@@ -1,0 +1,5 @@
+max_width = 120
+edition = "2024"
+match_block_trailing_comma = true
+newline_style = "Unix"
+use_field_init_shorthand = true

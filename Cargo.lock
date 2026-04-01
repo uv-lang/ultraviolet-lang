@@ -19,7 +19,7 @@ checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
 name = "backend"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "lazy_static",
  "ultraviolet-core",
@@ -36,7 +36,7 @@ dependencies = [
 
 [[package]]
 name = "frontend"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "anyhow",
  "once_cell",
@@ -93,7 +93,7 @@ checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
 name = "ultraviolet-cli"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "anyhow",
  "backend",
@@ -103,7 +103,7 @@ dependencies = [
 
 [[package]]
 name = "ultraviolet-core"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "anyhow",
  "colored",

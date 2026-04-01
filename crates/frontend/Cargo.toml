@@ -1,0 +1,13 @@
+[package]
+name = "frontend"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+regex = "1.12.3"
+once_cell = "1.21.3"
+
+ultraviolet-core = { path = "../core" }

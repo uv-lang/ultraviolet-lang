@@ -1,8 +1,24 @@
 [workspace]
-members = ["core", "frontend", "backend", "cli"]
+resolver = "3"
+members = ["crates/*"]
 
-default-members = ["cli"]
-resolver = "2"
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+authors = ["Andcool-Systems"]
+repository = "https://github.com/Andcool-Systems/Ultraviolet"
+description = "An interpretable, statically strongly typed programming language with tag-based syntax"
+publish = false
+keywords = ["language", "interpreter", "parser", "compiler", "typed"]
+categories = ["compilers", "parser-implementations", "development-tools"]
+# readme = "README.md"
 
 [workspace.dependencies]
 anyhow = "1.0.100"
+
+[workspace.lints.clippy]
+# https://users.rust-lang.org/t/to-string-vs-to-owned-for-string-literals/1441
+str_to_string = "warn"
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(docsrs_dep)'] }
