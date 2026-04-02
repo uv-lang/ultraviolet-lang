@@ -64,11 +64,11 @@ pub fn validate_and_parse_inner_type_block(
 
     match node.get_one_tag_by_name(name.as_str()) {
         Some(c) if c.self_closing => Err(SpannedError::new(
-            format!("`{}` tag cannot be self-closing", name),
+            format!("`{name}` tag cannot be self-closing"),
             c.span,
         )),
         Some(ch) if ch.children_len() != 1 || !ch.all_tags() => Err(SpannedError::new(
-            format!("`{}` tag must contain only one child", name),
+            format!("`{name}` tag must contain only one child"),
             ch.span,
         )),
         Some(ch) => Ok(Some(Spanned::new(

@@ -68,5 +68,27 @@
                 }
             }
         }
+        ,
+        {
+            "label": "Clippy",
+            "detail": "Run Clippy Test",
+            "type": "shell",
+            "command": "cargo clippy",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "runOptions": {
+                "reevaluateOnRerun": true
+            },
+            "options": {
+                "statusbar": {
+                    "label": "$(sparkle) Clippy"
+                }
+            }
+        }
     ]
 }

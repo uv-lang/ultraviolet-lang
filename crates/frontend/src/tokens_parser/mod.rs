@@ -107,11 +107,11 @@ impl TokenParser {
                         closing_tag_name = lit.to_owned();
                     },
                     _ => {
-                        return Err(SpannedError::new(format!("Unexpected literal `{}`", lit), token.span));
+                        return Err(SpannedError::new(format!("Unexpected literal `{lit}`"), token.span));
                     },
                 },
                 UVLexerTokens::Unknown(ch) => {
-                    return Err(SpannedError::new(format!("Unexpected token: `{}`", ch), token.span));
+                    return Err(SpannedError::new(format!("Unexpected token: `{ch}`"), token.span));
                 },
             }
         }

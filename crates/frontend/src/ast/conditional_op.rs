@@ -57,7 +57,7 @@ fn parse_outcomes(
 
     match node.get_one_tag_by_name(n) {
         Some(t) if t.self_closing => Err(SpannedError::new(
-            format!("`{}` tag could not be self-closing", n),
+            format!("`{n}` tag could not be self-closing"),
             t.span,
         )),
         Some(t) if !t.all_tags() => {

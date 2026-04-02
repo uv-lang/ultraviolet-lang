@@ -53,7 +53,7 @@ pub fn execute_builtin_function(fc: &FunctionCall, env: EnvRef) -> Result<Contro
 /// Built-in `print` function
 fn print(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
     for arg in args {
-        print!("{}", arg);
+        print!("{arg}");
     }
 
     Ok(ControlFlow::Simple(UVValue::Void))
@@ -62,7 +62,7 @@ fn print(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
 /// Built-in `println` function
 fn println(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
     for arg in args {
-        println!("{}", arg);
+        println!("{arg}");
     }
 
     Ok(ControlFlow::Simple(UVValue::Void))
@@ -74,7 +74,7 @@ fn println(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> 
 fn read(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
     // Print an initial input prompt if provided
     if let Some(arg) = args.first() {
-        print!("{}", arg);
+        print!("{arg}");
         let _ = io::stdout().flush();
     }
 

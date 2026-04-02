@@ -52,9 +52,9 @@ impl ErrorRenderer for SpannedError {
         if let Some(t) = &self.tip {
             writeln!(output, "{}: {}", "tip".green(), t.bold())?;
         }
-        writeln!(output, " --> {}", error_line_link)?;
+        writeln!(output, " --> {error_line_link}")?;
         writeln!(output, " {} |", " ".repeat(line_no_len))?;
-        writeln!(output, " {} | {}", editor_line, line_content)?;
+        writeln!(output, " {editor_line} | {line_content}")?;
         writeln!(
             output,
             " {} | {}{}",

@@ -14,7 +14,7 @@ fn main() {
         eprintln!("{}", err.display_with_source(&source));
     });
 
-    println!("{:?}", ret);
+    println!("{ret:?}");
 }
 
 fn run(source: &SourceFile) -> Result<ControlFlow, SpannedError> {
