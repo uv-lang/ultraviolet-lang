@@ -20,6 +20,7 @@ use ultraviolet_core::{
 };
 mod compare;
 mod conditional_op;
+mod logical;
 mod loops;
 mod math;
 mod program;
@@ -54,7 +55,7 @@ pub fn eval(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedErro
 
         ASTBlockType::ConditionalOp(co) => eval_conditional_op(co, env)?,
         ASTBlockType::MathOp(math_op) => math_op.eval(env)?,
-        ASTBlockType::LogicalOp(_logical_op) => todo!(),
+        ASTBlockType::LogicalOp(logical_op) => logical_op.eval(env)?,
         ASTBlockType::CompareOp(compare_op) => compare_op.eval(env)?,
         ASTBlockType::ForLoop(for_loop) => eval_for_loop(for_loop, env)?,
         ASTBlockType::WhileLoop(_while_loop) => todo!(),

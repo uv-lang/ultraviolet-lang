@@ -1,5 +1,6 @@
 <program>
     <main>
+        <!--
         <for>
             <iterator>x</iterator>
             <start>
@@ -31,6 +32,14 @@
                 </call>
             </body>
         </for>
+    -->
+        <call println>
+            <or>
+                <bool>1</bool>
+                <bool>0</bool>
+                <bool>0</bool>
+            </or>
+        </call>
     </main>
 
 </program>
