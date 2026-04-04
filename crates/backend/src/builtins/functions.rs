@@ -13,7 +13,8 @@ use ultraviolet_core::{
 
 use crate::eval::eval;
 
-type BuiltinFunctionSignature = fn(args: &[UVValue], env: EnvRef) -> Result<ControlFlow, SpannedError>;
+type BuiltinFunctionSignature =
+    fn(args: &[UVValue], env: EnvRef) -> Result<ControlFlow, SpannedError>;
 
 lazy_static! {
     static ref BUILTIN_FUNCTIONS: HashMap<&'static str, BuiltinFunctionSignature> = {
@@ -31,7 +32,10 @@ pub fn is_builtin_function(name: &str) -> bool {
 }
 
 /// Execute builtin function by signature
-pub fn execute_builtin_function(fc: &FunctionCall, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+pub fn execute_builtin_function(
+    fc: &FunctionCall,
+    env: EnvRef,
+) -> Result<ControlFlow, SpannedError> {
     match BUILTIN_FUNCTIONS.get(fc.name.as_str()) {
         Some(f) => {
             let mut av = Vec::new();
@@ -80,7 +84,9 @@ fn read(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
 
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {
-        Ok(_) => Ok(ControlFlow::Simple(UVValue::String(input.trim_end().to_owned()))),
+        Ok(_) => Ok(ControlFlow::Simple(UVValue::String(
+            input.trim_end().to_owned(),
+        ))),
         Err(_) => Ok(ControlFlow::Simple(UVValue::Null)),
     }
 }

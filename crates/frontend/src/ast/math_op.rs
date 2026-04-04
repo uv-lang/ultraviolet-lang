@@ -25,7 +25,10 @@ pub fn parse_math_op(node: &UVParseNode) -> GeneratorOutputType {
 }
 
 /// Parse arguments for math functions
-pub fn parse_arguments(node: &UVParseNode, op_type: &MathOpType) -> Result<Vec<ASTBlockType>, SpannedError> {
+pub fn parse_arguments(
+    node: &UVParseNode,
+    op_type: &MathOpType,
+) -> Result<Vec<ASTBlockType>, SpannedError> {
     if !node.all_tags() {
         return Err(SpannedError::new(
             "Unexpected literals inside math operation",

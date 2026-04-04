@@ -40,7 +40,9 @@ impl ErrorRenderer for SpannedError {
         let original_len = line_content.len();
 
         line_content = line_content.trim_start();
-        let col_offsetted = col.checked_sub(original_len - line_content.len()).context("")?;
+        let col_offsetted = col
+            .checked_sub(original_len - line_content.len())
+            .context("")?;
 
         let error_line_link = self.render_error_line(line, col, source);
 

@@ -3,7 +3,10 @@ use std::{
     collections::HashMap,
     f64::consts::{E, PI},
 };
-use ultraviolet_core::types::{backend::ControlFlow, frontend::ast::UVValue};
+use ultraviolet_core::types::{
+    backend::ControlFlow,
+    frontend::ast::{Number, UVValue},
+};
 
 lazy_static! {
     static ref BUILTIN_CONSTANTS: HashMap<&'static str, UVValue> = {
@@ -13,8 +16,8 @@ lazy_static! {
         m.insert("space", UVValue::String(" ".to_string()));
 
         // FIXME: Can we use dots here?
-        m.insert("math.pi", UVValue::Float(PI));
-        m.insert("math.exp", UVValue::Float(E));
+        m.insert("math.pi", UVValue::Number(Number::Float(PI)));
+        m.insert("math.exp", UVValue::Number(Number::Float(E)));
 
         m.insert("os.name", UVValue::String(std::env::consts::OS.to_string()));
         m.insert(

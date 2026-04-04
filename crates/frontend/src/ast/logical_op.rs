@@ -16,7 +16,11 @@ pub fn parse_logical_op(node: &UVParseNode) -> GeneratorOutputType {
         .to_uvlogical()
         .ok_or(SpannedError::new("Unknown logical operation", node.span))?;
 
-    let children = parse_arguments(node, op_type.min_arguments_count(), op_type.max_arguments_count())?;
+    let children = parse_arguments(
+        node,
+        op_type.min_arguments_count(),
+        op_type.max_arguments_count(),
+    )?;
 
     Ok(ASTBlockType::LogicalOp(LogicalOp {
         op_type,
@@ -26,7 +30,11 @@ pub fn parse_logical_op(node: &UVParseNode) -> GeneratorOutputType {
 }
 
 /// Parse arguments for logical op
-fn parse_arguments(node: &UVParseNode, min: usize, max: Option<usize>) -> Result<Vec<ASTBlockType>, SpannedError> {
+fn parse_arguments(
+    node: &UVParseNode,
+    min: usize,
+    max: Option<usize>,
+) -> Result<Vec<ASTBlockType>, SpannedError> {
     if !node.all_tags() {
         return Err(SpannedError::new(
             "Unexpected literals inside logical operation",
@@ -45,7 +53,10 @@ fn parse_arguments(node: &UVParseNode, min: usize, max: Option<usize>) -> Result
         && node.children_len() > m
     {
         return Err(SpannedError::new(
-            format!("`{}` logical operation can handle only {} arguments", node.name, m),
+            format!(
+                "`{}` logical operation can handle only {} arguments",
+                node.name, m
+            ),
             node.span,
         ));
     }

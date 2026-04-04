@@ -192,9 +192,17 @@ impl Lexer {
 
     /// Returns buffered literal
     fn finish_consuming_literal(&mut self, trim: bool) -> Option<String> {
-        let text = if trim { self.buffer.trim() } else { &self.buffer };
+        let text = if trim {
+            self.buffer.trim()
+        } else {
+            &self.buffer
+        };
 
-        let token = if text.is_empty() { None } else { Some(text.to_owned()) };
+        let token = if text.is_empty() {
+            None
+        } else {
+            Some(text.to_owned())
+        };
 
         self.buffer.clear();
         token
@@ -240,13 +248,19 @@ impl Lexer {
             self.iter.pos += 5;
 
             match self.iter.next() {
-                Some('>') if matches!(self.parse_state, LexerParseState::ParsingRawStringLiteral(None)) => {
+                Some('>')
+                    if matches!(
+                        self.parse_state,
+                        LexerParseState::ParsingRawStringLiteral(None)
+                    ) =>
+                {
                     return true;
                 },
                 Some('-') => {
                     let label = self.consume_raw_str_label();
                     if let Some(label) = label
-                        && let LexerParseState::ParsingRawStringLiteral(Some(start_label)) = &self.parse_state
+                        && let LexerParseState::ParsingRawStringLiteral(Some(start_label)) =
+                            &self.parse_state
                         && start_label.eq(&label)
                     {
                         return true;
@@ -397,7 +411,9 @@ mod tests {
                 UVLexerTokens::OpeningAngleBracket,
                 UVLexerTokens::Literal("str".to_owned()),
                 UVLexerTokens::ClosingAngleBracket,
-                UVLexerTokens::RawString(" Random content <str-123></str-123> <null /> ".to_owned()),
+                UVLexerTokens::RawString(
+                    " Random content <str-123></str-123> <null /> ".to_owned()
+                ),
                 UVLexerTokens::OpeningAngleBracketSlash,
                 UVLexerTokens::Literal("str".to_owned()),
                 UVLexerTokens::ClosingAngleBracket

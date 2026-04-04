@@ -24,7 +24,10 @@ pub fn parse_conditional_op(node: &UVParseNode) -> GeneratorOutputType {
     }
 
     let test = match node.get_one_tag_by_name("test") {
-        Some(t) if t.self_closing => Err(SpannedError::new("`test` tag could not be self-closing", t.span)),
+        Some(t) if t.self_closing => Err(SpannedError::new(
+            "`test` tag could not be self-closing",
+            t.span,
+        )),
         Some(t) if t.children_len() != 1 || !t.all_tags() => Err(SpannedError::new_tipped(
             "`test` should have only one nested tag",
             "If you want to place multiple tags inside, use the <g> grouping block.",
@@ -63,7 +66,10 @@ fn parse_outcomes(
         Some(t) if !t.all_tags() => {
             let extra_lit = t.get_inner_literal().unwrap_or_spanned(t.span)?;
 
-            Err(SpannedError::new("Found unexpected literal", extra_lit.span))
+            Err(SpannedError::new(
+                "Found unexpected literal",
+                extra_lit.span,
+            ))
         },
         Some(t) => Ok(Some(Spanned::new(parse_children_vec(t)?, t.span))),
         None => Ok(None),

@@ -1,16 +1,22 @@
 use crate::{
     traits::frontend::ast::{
-        ArgumentsCount, GetType, IsAssignable, StringToUVCompareOp, StringToUVLogicalOp, StringToUVMathOp,
-        StringToUVType,
+        ArgumentsCount, GetType, IsAssignable, StringToUVCompareOp, StringToUVLogicalOp,
+        StringToUVMathOp, StringToUVType,
     },
     types::frontend::{Span, Spanned},
 };
 
+/// Number-like value
+#[derive(Debug, Clone)]
+pub enum Number {
+    Int(i64),
+    Float(f64),
+}
+
 /// Typed value container
 #[derive(Debug, Clone)]
 pub enum UVValue {
-    Int(i64),
-    Float(f64),
+    Number(Number),
     String(String),
     Boolean(bool),
     Null,
@@ -18,11 +24,25 @@ pub enum UVValue {
     Void,
 }
 
+impl UVValue {
+    pub fn get_wider_type(values: &[UVValue]) -> UVType {
+        todo!()
+    }
+}
+
+impl GetType for Number {
+    fn get_type(&self) -> UVType {
+        match self {
+            Number::Int(_) => UVType::Int,
+            Number::Float(_) => UVType::Float,
+        }
+    }
+}
+
 impl GetType for UVValue {
     fn get_type(&self) -> UVType {
         match self {
-            UVValue::Int(_) => UVType::Int,
-            UVValue::Float(_) => UVType::Float,
+            UVValue::Number(n) => n.get_type(),
             UVValue::String(_) => UVType::String,
             UVValue::Boolean(_) => UVType::Boolean,
             UVValue::Null => UVType::Null,
@@ -32,11 +52,19 @@ impl GetType for UVValue {
     }
 }
 
+impl std::fmt::Display for Number {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Number::Int(i) => write!(f, "{i}"),
+            Number::Float(fl) => write!(f, "{fl}"),
+        }
+    }
+}
+
 impl std::fmt::Display for UVValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UVValue::Int(i) => write!(f, "{i}"),
-            UVValue::Float(fl) => write!(f, "{fl}"),
+            UVValue::Number(n) => n.fmt(f),
             UVValue::String(s) => write!(f, "{s}"),
             UVValue::Boolean(b) => write!(f, "{b}"),
             UVValue::Null => write!(f, "null"),
@@ -443,7 +471,10 @@ mod tests {
     fn type_compatible_with() {
         assert!(UVType::Union(vec![UVType::Int, UVType::Null]).is_assignable_from(&UVType::Null));
 
-        assert!(UVType::Union(vec![UVType::Int, UVType::Float]).is_assignable_from(&UVType::Union(vec![UVType::Int])));
+        assert!(
+            UVType::Union(vec![UVType::Int, UVType::Float])
+                .is_assignable_from(&UVType::Union(vec![UVType::Int]))
+        );
 
         assert!(!UVType::Int.is_assignable_from(&UVType::Union(vec![UVType::Int, UVType::Null])));
 

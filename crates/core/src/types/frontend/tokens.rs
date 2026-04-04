@@ -69,12 +69,16 @@ impl UVParseNode {
 
     /// Check if all children is literals
     pub fn all_literals(&self) -> bool {
-        self.children.iter().all(|ch| matches!(ch, UVParseBody::String(_)))
+        self.children
+            .iter()
+            .all(|ch| matches!(ch, UVParseBody::String(_)))
     }
 
     /// Check if all children is tags
     pub fn all_tags(&self) -> bool {
-        self.children.iter().all(|ch| matches!(ch, UVParseBody::Tag(_)))
+        self.children
+            .iter()
+            .all(|ch| matches!(ch, UVParseBody::Tag(_)))
     }
 
     /// Search extra children, that not included in white list

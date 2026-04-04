@@ -4,7 +4,9 @@ use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::{Positional, token_parser::UnwrapOptionError},
     types::frontend::{
-        ast::{ASTBlockType, FunctionCall, FunctionCallArg, FunctionDefinition, FunctionDefinitionArg},
+        ast::{
+            ASTBlockType, FunctionCall, FunctionCallArg, FunctionDefinition, FunctionDefinitionArg,
+        },
         tokens::UVParseNode,
     },
 };
@@ -37,7 +39,9 @@ pub fn parse_function_definition(node: &UVParseNode) -> GeneratorOutputType {
         return Err(SpannedError::new("Invalid function name", name_block.span));
     }
 
-    let name = name_block.get_inner_literal().unwrap_or_spanned(node.span)?;
+    let name = name_block
+        .get_inner_literal()
+        .unwrap_or_spanned(node.span)?;
 
     if !is_valid_identifier(name) {
         return Err(SpannedError::new(
@@ -58,17 +62,21 @@ pub fn parse_function_definition(node: &UVParseNode) -> GeneratorOutputType {
         },
     };
 
-    Ok(ASTBlockType::FunctionDefinition(Box::new(FunctionDefinition {
-        name: name.clone(),
-        arguments,
-        return_type: validate_and_parse_inner_type_block(node, "returns")?,
-        body: parse_children_vec(body)?,
-        span: node.span,
-    })))
+    Ok(ASTBlockType::FunctionDefinition(Box::new(
+        FunctionDefinition {
+            name: name.clone(),
+            arguments,
+            return_type: validate_and_parse_inner_type_block(node, "returns")?,
+            body: parse_children_vec(body)?,
+            span: node.span,
+        },
+    )))
 }
 
 /// Parse function definition arguments
-fn parse_arguments_definition(args: Vec<&UVParseNode>) -> Result<Vec<FunctionDefinitionArg>, SpannedError> {
+fn parse_arguments_definition(
+    args: Vec<&UVParseNode>,
+) -> Result<Vec<FunctionDefinitionArg>, SpannedError> {
     args.into_iter()
         .map(|arg| {
             // Name
@@ -92,10 +100,9 @@ fn parse_arguments_definition(args: Vec<&UVParseNode>) -> Result<Vec<FunctionDef
 
             Ok(FunctionDefinitionArg {
                 name: name.clone(),
-                arg_type: validate_and_parse_inner_type_block(arg, "type")?.ok_or(SpannedError::new(
-                    "Argument definition should have an `type` tag",
-                    arg.span,
-                ))?,
+                arg_type: validate_and_parse_inner_type_block(arg, "type")?.ok_or(
+                    SpannedError::new("Argument definition should have an `type` tag", arg.span),
+                )?,
                 span: arg.span,
             })
         })
@@ -105,12 +112,18 @@ fn parse_arguments_definition(args: Vec<&UVParseNode>) -> Result<Vec<FunctionDef
 /// Parse function call block
 pub fn parse_function_call(node: &UVParseNode) -> GeneratorOutputType {
     if node.extra_param.is_empty() {
-        return Err(SpannedError::new("Function call must have an function name", node.span));
+        return Err(SpannedError::new(
+            "Function call must have an function name",
+            node.span,
+        ));
     }
 
     if !is_valid_identifier(&node.extra_param) {
         return Err(SpannedError::new(
-            format!("{} is not a valid identifier for function call", node.extra_param),
+            format!(
+                "{} is not a valid identifier for function call",
+                node.extra_param
+            ),
             node.span,
         ));
     }
@@ -122,7 +135,9 @@ pub fn parse_function_call(node: &UVParseNode) -> GeneratorOutputType {
     }))
 }
 
-pub fn parse_function_call_arguments(args: Vec<&UVParseNode>) -> Result<Vec<FunctionCallArg>, SpannedError> {
+pub fn parse_function_call_arguments(
+    args: Vec<&UVParseNode>,
+) -> Result<Vec<FunctionCallArg>, SpannedError> {
     args.into_iter()
         .map(|arg| {
             Ok(FunctionCallArg {

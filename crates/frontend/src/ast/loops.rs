@@ -33,7 +33,10 @@ pub fn parse_for_loop(node: &UVParseNode) -> GeneratorOutputType {
         },
         Some(x) => x,
         None => {
-            return Err(SpannedError::new("`for` loop must have an `iterator` child", node.span));
+            return Err(SpannedError::new(
+                "`for` loop must have an `iterator` child",
+                node.span,
+            ));
         },
     };
 
@@ -80,7 +83,10 @@ pub fn parse_while_loop(node: &UVParseNode) -> GeneratorOutputType {
     let body = match node.get_one_tag_by_name("body") {
         Some(x) => x,
         None => {
-            return Err(SpannedError::new("`while` loop must have a body", node.span));
+            return Err(SpannedError::new(
+                "`while` loop must have a body",
+                node.span,
+            ));
         },
     };
 
@@ -93,7 +99,10 @@ pub fn parse_while_loop(node: &UVParseNode) -> GeneratorOutputType {
 }
 
 /// Get inner tag by nme and validate its children
-fn get_and_validate_inner_tag<'a>(node: &'a UVParseNode, name: &'a str) -> Result<&'a UVParseNode, SpannedError> {
+fn get_and_validate_inner_tag<'a>(
+    node: &'a UVParseNode,
+    name: &'a str,
+) -> Result<&'a UVParseNode, SpannedError> {
     let x_node = match node.get_one_tag_by_name(name) {
         Some(x) if x.children_len() != 1 || !x.all_tags() => {
             return Err(SpannedError::new(
@@ -103,7 +112,10 @@ fn get_and_validate_inner_tag<'a>(node: &'a UVParseNode, name: &'a str) -> Resul
         },
         Some(x) => x,
         None => {
-            return Err(SpannedError::new(format!("Loop must have an `{name}` tag"), node.span));
+            return Err(SpannedError::new(
+                format!("Loop must have an `{name}` tag"),
+                node.span,
+            ));
         },
     };
 

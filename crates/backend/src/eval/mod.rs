@@ -5,6 +5,7 @@ use crate::{
     },
     eval::{
         conditional_op::eval_conditional_op,
+        loops::eval_for_loop,
         program::eval_program,
         variables::{access_variable, assign_variable, define_variable},
     },
@@ -17,6 +18,8 @@ use ultraviolet_core::{
     },
 };
 mod conditional_op;
+mod loops;
+mod math;
 mod program;
 mod variables;
 
@@ -24,7 +27,9 @@ pub fn eval(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedErro
     Ok(match node {
         // Main program and others service blocks
         ASTBlockType::Program(program_block) => eval_program(program_block, env)?,
-        ASTBlockType::HeadBlock(blocks) | ASTBlockType::MainBlock(blocks) => eval_block(blocks, env)?,
+        ASTBlockType::HeadBlock(blocks) | ASTBlockType::MainBlock(blocks) => {
+            eval_block(blocks, env)?
+        },
 
         // Variables things
         ASTBlockType::VariableDefinition(def) => define_variable(def, env)?,
@@ -40,14 +45,16 @@ pub fn eval(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedErro
 
         // Functions things
         ASTBlockType::FunctionDefinition(_function_definition) => todo!(),
-        ASTBlockType::FunctionCall(fc) if is_builtin_function(&fc.name) => execute_builtin_function(fc, env)?,
+        ASTBlockType::FunctionCall(fc) if is_builtin_function(&fc.name) => {
+            execute_builtin_function(fc, env)?
+        },
         ASTBlockType::FunctionCall(_function_call) => todo!(),
 
         ASTBlockType::ConditionalOp(co) => eval_conditional_op(co, env)?,
         ASTBlockType::MathOp(_math_op) => todo!(),
         ASTBlockType::LogicalOp(_logical_op) => todo!(),
         ASTBlockType::CompareOp(_compare_op) => todo!(),
-        ASTBlockType::ForLoop(_for_loop) => todo!(),
+        ASTBlockType::ForLoop(for_loop) => eval_for_loop(for_loop, env)?,
         ASTBlockType::WhileLoop(_while_loop) => todo!(),
         ASTBlockType::Value(val) => ControlFlow::Simple(val.value.clone()),
         ASTBlockType::GroupBlock(block) => eval_block(block, env)?,
@@ -62,10 +69,9 @@ fn eval_block(nodes: &Vec<ASTBlockType>, env: EnvRef) -> Result<ControlFlow, Spa
     let mut last_eval_simple_val = UVValue::Void;
     for node in nodes {
         match eval(node, new_env.clone())? {
-            ControlFlow::Return(val) => return Ok(ControlFlow::Return(val)),
-
             // FIXME: Должен ли блок возвращать последнее вычисленное значение?
             ControlFlow::Simple(val) => last_eval_simple_val = val,
+            cf => return Ok(cf),
         }
     }
 
@@ -76,5 +82,6 @@ fn eval_block(nodes: &Vec<ASTBlockType>, env: EnvRef) -> Result<ControlFlow, Spa
 fn eval_return(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedError> {
     match eval(node, env)? {
         ControlFlow::Simple(val) | ControlFlow::Return(val) => Ok(ControlFlow::Return(val)),
+        ControlFlow::Break | ControlFlow::Continue => Ok(ControlFlow::Simple(UVValue::Void)),
     }
 }

@@ -11,7 +11,8 @@ use ultraviolet_core::{
 };
 
 use crate::ast::{
-    GeneratorOutputType, generate_ast, is_valid_identifier, type_parser::validate_and_parse_inner_type_block,
+    GeneratorOutputType, generate_ast, is_valid_identifier,
+    type_parser::validate_and_parse_inner_type_block,
 };
 
 /// Parse definition of variables <let>
@@ -34,7 +35,9 @@ pub fn parse_var_definition(node: &UVParseNode) -> GeneratorOutputType {
         return Err(SpannedError::new("Invalid variable name", name_block.span));
     }
 
-    let name = name_block.get_inner_literal().unwrap_or_spanned(node.span)?;
+    let name = name_block
+        .get_inner_literal()
+        .unwrap_or_spanned(node.span)?;
 
     if !is_valid_identifier(name) {
         return Err(SpannedError::new(
@@ -60,19 +63,24 @@ pub fn parse_var_definition(node: &UVParseNode) -> GeneratorOutputType {
     // <const /> tag
     let is_const = match node.get_one_tag_by_name("const") {
         Some(c) if !c.self_closing => {
-            return Err(SpannedError::new("`const` tag must be self-closing", c.span));
+            return Err(SpannedError::new(
+                "`const` tag must be self-closing",
+                c.span,
+            ));
         },
         Some(_) => true,
         None => false,
     };
 
-    Ok(ASTBlockType::VariableDefinition(Box::new(VariableDefinition {
-        name: Spanned::new(name.deref().clone(), name_block.span),
-        value: Spanned::new(generate_ast(value)?, value_block.span),
-        expected_type: validate_and_parse_inner_type_block(node, "type")?,
-        is_const,
-        span: node.span,
-    })))
+    Ok(ASTBlockType::VariableDefinition(Box::new(
+        VariableDefinition {
+            name: Spanned::new(name.deref().clone(), name_block.span),
+            value: Spanned::new(generate_ast(value)?, value_block.span),
+            expected_type: validate_and_parse_inner_type_block(node, "type")?,
+            is_const,
+            span: node.span,
+        },
+    )))
 }
 
 /// Parse variable assignment

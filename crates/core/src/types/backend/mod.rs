@@ -36,6 +36,15 @@ impl Environment {
         None
     }
 
+    /// Find variable by name
+    pub fn find_var(&self, name: impl Into<String>) -> Option<Rc<RefCell<RTVariable>>> {
+        if let Some(Symbol::Variable(var)) = self.find(name) {
+            Some(var)
+        } else {
+            None
+        }
+    }
+
     /// Define variable in current scope
     pub fn define_variable(&mut self, name: String, value: UVValue, constant: bool) {
         self.symbols.insert(
@@ -78,7 +87,10 @@ pub struct RTVariable {
 impl RTVariable {
     /// Create new variable from value
     pub fn new_from(val: UVValue, constant: bool) -> Self {
-        Self { value: val, constant }
+        Self {
+            value: val,
+            constant,
+        }
     }
 }
 
@@ -89,6 +101,9 @@ pub enum ControlFlow {
 
     /// Return propagates upstream
     Return(UVValue),
+
+    Break,
+    Continue,
 }
 
 impl ControlFlow {
@@ -97,6 +112,7 @@ impl ControlFlow {
         match self {
             ControlFlow::Simple(uvvalue) => uvvalue,
             ControlFlow::Return(uvvalue) => uvvalue,
+            ControlFlow::Continue | ControlFlow::Break => &UVValue::Void,
         }
     }
 }

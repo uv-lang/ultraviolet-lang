@@ -8,7 +8,10 @@ use ultraviolet_core::{
 };
 
 /// Evaluate conditional operator
-pub fn eval_conditional_op(co: &ConditionalOperator, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+pub fn eval_conditional_op(
+    co: &ConditionalOperator,
+    env: EnvRef,
+) -> Result<ControlFlow, SpannedError> {
     let cf = eval(&co.test, env.clone())?;
     let ControlFlow::Simple(evaluated_test) = cf else {
         return Ok(cf);
@@ -24,7 +27,11 @@ pub fn eval_conditional_op(co: &ConditionalOperator, env: EnvRef) -> Result<Cont
         },
     };
 
-    let branch = if test_result { &co.then_body } else { &co.else_body };
+    let branch = if test_result {
+        &co.then_body
+    } else {
+        &co.else_body
+    };
 
     if let Some(body) = branch {
         let new_env = Environment::new_child(env.clone());

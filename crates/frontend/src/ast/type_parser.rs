@@ -8,13 +8,19 @@ use ultraviolet_core::{
 pub fn parse_type_raw(node: &UVParseNode) -> Result<UVType, SpannedError> {
     if node.name.eq("union") {
         if node.self_closing {
-            return Err(SpannedError::new("Union cannot be used as individual type", node.span));
+            return Err(SpannedError::new(
+                "Union cannot be used as individual type",
+                node.span,
+            ));
         }
         return parse_union(node);
     }
 
     if !node.self_closing {
-        return Err(SpannedError::new("All type tags must be self-closing", node.span));
+        return Err(SpannedError::new(
+            "All type tags must be self-closing",
+            node.span,
+        ));
     }
 
     Ok(match node.name.as_str() {
@@ -24,7 +30,10 @@ pub fn parse_type_raw(node: &UVParseNode) -> Result<UVType, SpannedError> {
         "bool" => UVType::Boolean,
         "null" => UVType::Null,
         _ => {
-            return Err(SpannedError::new(format!("Unknown type `{}`", node.name), node.span));
+            return Err(SpannedError::new(
+                format!("Unknown type `{}`", node.name),
+                node.span,
+            ));
         },
     })
 }

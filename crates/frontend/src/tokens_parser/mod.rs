@@ -58,8 +58,14 @@ impl TokenParser {
                     UVParseState::ClosingAngleBracketClosingTag => {
                         if tag.name.ne(&closing_tag_name) {
                             return Err(SpannedError::new(
-                                format!("Unexpected closing tag `{}`. Expected `{}`", closing_tag_name, tag.name),
-                                Span::new(token.span.start - closing_tag_name.len(), token.span.end - 1),
+                                format!(
+                                    "Unexpected closing tag `{}`. Expected `{}`",
+                                    closing_tag_name, tag.name
+                                ),
+                                Span::new(
+                                    token.span.start - closing_tag_name.len(),
+                                    token.span.end - 1,
+                                ),
                             ));
                         }
 
@@ -107,11 +113,17 @@ impl TokenParser {
                         closing_tag_name = lit.to_owned();
                     },
                     _ => {
-                        return Err(SpannedError::new(format!("Unexpected literal `{lit}`"), token.span));
+                        return Err(SpannedError::new(
+                            format!("Unexpected literal `{lit}`"),
+                            token.span,
+                        ));
                     },
                 },
                 UVLexerTokens::Unknown(ch) => {
-                    return Err(SpannedError::new(format!("Unexpected token: `{ch}`"), token.span));
+                    return Err(SpannedError::new(
+                        format!("Unexpected token: `{ch}`"),
+                        token.span,
+                    ));
                 },
             }
         }
@@ -134,7 +146,9 @@ mod tests {
     use crate::{lexer::Lexer, tokens_parser::TokenParser};
 
     fn get_nodes(code: &str) -> UVParseNode {
-        TokenParser::new(Lexer::new(code.to_owned()).parse()).parse().unwrap()
+        TokenParser::new(Lexer::new(code.to_owned()).parse())
+            .parse()
+            .unwrap()
     }
 
     #[test]

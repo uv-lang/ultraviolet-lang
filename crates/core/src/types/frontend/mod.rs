@@ -1,6 +1,7 @@
 pub mod ast;
 pub mod lexer;
 pub mod tokens;
+pub mod uvvalue_ops;
 
 use anyhow::{Context, Result};
 use std::{fs, ops::Deref, path::Path};
@@ -32,7 +33,12 @@ impl<'a> SourceFile<'a> {
             code: code.clone(),
             char_to_byte: code.char_indices().map(|(i, _)| i).collect(),
             line_starts: std::iter::once(0)
-                .chain(code.chars().enumerate().filter(|(_, c)| *c == '\n').map(|(i, _)| i))
+                .chain(
+                    code.chars()
+                        .enumerate()
+                        .filter(|(_, c)| *c == '\n')
+                        .map(|(i, _)| i),
+                )
                 .collect(),
         })
     }

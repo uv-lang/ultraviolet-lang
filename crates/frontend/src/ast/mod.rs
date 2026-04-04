@@ -59,8 +59,10 @@ pub fn gen_main_ast(node: &UVParseNode) -> GeneratorOutputType {
     };
 
     let main = ASTBlockType::MainBlock(parse_children_vec(
-        node.get_one_tag_by_name("main")
-            .ok_or(SpannedError::new("Main block in <program> is required", node.span))?,
+        node.get_one_tag_by_name("main").ok_or(SpannedError::new(
+            "Main block in <program> is required",
+            node.span,
+        ))?,
     )?);
 
     Ok(ASTBlockType::Program(Box::new(ProgramBlock {
@@ -117,7 +119,10 @@ pub fn generate_ast(node: &UVParseNode) -> GeneratorOutputType {
         _ if node.self_closing => parse_var_access(node)?,
 
         name => {
-            return Err(SpannedError::new(format!("Unexpected `{name}` tag"), node.span));
+            return Err(SpannedError::new(
+                format!("Unexpected `{name}` tag"),
+                node.span,
+            ));
         },
     })
 }

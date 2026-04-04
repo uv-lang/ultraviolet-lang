@@ -5,7 +5,7 @@ use ultraviolet_core::{
     traits::frontend::token_parser::UnwrapOptionError,
     types::frontend::{
         Spanned,
-        ast::{ASTBlockType, UVValue},
+        ast::{ASTBlockType, Number, UVValue},
         tokens::UVParseNode,
     },
 };
@@ -17,8 +17,8 @@ use crate::ast::GeneratorOutputType;
 pub fn parse_value(node: &UVParseNode) -> GeneratorOutputType {
     Ok(ASTBlockType::Value(Spanned::new(
         match node.name.as_str() {
-            "int" => UVValue::Int(parse_int(node)?),
-            "float" => UVValue::Float(parse_float(node)?),
+            "int" => UVValue::Number(Number::Int(parse_int(node)?)),
+            "float" => UVValue::Number(Number::Float(parse_float(node)?)),
             "str" => UVValue::String(parse_str(node)),
             "bool" => UVValue::Boolean(parse_boolean(node)?),
             "null" => {
@@ -99,7 +99,10 @@ fn parse_boolean(node: &UVParseNode) -> Result<bool, SpannedError> {
 
 fn validate_null(node: &UVParseNode) -> Result<(), SpannedError> {
     if !node.self_closing {
-        return Err(SpannedError::new("That tag must be self-closing", node.span));
+        return Err(SpannedError::new(
+            "That tag must be self-closing",
+            node.span,
+        ));
     }
 
     Ok(())

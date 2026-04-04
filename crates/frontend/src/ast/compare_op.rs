@@ -26,7 +26,10 @@ pub fn parse_compare_op(node: &UVParseNode) -> GeneratorOutputType {
 }
 
 /// Parse arguments for compare
-fn parse_arguments(node: &UVParseNode, op_type: &CompareOpType) -> Result<Vec<ASTBlockType>, SpannedError> {
+fn parse_arguments(
+    node: &UVParseNode,
+    op_type: &CompareOpType,
+) -> Result<Vec<ASTBlockType>, SpannedError> {
     if !node.all_tags() {
         return Err(SpannedError::new(
             "Unexpected literals inside comparison operation",
@@ -48,7 +51,10 @@ fn parse_arguments(node: &UVParseNode, op_type: &CompareOpType) -> Result<Vec<AS
         && node.children_len() > max_args
     {
         return Err(SpannedError::new(
-            format!("Too many arguments for `{}` comparison operation", node.name),
+            format!(
+                "Too many arguments for `{}` comparison operation",
+                node.name
+            ),
             node.span,
         ));
     }

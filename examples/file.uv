@@ -1,9 +1,20 @@
 <program>
     <main>
-        <call print>
-            <dll.suffix />
-            <endl />
-        </call>
+        <for>
+            <iterator>iterator_name</iterator>
+            <start>
+                <int>0</int>
+            </start>
+            <end>
+                <int>10</int>
+            </end>
+
+            <body>
+                <call println>
+                    <iterator_name />
+                </call>
+            </body>
+        </for>
     </main>
 
 </program>
