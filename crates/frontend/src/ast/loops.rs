@@ -12,7 +12,7 @@ use crate::ast::{GeneratorOutputType, generate_ast, parse_children_vec};
 
 /// Parse for loop
 pub fn parse_for_loop(node: &UVParseNode) -> GeneratorOutputType {
-    let extra = node.search_extra_children(vec!["iterator", "start", "end", "step", "body"]);
+    let extra = node.search_extra_children(vec!["iter", "start", "end", "step", "body"]);
 
     if !extra.is_empty() {
         let first_extra = extra.first().unwrap_or_spanned(node.span)?;
@@ -24,10 +24,10 @@ pub fn parse_for_loop(node: &UVParseNode) -> GeneratorOutputType {
     }
 
     // Iterator
-    let iterator_node = match node.get_one_tag_by_name("iterator") {
+    let iterator_node = match node.get_one_tag_by_name("iter") {
         Some(x) if x.children_len() != 1 || !x.all_literals() => {
             return Err(SpannedError::new(
-                "`iterator` child must have only one inner literal",
+                "`iter` child must have only one inner literal",
                 x.span,
             ));
         },

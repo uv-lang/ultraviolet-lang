@@ -1,8 +1,7 @@
 <program>
     <main>
-        <!--
         <for>
-            <iterator>x</iterator>
+            <iter>x</iter>
             <start>
                 <int>0</int>
             </start>
@@ -11,35 +10,39 @@
             </end>
 
             <body>
-                <if>
-                    <test>
-                        <eq>
-                            <x />
-                            <int>5</int>
-                        </eq>
-                    </test>
+                <let>
+                    <name>type</name>
+                    <value>
+                        <if>
+                            <test>
+                                <eq>
+                                    <mod>
+                                        <x />
+                                        <int>2</int>
+                                    </mod>
+                                    <int>0</int>
+                                </eq>
+                            </test>
 
-                    <then>
-                        <call println>
-                            <str>It's five!!</str>
-                        </call>
-                        <continue />
-                    </then>
-                </if>
+                            <then>
+                                <str> is even!</str>
+                            </then>
 
-                <call println>
+                            <else>
+                                <str> is odd!</str>
+                            </else>
+                        </if>
+                    </value>
+                </let>
+
+                <call print>
                     <x />
+                    <type />
+                    <endl />
                 </call>
+
             </body>
         </for>
-    -->
-        <call println>
-            <or>
-                <bool>1</bool>
-                <bool>0</bool>
-                <bool>0</bool>
-            </or>
-        </call>
     </main>
 
 </program>

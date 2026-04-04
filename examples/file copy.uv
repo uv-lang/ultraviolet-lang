@@ -176,7 +176,7 @@
 
     <!-- For loops -->
     <for>
-        <iterator>iterator_name</iterator>
+        <iter>iterator_name</iter>
         <start>
             <int>0</int>
         </start>
