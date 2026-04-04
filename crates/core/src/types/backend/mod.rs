@@ -46,11 +46,16 @@ impl Environment {
     }
 
     /// Define variable in current scope
-    pub fn define_variable(&mut self, name: String, value: UVValue, constant: bool) {
+    pub fn define_variable(&mut self, name: impl Into<String>, value: UVValue, constant: bool) {
         self.symbols.insert(
-            name,
+            name.into(),
             Symbol::Variable(Rc::new(RefCell::new(RTVariable::new_from(value, constant)))),
         );
+    }
+
+    /// Remove symbol from CURRENT scope
+    pub fn remove_symbol(&mut self, name: impl Into<String>) -> bool {
+        self.symbols.remove(&name.into()).is_some()
     }
 }
 

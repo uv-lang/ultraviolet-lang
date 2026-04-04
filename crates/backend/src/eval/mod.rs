@@ -6,7 +6,7 @@ use crate::{
     },
     eval::{
         conditional_op::eval_conditional_op,
-        loops::eval_for_loop,
+        loops::{eval_for_loop, eval_while_loop},
         program::eval_program,
         variables::{access_variable, assign_variable, define_variable},
     },
@@ -58,7 +58,7 @@ pub fn eval(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedErro
         ASTBlockType::LogicalOp(logical_op) => logical_op.eval(env)?,
         ASTBlockType::CompareOp(compare_op) => compare_op.eval(env)?,
         ASTBlockType::ForLoop(for_loop) => eval_for_loop(for_loop, env)?,
-        ASTBlockType::WhileLoop(_while_loop) => todo!(),
+        ASTBlockType::WhileLoop(while_loop) => eval_while_loop(while_loop, env)?,
         ASTBlockType::Value(val) => ControlFlow::Simple(val.value.clone()),
         ASTBlockType::GroupBlock(block) => eval_block(block, env)?,
         ASTBlockType::Return(block) => eval_return(block, env)?,

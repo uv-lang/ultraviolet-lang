@@ -1,48 +1,35 @@
 <program>
     <main>
-        <for>
-            <iter>x</iter>
-            <start>
+        <let>
+            <name>some_var</name>
+            <value>
                 <int>0</int>
-            </start>
-            <end>
-                <int>10</int>
-            </end>
+            </value>
+        </let>
+
+        <while>
+            <!-- While condition -->
+            <test>
+                <lt>
+                    <some_var />
+                    <int>10</int>
+                </lt>
+            </test>
 
             <body>
-                <let>
-                    <name>type</name>
-                    <value>
-                        <if>
-                            <test>
-                                <eq>
-                                    <mod>
-                                        <x />
-                                        <int>2</int>
-                                    </mod>
-                                    <int>0</int>
-                                </eq>
-                            </test>
+                <!-- Loop body -->
+                <some_var>
+                    <sum>
+                        <some_var />
+                        <int>1</int>
+                    </sum>
+                </some_var>
 
-                            <then>
-                                <str> is even!</str>
-                            </then>
-
-                            <else>
-                                <str> is odd!</str>
-                            </else>
-                        </if>
-                    </value>
-                </let>
-
-                <call print>
-                    <x />
-                    <type />
-                    <endl />
+                <call println>
+                    <some_var />
                 </call>
-
             </body>
-        </for>
+        </while>
     </main>
 
 </program>
