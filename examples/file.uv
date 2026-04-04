@@ -1,20 +1,11 @@
 <program>
     <main>
-        <for>
-            <iterator>iterator_name</iterator>
-            <start>
-                <int>0</int>
-            </start>
-            <end>
-                <int>10</int>
-            </end>
-
-            <body>
-                <call println>
-                    <iterator_name />
-                </call>
-            </body>
-        </for>
+        <call println>
+            <div>
+                <int>5</int>
+                <float>0.1</float>
+            </div>
+        </call>
     </main>
 
 </program>

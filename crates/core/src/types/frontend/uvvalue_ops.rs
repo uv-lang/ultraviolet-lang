@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::ops::{Add, Div, Mul, Rem, Sub};
 
 use crate::types::frontend::ast::{Number, UVValue};
 
@@ -13,13 +13,65 @@ impl Number {
     }
 }
 
-impl<'a, 'b> Add<&'b UVValue> for &'a UVValue {
+impl<'b> Add<&'b UVValue> for &UVValue {
     type Output = UVValue;
 
     fn add(self, rhs: &'b UVValue) -> Self::Output {
         match (self, rhs) {
             (UVValue::Number(lhs), UVValue::Number(rhs)) => {
-                UVValue::Number(Number::Float(lhs.to_f64() + rhs.to_f64()))
+                UVValue::Number(Number::Float(lhs.to_f64().add(rhs.to_f64())))
+            },
+            _ => unreachable!("Typechecker bug"),
+        }
+    }
+}
+
+impl<'b> Sub<&'b UVValue> for &UVValue {
+    type Output = UVValue;
+
+    fn sub(self, rhs: &'b UVValue) -> Self::Output {
+        match (self, rhs) {
+            (UVValue::Number(lhs), UVValue::Number(rhs)) => {
+                UVValue::Number(Number::Float(lhs.to_f64().sub(rhs.to_f64())))
+            },
+            _ => unreachable!("Typechecker bug"),
+        }
+    }
+}
+
+impl<'b> Mul<&'b UVValue> for &UVValue {
+    type Output = UVValue;
+
+    fn mul(self, rhs: &'b UVValue) -> Self::Output {
+        match (self, rhs) {
+            (UVValue::Number(lhs), UVValue::Number(rhs)) => {
+                UVValue::Number(Number::Float(lhs.to_f64().mul(rhs.to_f64())))
+            },
+            _ => unreachable!("Typechecker bug"),
+        }
+    }
+}
+
+impl<'b> Div<&'b UVValue> for &UVValue {
+    type Output = UVValue;
+
+    fn div(self, rhs: &'b UVValue) -> Self::Output {
+        match (self, rhs) {
+            (UVValue::Number(lhs), UVValue::Number(rhs)) => {
+                UVValue::Number(Number::Float(lhs.to_f64().div(rhs.to_f64())))
+            },
+            _ => unreachable!("Typechecker bug"),
+        }
+    }
+}
+
+impl<'b> Rem<&'b UVValue> for &UVValue {
+    type Output = UVValue;
+
+    fn rem(self, rhs: &'b UVValue) -> Self::Output {
+        match (self, rhs) {
+            (UVValue::Number(lhs), UVValue::Number(rhs)) => {
+                UVValue::Number(Number::Float(lhs.to_f64().rem(rhs.to_f64())))
             },
             _ => unreachable!("Typechecker bug"),
         }

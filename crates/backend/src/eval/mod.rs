@@ -6,6 +6,7 @@ use crate::{
     eval::{
         conditional_op::eval_conditional_op,
         loops::eval_for_loop,
+        math::EvalMath,
         program::eval_program,
         variables::{access_variable, assign_variable, define_variable},
     },
@@ -51,7 +52,7 @@ pub fn eval(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedErro
         ASTBlockType::FunctionCall(_function_call) => todo!(),
 
         ASTBlockType::ConditionalOp(co) => eval_conditional_op(co, env)?,
-        ASTBlockType::MathOp(_math_op) => todo!(),
+        ASTBlockType::MathOp(math_op) => math_op.eval(env)?,
         ASTBlockType::LogicalOp(_logical_op) => todo!(),
         ASTBlockType::CompareOp(_compare_op) => todo!(),
         ASTBlockType::ForLoop(for_loop) => eval_for_loop(for_loop, env)?,

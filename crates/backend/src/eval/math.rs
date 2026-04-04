@@ -2,7 +2,7 @@ use ultraviolet_core::{
     errors::SpannedError,
     types::{
         backend::{ControlFlow, EnvRef},
-        frontend::ast::{MathOp, MathOpType},
+        frontend::ast::{MathOp, MathOpType, UVValue},
     },
 };
 
@@ -11,6 +11,8 @@ use crate::eval::eval;
 pub trait EvalMath {
     /// Evaluate math operation
     fn eval(&self, env: EnvRef) -> Result<ControlFlow, SpannedError>;
+
+    fn eval_expr(&self, values: &[UVValue]) -> Result<UVValue, SpannedError>;
 }
 
 impl EvalMath for MathOp {
@@ -26,14 +28,25 @@ impl EvalMath for MathOp {
             values.push(v);
         }
 
-        match self.op_type {
-            MathOpType::Sum => todo!(),
-            MathOpType::Sub => todo!(),
-            MathOpType::Mul => todo!(),
-            MathOpType::Div => todo!(),
-            MathOpType::Mod => todo!(),
-        }
+        Ok(ControlFlow::Simple(self.eval_expr(values.as_slice())?))
+    }
 
-        todo!()
+    fn eval_expr(&self, values: &[UVValue]) -> Result<UVValue, SpannedError> {
+        let mut iter = values.iter();
+
+        let first = iter
+            .next()
+            .ok_or_else(|| SpannedError::new("empty operands", self.span))?
+            .clone();
+
+        let result = match self.op_type {
+            MathOpType::Sum => iter.fold(first, |acc, v| &acc + v),
+            MathOpType::Sub => iter.fold(first, |acc, v| &acc - v),
+            MathOpType::Mul => iter.fold(first, |acc, v| &acc * v),
+            MathOpType::Div => iter.fold(first, |acc, v| &acc / v),
+            MathOpType::Mod => iter.fold(first, |acc, v| &acc % v),
+        };
+
+        Ok(result)
     }
 }
