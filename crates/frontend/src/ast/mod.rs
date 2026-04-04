@@ -92,7 +92,13 @@ pub fn generate_ast(node: &UVParseNode) -> GeneratorOutputType {
 
         // Parse return block
         // TODO: Dead code analysis
-        "return" if !node.self_closing => parse_return(node)?,
+        "return" => parse_return(node)?,
+
+        // Parse break
+        "break" if node.self_closing => ASTBlockType::Break,
+
+        // Parse continue
+        "continue" if node.self_closing => ASTBlockType::Continue,
 
         // Parse function definition
         "fn" if !node.self_closing => parse_function_definition(node)?,
@@ -142,15 +148,10 @@ pub fn parse_children_vec(n: &UVParseNode) -> Result<Vec<ASTBlockType>, SpannedE
 
 /// Parse return block
 fn parse_return(node: &UVParseNode) -> Result<ASTBlockType, SpannedError> {
-    if !node.all_tags() || node.children_len() != 1 {
-        return Err(SpannedError::new_tipped(
-            "`return` statement should have one inner tag",
-            "Try using group `g` block",
-            node.span,
-        ));
-    }
+    let ch = match node.get_tag_at(0) {
+        Some(t) => Some(Box::new(generate_ast(t)?)),
+        None => None,
+    };
 
-    Ok(ASTBlockType::Return(Box::new(generate_ast(
-        node.get_tag_at(0).unwrap_or_spanned(node.span)?,
-    )?)))
+    Ok(ASTBlockType::Return(ch))
 }

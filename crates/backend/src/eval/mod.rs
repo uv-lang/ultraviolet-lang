@@ -1,4 +1,5 @@
 use crate::{
+    EvalOps,
     builtins::{
         constants::{get_builtin_constant, is_builtin_constant},
         functions::{execute_builtin_function, is_builtin_function},
@@ -6,7 +7,6 @@ use crate::{
     eval::{
         conditional_op::eval_conditional_op,
         loops::eval_for_loop,
-        math::EvalMath,
         program::eval_program,
         variables::{access_variable, assign_variable, define_variable},
     },
@@ -18,6 +18,7 @@ use ultraviolet_core::{
         frontend::ast::{ASTBlockType, UVValue},
     },
 };
+mod compare;
 mod conditional_op;
 mod loops;
 mod math;
@@ -54,12 +55,15 @@ pub fn eval(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedErro
         ASTBlockType::ConditionalOp(co) => eval_conditional_op(co, env)?,
         ASTBlockType::MathOp(math_op) => math_op.eval(env)?,
         ASTBlockType::LogicalOp(_logical_op) => todo!(),
-        ASTBlockType::CompareOp(_compare_op) => todo!(),
+        ASTBlockType::CompareOp(compare_op) => compare_op.eval(env)?,
         ASTBlockType::ForLoop(for_loop) => eval_for_loop(for_loop, env)?,
         ASTBlockType::WhileLoop(_while_loop) => todo!(),
         ASTBlockType::Value(val) => ControlFlow::Simple(val.value.clone()),
         ASTBlockType::GroupBlock(block) => eval_block(block, env)?,
         ASTBlockType::Return(block) => eval_return(block, env)?,
+
+        ASTBlockType::Break => ControlFlow::Break,
+        ASTBlockType::Continue => ControlFlow::Continue,
     })
 }
 
@@ -80,8 +84,12 @@ fn eval_block(nodes: &Vec<ASTBlockType>, env: EnvRef) -> Result<ControlFlow, Spa
 }
 
 /// Evaluate return block
-fn eval_return(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedError> {
-    match eval(node, env)? {
+fn eval_return(body: &Option<Box<ASTBlockType>>, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+    let Some(b) = body else {
+        return Ok(ControlFlow::Return(UVValue::Void));
+    };
+
+    match eval(b, env)? {
         ControlFlow::Simple(val) | ControlFlow::Return(val) => Ok(ControlFlow::Return(val)),
         ControlFlow::Break | ControlFlow::Continue => Ok(ControlFlow::Simple(UVValue::Void)),
     }

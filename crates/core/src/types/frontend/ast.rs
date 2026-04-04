@@ -25,7 +25,7 @@ pub enum UVValue {
 }
 
 impl UVValue {
-    pub fn get_wider_type(values: &[UVValue]) -> UVType {
+    pub fn get_wider_type(_values: &[UVValue]) -> UVType {
         todo!()
     }
 }
@@ -197,7 +197,9 @@ pub enum ASTBlockType {
 
     GroupBlock(Box<Vec<ASTBlockType>>),
 
-    Return(Box<ASTBlockType>),
+    Return(Option<Box<ASTBlockType>>),
+    Continue,
+    Break,
 }
 
 // --------------------------- PROGRAM BLOCK ------------------------

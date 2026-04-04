@@ -1,11 +1,36 @@
 <program>
     <main>
-        <call println>
-            <div>
-                <int>5</int>
-                <float>0.1</float>
-            </div>
-        </call>
+        <for>
+            <iterator>x</iterator>
+            <start>
+                <int>0</int>
+            </start>
+            <end>
+                <int>10</int>
+            </end>
+
+            <body>
+                <if>
+                    <test>
+                        <eq>
+                            <x />
+                            <int>5</int>
+                        </eq>
+                    </test>
+
+                    <then>
+                        <call println>
+                            <str>It's five!!</str>
+                        </call>
+                        <continue />
+                    </then>
+                </if>
+
+                <call println>
+                    <x />
+                </call>
+            </body>
+        </for>
     </main>
 
 </program>
