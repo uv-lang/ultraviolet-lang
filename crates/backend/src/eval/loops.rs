@@ -31,7 +31,7 @@ pub fn eval_for_loop(for_node: &ForLoop, env: EnvRef) -> Result<ControlFlow, Spa
         UVValue::Number(Number::Int(1))
     };
 
-    // FIXME: Должен ли интерпретатор создавать итератор в родительском скопупе для
+    // FIXME: Должен ли интерпретатор создавать итератор в родительском скоупе для
     // снижения количества аллокаций для нового скоупа?
     env.borrow_mut()
         .define_variable(for_node.iterator.value.clone(), start.clone(), false);

@@ -1,35 +1,38 @@
 <program>
     <main>
-        <let>
-            <name>some_var</name>
-            <value>
-                <int>0</int>
-            </value>
-        </let>
+        <fn>
+            <name>sum</name>
 
-        <while>
-            <!-- While condition -->
-            <test>
-                <lt>
-                    <some_var />
-                    <int>10</int>
-                </lt>
-            </test>
+            <arg>
+                <name>arg_1</name>
+                <type>
+                    <int />
+                </type>
+            </arg>
+
+            <arg>
+                <name>arg_2</name>
+                <type>
+                    <int />
+                </type>
+            </arg>
 
             <body>
-                <!-- Loop body -->
-                <some_var>
+                <return>
                     <sum>
-                        <some_var />
-                        <int>1</int>
+                        <arg_1 />
+                        <arg_2 />
                     </sum>
-                </some_var>
-
-                <call println>
-                    <some_var />
-                </call>
+                </return>
             </body>
-        </while>
+        </fn>
+
+        <call println>
+            <call sum>
+                <int>5</int>
+                <int>2</int>
+            </call>
+        </call>
     </main>
 
 </program>

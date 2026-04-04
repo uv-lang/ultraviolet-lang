@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{ops::Deref, rc::Rc};
 
 use ultraviolet_core::{
     errors::SpannedError,
@@ -67,7 +67,7 @@ pub fn parse_function_definition(node: &UVParseNode) -> GeneratorOutputType {
             name: name.clone(),
             arguments,
             return_type: validate_and_parse_inner_type_block(node, "returns")?,
-            body: parse_children_vec(body)?,
+            body: Rc::new(parse_children_vec(body)?),
             span: node.span,
         },
     )))

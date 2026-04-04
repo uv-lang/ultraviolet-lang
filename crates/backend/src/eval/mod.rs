@@ -6,6 +6,7 @@ use crate::{
     },
     eval::{
         conditional_op::eval_conditional_op,
+        functions::{call_function, define_function},
         loops::{eval_for_loop, eval_while_loop},
         program::eval_program,
         variables::{access_variable, assign_variable, define_variable},
@@ -20,6 +21,7 @@ use ultraviolet_core::{
 };
 mod compare;
 mod conditional_op;
+mod functions;
 mod logical;
 mod loops;
 mod math;
@@ -47,11 +49,13 @@ pub fn eval(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedErro
         ASTBlockType::VariableAccess(var_acc) => access_variable(var_acc, env)?,
 
         // Functions things
-        ASTBlockType::FunctionDefinition(_function_definition) => todo!(),
+        ASTBlockType::FunctionDefinition(function_definition) => {
+            define_function(function_definition, env)?
+        },
         ASTBlockType::FunctionCall(fc) if is_builtin_function(&fc.name) => {
             execute_builtin_function(fc, env)?
         },
-        ASTBlockType::FunctionCall(_function_call) => todo!(),
+        ASTBlockType::FunctionCall(function_call) => call_function(function_call, env)?,
 
         ASTBlockType::ConditionalOp(co) => eval_conditional_op(co, env)?,
         ASTBlockType::MathOp(math_op) => math_op.eval(env)?,

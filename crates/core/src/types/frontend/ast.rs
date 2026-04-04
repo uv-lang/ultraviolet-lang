@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::{
     traits::frontend::ast::{
         ArgumentsCount, GetType, IsAssignable, StringToUVCompareOp, StringToUVLogicalOp,
@@ -429,7 +431,7 @@ pub struct FunctionDefinition {
     pub arguments: Vec<FunctionDefinitionArg>,
     pub return_type: Option<Spanned<UVType>>,
 
-    pub body: Vec<ASTBlockType>,
+    pub body: Rc<Vec<ASTBlockType>>,
 
     pub span: Span,
 }

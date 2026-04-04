@@ -1,6 +1,6 @@
 use crate::{
     traits::frontend::ast::GetType,
-    types::frontend::ast::{UVType, UVValue},
+    types::frontend::ast::{ASTBlockType, UVType, UVValue},
 };
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
@@ -45,12 +45,27 @@ impl Environment {
         }
     }
 
+    /// Find function by name
+    pub fn find_func(&self, name: impl Into<String>) -> Option<Rc<RefCell<RTFunction>>> {
+        if let Some(Symbol::Function(var)) = self.find(name) {
+            Some(var)
+        } else {
+            None
+        }
+    }
+
     /// Define variable in current scope
     pub fn define_variable(&mut self, name: impl Into<String>, value: UVValue, constant: bool) {
         self.symbols.insert(
             name.into(),
             Symbol::Variable(Rc::new(RefCell::new(RTVariable::new_from(value, constant)))),
         );
+    }
+
+    /// Define function in current scope
+    pub fn define_function(&mut self, name: impl Into<String>, f: RTFunction) {
+        self.symbols
+            .insert(name.into(), Symbol::Function(Rc::new(RefCell::new(f))));
     }
 
     /// Remove symbol from CURRENT scope
@@ -70,14 +85,14 @@ impl Drop for Environment {
 #[derive(Debug, Clone)]
 pub enum Symbol {
     Variable(Rc<RefCell<RTVariable>>),
-    Function(),
+    Function(Rc<RefCell<RTFunction>>),
 }
 
 impl GetType for Symbol {
     fn get_type(&self) -> UVType {
         match self {
             Symbol::Variable(rc) => rc.borrow().value.get_type(),
-            Symbol::Function() => todo!(),
+            Symbol::Function(_) => todo!(),
         }
     }
 }
@@ -97,6 +112,13 @@ impl RTVariable {
             constant,
         }
     }
+}
+
+#[derive(Debug)]
+pub struct RTFunction {
+    pub args_names_order: Vec<String>,
+    pub body: Rc<Vec<ASTBlockType>>,
+    pub lexical_env: EnvRef,
 }
 
 /// Indicates, when block ended with return, break, etc...
