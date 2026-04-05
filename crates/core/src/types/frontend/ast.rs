@@ -26,12 +26,6 @@ pub enum UVValue {
     Void,
 }
 
-impl UVValue {
-    pub fn get_wider_type(_values: &[UVValue]) -> UVType {
-        todo!()
-    }
-}
-
 impl GetType for Number {
     fn get_type(&self) -> UVType {
         match self {
@@ -148,28 +142,6 @@ impl StringToUVType for str {
         }
     }
 }
-
-// ---------------
-/*
-#[derive(Debug)]
-pub enum Symbol {
-    /// Primitive type
-    Primitive(UVValue),
-
-    /// Name of the variable in scope
-    Variable(String),
-}
-
-impl GetTypeScope for Symbol {
-    fn get_type_from_scope(&self, scope: Option<usize>) -> UVType {
-        match self {
-            Self::Primitive(val) => val.get_type(),
-            // Scope-based search of the final primitive
-            Self::Variable(var) => todo!(),
-        }
-    }
-}
-*/
 
 // --------------------------- AST-TYPES ---------------------------
 #[derive(Debug)]

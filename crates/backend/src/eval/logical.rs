@@ -6,22 +6,11 @@ use ultraviolet_core::{
     },
 };
 
-use crate::{EvalOps, eval::eval};
+use crate::EvalOps;
 
 impl EvalOps for LogicalOp {
     fn eval(&self, env: EnvRef) -> Result<ControlFlow, SpannedError> {
-        let mut values = Vec::new();
-
-        for op in &self.operands {
-            let e_r = eval(op, env.clone())?;
-            let v = match e_r {
-                ControlFlow::Simple(v) => v,
-                _ => return Ok(e_r),
-            };
-            values.push(v);
-        }
-
-        Ok(ControlFlow::Simple(self.eval_expr(values.as_slice())?))
+        self._eval_with_operands(&self.operands, env)
     }
 
     fn eval_expr(&self, values: &[UVValue]) -> Result<UVValue, SpannedError> {

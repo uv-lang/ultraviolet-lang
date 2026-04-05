@@ -1,7 +1,4 @@
-use crate::{
-    traits::frontend::ast::GetType,
-    types::frontend::ast::{ASTBlockType, UVType, UVValue},
-};
+use crate::types::frontend::ast::{ASTBlockType, UVValue};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 pub type EnvRef = Rc<RefCell<Environment>>;
@@ -88,6 +85,7 @@ pub enum Symbol {
     Function(Rc<RefCell<RTFunction>>),
 }
 
+/*
 impl GetType for Symbol {
     fn get_type(&self) -> UVType {
         match self {
@@ -96,6 +94,7 @@ impl GetType for Symbol {
         }
     }
 }
+*/
 
 /// Runtime variable struct'
 #[derive(Debug, Clone)]
@@ -131,15 +130,4 @@ pub enum ControlFlow {
 
     Break,
     Continue,
-}
-
-impl ControlFlow {
-    // FIXME: Should interpreter flat a ControlFlow?
-    pub fn flatten(&self) -> &UVValue {
-        match self {
-            ControlFlow::Simple(uvvalue) => uvvalue,
-            ControlFlow::Return(uvvalue) => uvvalue,
-            ControlFlow::Continue | ControlFlow::Break => &UVValue::Void,
-        }
-    }
 }

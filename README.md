@@ -1,0 +1,337 @@
+# Ultraviolet
+
+**Ultraviolet** – это прототип, а далее полноценный язык со своим интерпретатором, написанный на языке программирования Rust.  
+
+Язык имеет синтаксис, схожий с синтаксисом HTML или XML, что делает его простым для парсинга и *почти* понятным для чтения. Сам по себе язык статически строго типизируемый, что достигается строгой проверкой на типы в процессе работы фронтенда языка.
+
+```xml
+<program>
+<head>
+    <!-- Include external libraries -->
+    <include>
+        <str>math</str>
+    </include>
+    <include>
+        <str>string</str>
+    </include>
+</head>
+<main>
+    <!-- 
+        Data types
+        All literals must be wrapped in their data type
+
+        A self-closing tag (e.g. <int />) is used as a data type for typechecker.
+    -->
+
+    <!-- Strings -->
+    <str>Hello world!</str>
+
+    <!-- Integer (always int64) -->
+    <int>255</int>
+
+    <!-- Fp -->
+    <float>69.67</float>
+
+    <!-- Booleans (only 0 and 1 literals allowed) -->
+    <bool>0</bool>
+
+    <!-- Null can be used as type or as value -->
+    <null />
+
+    <!-- Union types -->
+    <!-- Arguments with that type can contain multiple primitives types -->
+    <union>
+        <int />
+        <null />
+    </union>
+
+
+    <!-- Arithmetical operations -->
+
+    <!-- Sum can handle numerous arguments (maybe) -->
+    <sum>
+        <int>10</int>
+        <float>1.5</float>
+    </sum>
+
+    <!-- Subtraction perform operation in passed arguments order (5 - 3) -->
+    <sub>
+        <int>5</int>
+        <int>3</int>
+    </sub>
+
+    <!-- Mul, same as sum can handle numerous arguments -->
+    <mul>
+        <int>6</int>
+        <int>9</int>
+    </mul>
+
+    <!-- 6 / 3 -->
+    <div>
+        <int>6</int>
+        <int>3</int>
+    </div>
+
+    <!-- 6 % 3 -->
+    <mod>
+        <int>6</int>
+        <int>3</int>
+    </mod>
+
+    <!-- Math operations also can be nested -->
+    <!--
+        In this case, the priority of mathematical operations is ignored, 
+        and the calculation is performed based on the nesting of blocks ((1 + 2) * 3) 
+    -->
+    <mul>
+        <sum>
+            <int>1</int>
+            <int>2</int>
+        </sum>
+        <int>3</int>
+    </mul>
+
+    <!-- Logical operations -->
+    <!-- Equality -->
+    <eq>
+        <int>5</int>
+        <int>5</int>
+    </eq>
+
+    <!-- Not Equality -->
+    <neq>
+        <int>5</int>
+        <int>8</int>
+    </neq>
+
+    <!-- Greater then (5 > 8) Also can used as `gte` tag -->
+    <gt>
+        <int>5</int>
+        <int>8</int>
+    </gt>
+
+    <!-- Less then (5 < 8) Also can used as `lte` tag -->
+    <lt>
+        <int>5</int>
+        <int>8</int>
+    </lt>
+
+    <!-- Can handle numerous arguments -->
+    <and>
+        <bool>1</bool>
+        <bool>1</bool>
+    </and>
+
+    <or>
+        <bool>1</bool>
+        <bool>0</bool>
+    </or>
+
+    <!-- Inverse boolean value -->
+    <not>
+        <bool>1</bool>
+    </not>
+
+
+    <!-- Var definitions -->
+    <let>
+        <!-- Variable name automatically casts to string -->
+        <name>variable_name</name>
+        <value>
+            <int>69</int>
+        </value>
+    </let>
+
+    <!-- Access variables value -->
+    <variable_name />
+
+    <!-- Variable assignment -->
+    <variable_name>
+        <int>88</int>
+    </variable_name>
+
+
+
+    <!-- Increment and decrement -->
+    <!-- Variables can be passed by pointer using <var ptr /> -->
+    <!-- Пока что я без понятия как реализовывать это в интерпретаторе, так что сделаем уже позже -->
+    <inc>
+        <ref>variable_name</ref>
+    </inc>
+    <dec>
+        <ref>variable_name</ref>
+    </dec>
+
+
+    <!-- Conditional operators -->
+    <if>
+        <test>
+            <gte>
+                <variable_name />
+                <int>8</int>
+            </gte>
+        </test>
+
+        <then>
+            <!-- If body -->
+        </then>
+        <else>
+            <!-- Else body -->
+        </else>
+    </if>
+
+
+    <!-- For loops -->
+    <for>
+        <iter>iterator_name</iter>
+        <start>
+            <int>0</int>
+        </start>
+        <end>
+            <int>10</int>
+        </end>
+        <!-- [OPTIONAL] Step -->
+        <step>
+            <float>0.5</float>
+        </step>
+
+        <body>
+            <!-- Loop body -->
+        </body>
+    </for>
+
+
+    <!-- While loops -->
+    <let>
+        <name>some_var</name>
+        <value>
+            <int>0</int>
+        </value>
+    </let>
+
+    <while>
+        <!-- While condition -->
+        <test>
+            <lt>
+                <some_var />
+                <int>10</int>
+            </lt>
+        </test>
+
+        <body>
+            <!-- Loop body -->
+            <inc>
+                <ref>some_var</ref>
+            </inc>
+        </body>
+    </while>
+
+
+    <!-- Functions -->
+    <fn>
+        <!-- Function name -->
+        <name>some_function</name>
+
+        <!-- Arguments definition -->
+        <arg>
+            <!-- Name of argument -->
+            <name>argument</name>
+
+            <!-- Argument type -->
+            <type>
+                <int />
+            </type>
+        </arg>
+
+        <!-- Second argument -->
+        <arg>
+            <!-- Name of argument -->
+            <name>argument_2</name>
+
+            <!-- Argument type -->
+            <type>
+                <int />
+            </type>
+        </arg>
+
+        <!-- Return type -->
+        <returns>
+            <int />
+        </returns>
+
+        <!-- Function body -->
+
+        <body>
+            <!-- Return -->
+            <return>
+                <mul>
+                    <argument />
+                    <argument_2 />
+                </mul>
+            </return>
+        </body>
+    </fn>
+
+    <!-- Function calling -->
+    <!-- Function arguments are passed in the order they are defined -->
+    <call some_function>
+        <int>8</int>
+        <int>6</int>
+    </call>
+
+
+    <!-- Printing to console -->
+    <call println>
+        <str>Hello world!</str>
+    </call>
+
+    <!-- Will print `36` -->
+    <call println>
+        <call some_function>
+            <int>6</int>
+            <int>6</int>
+        </call>
+    </call>
+</main>
+
+</program>
+
+
+<!-- Code below — just for test -->
+<ffi>
+    <name>show_message_box</name>
+    <dll>
+        <str>user32.dll</str>
+    </dll>
+    <function>
+        <str>MessageBoxA</str>
+    </function>
+
+    <!-- Аргументы должны соответствовать ABI из DLL -->
+    <arg>
+        <name>title</name>
+        <type>
+            <str />
+        </type>
+    </arg>
+
+    <arg>
+        <name>text</name>
+        <type>
+            <str />
+        </type>
+    </arg>
+
+</ffi>
+
+<call show_message_box>
+    <str>Message Box</str>
+    <str>Hello from XLL FFI!</str>
+</call>
+```
+
+TODO: Arrays, try-catch expr
+
+
+---
+**design created by AndcoolSystems**
