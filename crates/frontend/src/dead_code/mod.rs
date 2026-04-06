@@ -7,19 +7,14 @@ use ultraviolet_core::{
 /// Program analyze
 pub fn analyze_dead_code_program(ast: &ASTBlockType) -> Vec<SpannedError> {
     let mut errors = Vec::new();
-    match ast {
-        ASTBlockType::Program(p) => {
-            if let Some(head) = &p.head {
-                if let ASTBlockType::HeadBlock(h) = head {
-                    errors.extend(analyze_dead_code(h));
-                }
-            }
+    if let ASTBlockType::Program(p) = ast {
+        if let Some(ASTBlockType::HeadBlock(h)) = &p.head {
+            errors.extend(analyze_dead_code(h));
+        }
 
-            if let ASTBlockType::MainBlock(m) = &p.main {
-                errors.extend(analyze_dead_code(m));
-            }
-        },
-        _ => {},
+        if let ASTBlockType::MainBlock(m) = &p.main {
+            errors.extend(analyze_dead_code(m));
+        }
     }
 
     errors

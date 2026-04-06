@@ -306,7 +306,7 @@ impl StringToUVMathOp for str {
 
 impl fmt::Display for MathOpType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
@@ -337,7 +337,7 @@ pub enum CompareOpType {
 
 impl fmt::Display for CompareOpType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
@@ -386,7 +386,7 @@ pub enum LogicalOpType {
 
 impl fmt::Display for LogicalOpType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
