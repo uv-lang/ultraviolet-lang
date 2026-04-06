@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::types::frontend::ast::{CompareOpType, LogicalOpType, MathOpType, UVType};
 
 pub trait GetType {
@@ -52,4 +54,9 @@ pub trait ArgumentsCount {
 
     /// Get allowed maximum of arguments count
     fn max_arguments_count(&self) -> Option<usize>;
+}
+
+pub trait GetBlockName<'a> {
+    /// Get name of block
+    fn get_block_name(&'a self) -> Cow<'a, str>;
 }

@@ -1,9 +1,13 @@
-use std::rc::Rc;
+use core::fmt;
+use std::{borrow::Cow, rc::Rc};
 
 use crate::{
-    traits::frontend::ast::{
-        ArgumentsCount, GetType, IsAssignable, StringToUVCompareOp, StringToUVLogicalOp,
-        StringToUVMathOp, StringToUVType,
+    traits::frontend::{
+        Positional,
+        ast::{
+            ArgumentsCount, GetBlockName, GetType, IsAssignable, StringToUVCompareOp,
+            StringToUVLogicalOp, StringToUVMathOp, StringToUVType,
+        },
     },
     types::frontend::{Span, Spanned},
 };
@@ -148,8 +152,8 @@ impl StringToUVType for str {
 pub enum ASTBlockType {
     Program(Box<ProgramBlock>),
 
-    HeadBlock(Vec<ASTBlockType>),
-    MainBlock(Vec<ASTBlockType>),
+    HeadBlock(Spanned<Vec<ASTBlockType>>),
+    MainBlock(Spanned<Vec<ASTBlockType>>),
 
     VariableDefinition(Box<VariableDefinition>),
     FunctionDefinition(Box<FunctionDefinition>),
@@ -169,11 +173,65 @@ pub enum ASTBlockType {
 
     Value(Spanned<UVValue>),
 
-    GroupBlock(Box<Vec<ASTBlockType>>),
+    GroupBlock(Spanned<Vec<ASTBlockType>>),
 
-    Return(Option<Box<ASTBlockType>>),
+    Return(Spanned<Option<Box<ASTBlockType>>>),
     Continue,
     Break,
+}
+
+impl<'a> GetBlockName<'a> for ASTBlockType {
+    fn get_block_name(&'a self) -> Cow<'a, str> {
+        match self {
+            ASTBlockType::Program(_) => Cow::Borrowed("program"),
+            ASTBlockType::HeadBlock(_) => Cow::Borrowed("head"),
+            ASTBlockType::MainBlock(_) => Cow::Borrowed("main"),
+            ASTBlockType::VariableDefinition(_) => Cow::Borrowed("let"),
+            ASTBlockType::VariableAssignment(a) => Cow::Borrowed(&a.name),
+            ASTBlockType::VariableAccess(a) => Cow::Borrowed(&a.name),
+
+            ASTBlockType::MathOp(m) => Cow::Owned(m.op_type.to_string().to_lowercase()),
+            ASTBlockType::LogicalOp(l) => Cow::Owned(l.op_type.to_string().to_lowercase()),
+            ASTBlockType::CompareOp(c) => Cow::Owned(c.op_type.to_string().to_lowercase()),
+            ASTBlockType::Value(v) => Cow::Owned(v.value.to_string().to_lowercase()),
+
+            ASTBlockType::ForLoop(_) => Cow::Borrowed("for"),
+            ASTBlockType::WhileLoop(_) => Cow::Borrowed("while"),
+            ASTBlockType::Return(_) => Cow::Borrowed("return"),
+            ASTBlockType::Continue => Cow::Borrowed("continue"),
+            ASTBlockType::Break => Cow::Borrowed("break"),
+            ASTBlockType::GroupBlock(_) => Cow::Borrowed("g"),
+            ASTBlockType::FunctionDefinition(_) => Cow::Borrowed("fn"),
+            ASTBlockType::FunctionCall(_) => Cow::Borrowed("call"),
+            ASTBlockType::ConditionalOp(_) => Cow::Borrowed("if"),
+        }
+    }
+}
+
+impl Positional for ASTBlockType {
+    fn get_span(&self) -> Span {
+        match self {
+            ASTBlockType::Program(p) => p.span,
+            ASTBlockType::HeadBlock(a) => a.span,
+            ASTBlockType::MainBlock(a) => a.span,
+            ASTBlockType::VariableDefinition(v) => v.span,
+            ASTBlockType::FunctionDefinition(f) => f.span,
+            ASTBlockType::FunctionCall(f) => f.span,
+            ASTBlockType::VariableAssignment(v) => v.span,
+            ASTBlockType::VariableAccess(v) => v.span,
+            ASTBlockType::ConditionalOp(c) => c.span,
+            ASTBlockType::MathOp(m) => m.span,
+            ASTBlockType::LogicalOp(l) => l.span,
+            ASTBlockType::CompareOp(c) => c.span,
+            ASTBlockType::ForLoop(f) => f.span,
+            ASTBlockType::WhileLoop(w) => w.span,
+            ASTBlockType::Value(s) => s.span,
+            ASTBlockType::GroupBlock(a) => a.span,
+            ASTBlockType::Return(a) => a.span,
+            ASTBlockType::Continue => todo!(),
+            ASTBlockType::Break => todo!(),
+        }
+    }
 }
 
 // --------------------------- PROGRAM BLOCK ------------------------
@@ -196,12 +254,6 @@ pub struct VariableDefinition {
     pub is_const: bool,
 
     pub span: Span,
-}
-
-impl GetType for VariableDefinition {
-    fn get_type(&self) -> UVType {
-        todo!()
-    }
 }
 
 // ------------------------- Variable Assign ---------------------------------
@@ -252,6 +304,12 @@ impl StringToUVMathOp for str {
     }
 }
 
+impl fmt::Display for MathOpType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 impl ArgumentsCount for MathOpType {
     fn min_arguments_count(&self) -> usize {
         2
@@ -275,6 +333,12 @@ pub enum CompareOpType {
     GreaterEquals,
     Less,
     LessEquals,
+}
+
+impl fmt::Display for CompareOpType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(Debug)]
@@ -318,6 +382,12 @@ pub enum LogicalOpType {
     And,
     Or,
     Not,
+}
+
+impl fmt::Display for LogicalOpType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(Debug)]

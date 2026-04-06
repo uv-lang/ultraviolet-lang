@@ -4,11 +4,18 @@ use crate::{traits::frontend::Positional, types::frontend::Span};
 
 pub mod error_renderer;
 
+pub enum ErrorType {
+    Error,
+    Warning,
+}
+
 /// Simple parse error
 pub struct SpannedError {
     message: String,
     tip: Option<String>,
     span: Span,
+
+    error_type: ErrorType,
 }
 
 impl SpannedError {
@@ -18,15 +25,24 @@ impl SpannedError {
             message: message.into(),
             span,
             tip: None,
+            error_type: ErrorType::Error,
         }
     }
 
+    /// New error with tip
     pub fn new_tipped(message: impl Into<String>, tip: impl Into<String>, span: Span) -> Self {
         Self {
             message: message.into(),
             span,
             tip: Some(tip.into()),
+            error_type: ErrorType::Error,
         }
+    }
+
+    /// Set error type
+    pub fn set_type(mut self, t: ErrorType) -> Self {
+        self.error_type = t;
+        self
     }
 }
 

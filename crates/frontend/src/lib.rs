@@ -1,11 +1,15 @@
 use ultraviolet_core::{
-    errors::SpannedError,
+    errors::{SpannedError, error_renderer::ErrorRenderer},
     types::frontend::{SourceFile, ast::ASTBlockType},
 };
 
-use crate::{ast::gen_main_ast, lexer::Lexer, tokens_parser::TokenParser};
+use crate::{
+    ast::gen_main_ast, dead_code::analyze_dead_code_program, lexer::Lexer,
+    tokens_parser::TokenParser,
+};
 
 pub mod ast;
+mod dead_code;
 mod iterator;
 mod lexer;
 mod tokens_parser;
@@ -17,5 +21,14 @@ pub fn process(source: &SourceFile) -> Result<ASTBlockType, SpannedError> {
     let mut token_parser = TokenParser::new(tokens);
     let parse_tree = token_parser.parse()?;
 
-    gen_main_ast(&parse_tree)
+    let ast = gen_main_ast(&parse_tree)?;
+    let dead_code = analyze_dead_code_program(&ast);
+
+    if !dead_code.is_empty() {
+        dead_code
+            .into_iter()
+            .for_each(|e| println!("{}", e.display_with_source(source)));
+    }
+
+    Ok(ast)
 }

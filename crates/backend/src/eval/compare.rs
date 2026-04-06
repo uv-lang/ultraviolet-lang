@@ -10,7 +10,7 @@ use crate::EvalOps;
 
 impl EvalOps for CompareOp {
     fn eval(&self, env: EnvRef) -> Result<ControlFlow, SpannedError> {
-        self._eval_with_operands(&self.operands, env)    
+        self._eval_with_operands(&self.operands, env)
     }
 
     fn eval_expr(&self, values: &[UVValue]) -> Result<UVValue, SpannedError> {

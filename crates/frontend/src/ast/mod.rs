@@ -7,6 +7,7 @@ use ultraviolet_core::{
         token_parser::UnwrapOptionError,
     },
     types::frontend::{
+        Spanned,
         ast::{ASTBlockType, ProgramBlock},
         tokens::UVParseNode,
     },
@@ -53,17 +54,21 @@ pub fn gen_main_ast(node: &UVParseNode) -> GeneratorOutputType {
     }
 
     let head_parsed = if let Some(h) = node.get_one_tag_by_name("head") {
-        Some(ASTBlockType::HeadBlock(parse_children_vec(h)?))
+        Some(ASTBlockType::HeadBlock(Spanned::new(
+            parse_children_vec(h)?,
+            h.span,
+        )))
     } else {
         None
     };
 
-    let main = ASTBlockType::MainBlock(parse_children_vec(
-        node.get_one_tag_by_name("main").ok_or(SpannedError::new(
+    let main = ASTBlockType::MainBlock(Spanned::new(
+        parse_children_vec(node.get_one_tag_by_name("main").ok_or(SpannedError::new(
             "Main block in <program> is required",
             node.span,
-        ))?,
-    )?);
+        ))?)?,
+        node.span,
+    ));
 
     Ok(ASTBlockType::Program(Box::new(ProgramBlock {
         head: head_parsed,
@@ -88,7 +93,9 @@ pub fn generate_ast(node: &UVParseNode) -> GeneratorOutputType {
         "if" if !node.self_closing => parse_conditional_op(node)?,
 
         // Parse group block
-        "g" if !node.self_closing => ASTBlockType::GroupBlock(Box::new(parse_children_vec(node)?)),
+        "g" if !node.self_closing => {
+            ASTBlockType::GroupBlock(Spanned::new(parse_children_vec(node)?, node.span))
+        },
 
         // Parse return block
         // TODO: Dead code analysis
@@ -153,5 +160,5 @@ fn parse_return(node: &UVParseNode) -> Result<ASTBlockType, SpannedError> {
         None => None,
     };
 
-    Ok(ASTBlockType::Return(ch))
+    Ok(ASTBlockType::Return(Spanned::new(ch, node.span)))
 }

@@ -16,7 +16,10 @@ use ultraviolet_core::{
     errors::SpannedError,
     types::{
         backend::{ControlFlow, EnvRef, Environment},
-        frontend::ast::{ASTBlockType, UVValue},
+        frontend::{
+            Spanned,
+            ast::{ASTBlockType, UVValue},
+        },
     },
 };
 mod compare;
@@ -89,8 +92,11 @@ fn eval_block(nodes: &Vec<ASTBlockType>, env: EnvRef) -> Result<ControlFlow, Spa
 }
 
 /// Evaluate return block
-fn eval_return(body: &Option<Box<ASTBlockType>>, env: EnvRef) -> Result<ControlFlow, SpannedError> {
-    let Some(b) = body else {
+fn eval_return(
+    body: &Spanned<Option<Box<ASTBlockType>>>,
+    env: EnvRef,
+) -> Result<ControlFlow, SpannedError> {
+    let Some(ref b) = body.value else {
         return Ok(ControlFlow::Return(UVValue::Void));
     };
 

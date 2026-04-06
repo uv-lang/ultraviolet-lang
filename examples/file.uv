@@ -24,6 +24,10 @@
                         <arg_2 />
                     </sum>
                 </return>
+
+                <call println>
+                    <str>Hello! I'm unreachable!</str>
+                </call>
             </body>
         </fn>
 

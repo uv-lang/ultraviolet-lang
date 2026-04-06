@@ -1,8 +1,12 @@
 use anyhow::{Context, Result};
-use colored::Colorize;
+use colored::{Color, Colorize};
 use std::{cmp::min, fmt::Write};
 
-use crate::{errors::SpannedError, traits::frontend::Positional, types::frontend::SourceFile};
+use crate::{
+    errors::{ErrorType, SpannedError},
+    traits::frontend::Positional,
+    types::frontend::SourceFile,
+};
 
 /// Trait for positional errors, that renders error messages
 pub trait ErrorRenderer {
@@ -50,7 +54,18 @@ impl ErrorRenderer for SpannedError {
         let line_no_len = editor_line.to_string().len();
 
         let mut output = String::new();
-        writeln!(output, "{}: {}", "error".red(), self.message.bold())?;
+
+        let color = match self.error_type {
+            ErrorType::Error => Color::Red,
+            ErrorType::Warning => Color::Yellow,
+        };
+
+        let e_type = match self.error_type {
+            ErrorType::Error => "error",
+            ErrorType::Warning => "warning",
+        };
+
+        writeln!(output, "{}: {}", e_type.color(color), self.message.bold())?;
         if let Some(t) = &self.tip {
             writeln!(output, "{}: {}", "tip".green(), t.bold())?;
         }
@@ -63,7 +78,7 @@ impl ErrorRenderer for SpannedError {
             " ".repeat(line_no_len),
             " ".repeat(col_offsetted),
             "^".repeat(min(self.span.end - self.span.start, line_content.len() - 1))
-                .red()
+                .color(color)
         )?;
 
         Ok(output)
