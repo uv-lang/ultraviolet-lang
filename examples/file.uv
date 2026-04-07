@@ -18,12 +18,17 @@
             </arg>
 
             <body>
-                <return>
-                    <sum>
-                        <arg_1 />
-                        <arg_2 />
-                    </sum>
-                </return>
+                <if>
+                    <test>
+                        <bool>1</bool>
+                    </test>
+                    <then>
+                        <continue />
+                    </then>
+                    <else>
+                        <continue />
+                    </else>
+                </if>
 
                 <call println>
                     <str>Hello! I'm unreachable!</str>
