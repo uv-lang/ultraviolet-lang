@@ -129,14 +129,14 @@ pub fn analyze_dead_code<'a>(
                 &mut errors,
                 &mut found_terminal,
                 &mut terminal_type,
-                analyze_function_def(&f),
+                analyze_function_def(f),
             ),
 
             ASTBlockType::FunctionCall(fc) => apply_flow(
                 &mut errors,
                 &mut found_terminal,
                 &mut terminal_type,
-                analyze_function_call(&fc),
+                analyze_function_call(fc),
             ),
 
             _ => {},
