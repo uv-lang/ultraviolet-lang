@@ -4,10 +4,29 @@ use ultraviolet_core::{
     types::frontend::ast::ASTBlockType,
 };
 
+use crate::dead_code::functions::{analyze_function_call, analyze_function_def};
+
+mod functions;
+
+#[derive(Debug)]
 pub enum DeadCodeAnalysisFlow {
     None,
     Return,
     LoopDiverges,
+}
+
+/// Applies check flow
+fn apply_flow(
+    errors: &mut Vec<SpannedError>,
+    f_t: &mut bool,
+    terminal_t: &mut DeadCodeAnalysisFlow,
+    (errs, t): (Vec<SpannedError>, DeadCodeAnalysisFlow),
+) {
+    errors.extend(errs);
+    if !matches!(t, DeadCodeAnalysisFlow::None) {
+        *f_t = true;
+        *terminal_t = t;
+    }
 }
 
 /// Program analyze
@@ -15,19 +34,22 @@ pub fn analyze_dead_code_program(ast: &ASTBlockType) -> Vec<SpannedError> {
     let mut errors = Vec::new();
     if let ASTBlockType::Program(p) = ast {
         if let Some(ASTBlockType::HeadBlock(h)) = &p.head {
-            errors.extend(analyze_dead_code(h).0);
+            errors.extend(analyze_dead_code(&h.value).0);
         }
 
         if let ASTBlockType::MainBlock(m) = &p.main {
-            errors.extend(analyze_dead_code(m).0);
+            errors.extend(analyze_dead_code(&m.value).0);
         }
     }
 
     errors
 }
 
+// TODO: Сделать нормальный анализ для каждого из типов блоков
 /// Analyze code for unreachable elements
-pub fn analyze_dead_code(blocks: &[ASTBlockType]) -> (Vec<SpannedError>, DeadCodeAnalysisFlow) {
+pub fn analyze_dead_code<'a>(
+    blocks: impl IntoIterator<Item = &'a ASTBlockType>,
+) -> (Vec<SpannedError>, DeadCodeAnalysisFlow) {
     let mut errors = Vec::new();
     let mut found_terminal = false;
     let mut terminal_type = DeadCodeAnalysisFlow::None;
@@ -52,7 +74,7 @@ pub fn analyze_dead_code(blocks: &[ASTBlockType]) -> (Vec<SpannedError>, DeadCod
                 found_terminal = true;
                 terminal_type = DeadCodeAnalysisFlow::Return;
             },
-            ASTBlockType::Break | ASTBlockType::Continue => {
+            ASTBlockType::Break(_) | ASTBlockType::Continue(_) => {
                 found_terminal = true;
                 terminal_type = DeadCodeAnalysisFlow::LoopDiverges;
             },
@@ -60,20 +82,21 @@ pub fn analyze_dead_code(blocks: &[ASTBlockType]) -> (Vec<SpannedError>, DeadCod
             // For simple blocks, just check code and propagates terminal
             ASTBlockType::GroupBlock(inner)
             | ASTBlockType::MainBlock(inner)
-            | ASTBlockType::HeadBlock(inner) => {
-                let (errs, t) = analyze_dead_code(inner);
-                errors.extend(errs);
-                terminal_type = t;
-            },
+            | ASTBlockType::HeadBlock(inner) => apply_flow(
+                &mut errors,
+                &mut found_terminal,
+                &mut terminal_type,
+                analyze_dead_code(&inner.value),
+            ),
 
             ASTBlockType::ConditionalOp(cond) => {
                 let (then_errs, then_flow) = match &cond.then_body {
-                    Some(b) => analyze_dead_code(b),
+                    Some(b) => analyze_dead_code(&b.value),
                     None => (vec![], DeadCodeAnalysisFlow::None),
                 };
 
                 let (else_errs, else_flow) = match &cond.else_body {
-                    Some(b) => analyze_dead_code(b),
+                    Some(b) => analyze_dead_code(&b.value),
                     None => (vec![], DeadCodeAnalysisFlow::None),
                 };
 
@@ -88,23 +111,33 @@ pub fn analyze_dead_code(blocks: &[ASTBlockType]) -> (Vec<SpannedError>, DeadCod
                 }
             },
 
-            ASTBlockType::ForLoop(f) => {
-                let (errs, t) = analyze_dead_code_loop(&f.body);
-                errors.extend(errs);
-                terminal_type = t;
-            },
+            ASTBlockType::ForLoop(f) => apply_flow(
+                &mut errors,
+                &mut found_terminal,
+                &mut terminal_type,
+                analyze_dead_code_loop(&f.body),
+            ),
 
-            ASTBlockType::WhileLoop(w) => {
-                let (errs, t) = analyze_dead_code_loop(&w.body);
-                errors.extend(errs);
-                terminal_type = t;
-            },
+            ASTBlockType::WhileLoop(w) => apply_flow(
+                &mut errors,
+                &mut found_terminal,
+                &mut terminal_type,
+                analyze_dead_code_loop(&w.body),
+            ),
 
-            ASTBlockType::FunctionDefinition(f) => {
-                let (errs, t) = analyze_dead_code_function_def(&f.body);
-                errors.extend(errs);
-                terminal_type = t;
-            },
+            ASTBlockType::FunctionDefinition(f) => apply_flow(
+                &mut errors,
+                &mut found_terminal,
+                &mut terminal_type,
+                analyze_function_def(&f),
+            ),
+
+            ASTBlockType::FunctionCall(fc) => apply_flow(
+                &mut errors,
+                &mut found_terminal,
+                &mut terminal_type,
+                analyze_function_call(&fc),
+            ),
 
             _ => {},
         }
@@ -118,19 +151,6 @@ fn analyze_dead_code_loop(blocks: &[ASTBlockType]) -> (Vec<SpannedError>, DeadCo
 
     // If inner blocks returns a loop terminator – catch them
     if matches!(t, DeadCodeAnalysisFlow::LoopDiverges) {
-        t = DeadCodeAnalysisFlow::None;
-    }
-
-    (errs, t)
-}
-
-fn analyze_dead_code_function_def(
-    blocks: &[ASTBlockType],
-) -> (Vec<SpannedError>, DeadCodeAnalysisFlow) {
-    let (errs, mut t) = analyze_dead_code(blocks);
-
-    // If inner blocks returns a return – catch them
-    if matches!(t, DeadCodeAnalysisFlow::Return) {
         t = DeadCodeAnalysisFlow::None;
     }
 

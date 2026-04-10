@@ -176,8 +176,8 @@ pub enum ASTBlockType {
     GroupBlock(Spanned<Vec<ASTBlockType>>),
 
     Return(Spanned<Option<Box<ASTBlockType>>>),
-    Continue,
-    Break,
+    Continue(Spanned<()>),
+    Break(Spanned<()>),
 }
 
 impl<'a> GetBlockName<'a> for ASTBlockType {
@@ -198,8 +198,8 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
             ASTBlockType::ForLoop(_) => Cow::Borrowed("for"),
             ASTBlockType::WhileLoop(_) => Cow::Borrowed("while"),
             ASTBlockType::Return(_) => Cow::Borrowed("return"),
-            ASTBlockType::Continue => Cow::Borrowed("continue"),
-            ASTBlockType::Break => Cow::Borrowed("break"),
+            ASTBlockType::Continue(_) => Cow::Borrowed("continue"),
+            ASTBlockType::Break(_) => Cow::Borrowed("break"),
             ASTBlockType::GroupBlock(_) => Cow::Borrowed("g"),
             ASTBlockType::FunctionDefinition(_) => Cow::Borrowed("fn"),
             ASTBlockType::FunctionCall(_) => Cow::Borrowed("call"),
@@ -228,8 +228,8 @@ impl Positional for ASTBlockType {
             ASTBlockType::Value(s) => s.span,
             ASTBlockType::GroupBlock(a) => a.span,
             ASTBlockType::Return(a) => a.span,
-            ASTBlockType::Continue => todo!(),
-            ASTBlockType::Break => todo!(),
+            ASTBlockType::Continue(c) => c.span,
+            ASTBlockType::Break(b) => b.span,
         }
     }
 }

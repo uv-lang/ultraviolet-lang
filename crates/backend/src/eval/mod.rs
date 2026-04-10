@@ -70,8 +70,8 @@ pub fn eval(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedErro
         ASTBlockType::GroupBlock(block) => eval_block(block, env)?,
         ASTBlockType::Return(block) => eval_return(block, env)?,
 
-        ASTBlockType::Break => ControlFlow::Break,
-        ASTBlockType::Continue => ControlFlow::Continue,
+        ASTBlockType::Break(_) => ControlFlow::Break,
+        ASTBlockType::Continue(_) => ControlFlow::Continue,
     })
 }
 
@@ -82,7 +82,7 @@ fn eval_block(nodes: &Vec<ASTBlockType>, env: EnvRef) -> Result<ControlFlow, Spa
     let mut last_eval_simple_val = UVValue::Void;
     for node in nodes {
         match eval(node, new_env.clone())? {
-            // FIXME: Должен ли блок возвращать последнее вычисленное значение?
+            // FIXME: Should the block return the last calculated value?
             ControlFlow::Simple(val) => last_eval_simple_val = val,
             cf => return Ok(cf),
         }

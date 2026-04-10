@@ -102,10 +102,10 @@ pub fn generate_ast(node: &UVParseNode) -> GeneratorOutputType {
         "return" => parse_return(node)?,
 
         // Parse break
-        "break" if node.self_closing => ASTBlockType::Break,
+        "break" if node.self_closing => ASTBlockType::Break(Spanned::new((), node.span)),
 
         // Parse continue
-        "continue" if node.self_closing => ASTBlockType::Continue,
+        "continue" if node.self_closing => ASTBlockType::Continue(Spanned::new((), node.span)),
 
         // Parse function definition
         "fn" if !node.self_closing => parse_function_definition(node)?,

@@ -1,3 +1,9 @@
+/**
+* Constants built into the language
+*
+* Contains text, mathematical and system constants,
+* derived from the Rust standard library
+*/
 use lazy_static::lazy_static;
 use std::{
     collections::HashMap,

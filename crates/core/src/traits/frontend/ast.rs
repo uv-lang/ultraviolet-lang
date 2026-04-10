@@ -56,6 +56,11 @@ pub trait ArgumentsCount {
     fn max_arguments_count(&self) -> Option<usize>;
 }
 
+/** Get the name of the current block
+*
+* Example:
+* <let>...</let> will return `let`
+*/
 pub trait GetBlockName<'a> {
     /// Get name of block
     fn get_block_name(&'a self) -> Cow<'a, str>;

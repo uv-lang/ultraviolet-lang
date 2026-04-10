@@ -24,7 +24,7 @@ impl UVParseNode {
         self.children.len()
     }
 
-    /// Get inner TAG child by name
+    /** Get the first TAG whose name matches the passed argument `name` */
     pub fn get_one_tag_by_name(&self, name: &str) -> Option<&UVParseNode> {
         self.children.iter().find_map(|ch| match ch {
             UVParseBody::Tag(node) if node.name == name => Some(node.as_ref()),
@@ -32,7 +32,7 @@ impl UVParseNode {
         })
     }
 
-    /// Get inner TAG children by name
+    /** Get ALL TAGS whose names match the passed argument `name` */
     pub fn get_many_tags_by_name(&self, name: &str) -> Vec<&UVParseNode> {
         self.children
             .iter()
