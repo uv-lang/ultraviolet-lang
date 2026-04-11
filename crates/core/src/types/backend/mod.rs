@@ -96,7 +96,7 @@ impl GetType for Symbol {
 }
 */
 
-/// Runtime variable struct'
+/// Runtime variable struct
 #[derive(Debug, Clone)]
 pub struct RTVariable {
     pub value: UVValue,

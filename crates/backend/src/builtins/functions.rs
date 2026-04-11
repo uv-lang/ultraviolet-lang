@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use std::{
     collections::HashMap,
-    io::{self, Write},
+    io::{self, BufWriter, Write},
 };
 use ultraviolet_core::{
     errors::SpannedError,
@@ -55,26 +55,66 @@ pub fn execute_builtin_function(
 }
 
 /// Built-in `print` function
+///
+/// Each argument is printed without delimiters or newlines.
+///
+/// Example:
+/// ```xml
+/// <call print>
+///    <int>3<int>
+///    <int>4<int>
+/// </call>
+/// ```
+///
+/// Will output `34`
 fn print(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
+    let stdout = io::stdout();
+    let mut out = BufWriter::new(stdout.lock());
+
     for arg in args {
-        print!("{arg}");
+        let _ = write!(out, "{arg}");
     }
 
+    let _ = out.flush();
     Ok(ControlFlow::Simple(UVValue::Void))
 }
 
 /// Built-in `println` function
+///
+/// A newline character is added after each argument is printed.
+///
+/// Example:
+/// ```xml
+/// <call println>
+///    <int>3<int>
+///    <int>4<int>
+/// </call>
+/// ```
+///
+/// Will output
+/// ```
+/// 3
+/// 4
+/// ```
 fn println(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
+    let stdout = io::stdout();
+    let mut out = BufWriter::new(stdout.lock());
+
     for arg in args {
-        println!("{arg}");
+        let _ = writeln!(out, "{arg}");
     }
 
+    let _ = out.flush();
     Ok(ControlFlow::Simple(UVValue::Void))
 }
 
 /// Built-in function for reading from stdin
 ///
-/// Returns String on success and Null on failure
+/// Prints the value of the first argument (if passed) to stdout
+/// as an input prompt and then waits for input from stdin
+///
+/// If the string is successfully received, returns UVValue::String,
+/// If getting the string failed, returns UVValue::Null
 fn read(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
     // Print an initial input prompt if provided
     if let Some(arg) = args.first() {
