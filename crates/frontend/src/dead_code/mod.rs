@@ -129,10 +129,10 @@ pub fn analyze_dead_code<'a>(blocks: impl IntoIterator<Item = &'a ASTBlockType>)
                 let then_terminates = then_flow.as_ref().is_some_and(|f| f.is_terminates());
                 let else_terminates = else_flow.as_ref().is_some_and(|f| f.is_terminates());
 
-                if test_flow.is_terminates() || (then_terminates && else_terminates) {
-                    if let Some(f) = then_flow.as_ref().or(else_flow.as_ref()) {
-                        flow.set_terminal(f.flow_type.clone());
-                    }
+                if (test_flow.is_terminates() || (then_terminates && else_terminates))
+                    && let Some(f) = then_flow.as_ref().or(else_flow.as_ref())
+                {
+                    flow.set_terminal(f.flow_type.clone());
                 }
 
                 if let Some(f) = then_flow {

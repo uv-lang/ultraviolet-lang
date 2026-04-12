@@ -73,7 +73,7 @@
             "label": "Clippy",
             "detail": "Run Clippy Test",
             "type": "shell",
-            "command": "cargo clippy",
+            "command": "cargo clippy --workspace --all-features --all-targets --locked -- -D warnings --allow deprecated",
             "group": {
                 "kind": "test",
                 "isDefault": false
