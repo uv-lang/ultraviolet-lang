@@ -98,7 +98,6 @@ pub fn generate_ast(node: &UVParseNode) -> GeneratorOutputType {
         },
 
         // Parse return block
-        // TODO: Dead code analysis
         "return" => parse_return(node)?,
 
         // Parse break

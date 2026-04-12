@@ -163,6 +163,56 @@ pub fn analyze_dead_code<'a>(blocks: impl IntoIterator<Item = &'a ASTBlockType>)
                 }
             },
 
+            ASTBlockType::CompareOp(cmp) => {
+                for arg in &cmp.operands {
+                    let arg_flow = analyze_dead_code(slice::from_ref(arg));
+                    let is_term = arg_flow.is_terminates();
+                    flow.apply_flow(arg_flow, block);
+
+                    if is_term {
+                        break;
+                    }
+                }
+            },
+
+            ASTBlockType::MathOp(cmp) => {
+                for arg in &cmp.operands {
+                    let arg_flow = analyze_dead_code(slice::from_ref(arg));
+                    let is_term = arg_flow.is_terminates();
+                    flow.apply_flow(arg_flow, block);
+
+                    if is_term {
+                        break;
+                    }
+                }
+            },
+
+            ASTBlockType::LogicalOp(cmp) => {
+                for arg in &cmp.operands {
+                    let arg_flow = analyze_dead_code(slice::from_ref(arg));
+                    let is_term = arg_flow.is_terminates();
+                    flow.apply_flow(arg_flow, block);
+
+                    if is_term {
+                        break;
+                    }
+                }
+            },
+
+            ASTBlockType::VariableAssignment(assign) => {
+                flow.apply_flow(
+                    analyze_dead_code(slice::from_ref(assign.value.deref().deref())),
+                    block,
+                );
+            },
+
+            ASTBlockType::VariableDefinition(assign) => {
+                flow.apply_flow(
+                    analyze_dead_code(slice::from_ref(assign.value.deref())),
+                    block,
+                );
+            },
+
             _ => {},
         }
     }
