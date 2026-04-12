@@ -126,8 +126,8 @@ pub fn analyze_dead_code<'a>(blocks: impl IntoIterator<Item = &'a ASTBlockType>)
                 let then_flow = cond.then_body.as_deref().map(analyze_dead_code);
                 let else_flow = cond.else_body.as_deref().map(analyze_dead_code);
 
-                let then_terminates = then_flow.as_ref().map_or(false, |f| f.is_terminates());
-                let else_terminates = else_flow.as_ref().map_or(false, |f| f.is_terminates());
+                let then_terminates = then_flow.as_ref().is_some_and(|f| f.is_terminates());
+                let else_terminates = else_flow.as_ref().is_some_and(|f| f.is_terminates());
 
                 if test_flow.is_terminates() || (then_terminates && else_terminates) {
                     if let Some(f) = then_flow.as_ref().or(else_flow.as_ref()) {
