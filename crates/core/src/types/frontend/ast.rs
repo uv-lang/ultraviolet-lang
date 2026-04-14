@@ -9,7 +9,7 @@ use crate::{
             StringToUVLogicalOp, StringToUVMathOp, StringToUVType,
         },
     },
-    types::frontend::{Span, Spanned},
+    types::frontend::{Span, Spanned, typechecker::EnvRef},
 };
 
 /// Number-like value
@@ -31,7 +31,7 @@ pub enum UVValue {
 }
 
 impl GetType for Number {
-    fn get_type(&self) -> UVType {
+    fn get_type(&self, _env: EnvRef) -> UVType {
         match self {
             Number::Int(_) => UVType::Int,
             Number::Float(_) => UVType::Float,
@@ -40,9 +40,9 @@ impl GetType for Number {
 }
 
 impl GetType for UVValue {
-    fn get_type(&self) -> UVType {
+    fn get_type(&self, env: EnvRef) -> UVType {
         match self {
-            UVValue::Number(n) => n.get_type(),
+            UVValue::Number(n) => n.get_type(env),
             UVValue::String(_) => UVType::String,
             UVValue::Boolean(_) => UVType::Boolean,
             UVValue::Null => UVType::Null,

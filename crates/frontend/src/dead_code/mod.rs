@@ -13,7 +13,7 @@ pub enum DeadCodeAnalysisFlow {
     LoopDiverges,
 }
 
-/** Stores and manages the current dead code review thread */
+/** Stores and manages the current dead code analysis flow */
 pub struct CheckFlow {
     pub errors: Vec<SpannedError>,
     pub flow_type: DeadCodeAnalysisFlow,
@@ -87,7 +87,6 @@ pub fn analyze_dead_code_program(ast: &ASTBlockType) -> Vec<SpannedError> {
     errors
 }
 
-// TODO: Сделать нормальный анализ для каждого из типов блоков
 /// Analyze code for unreachable elements
 pub fn analyze_dead_code<'a>(blocks: impl IntoIterator<Item = &'a ASTBlockType>) -> CheckFlow {
     let mut flow = CheckFlow::new();

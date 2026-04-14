@@ -1,10 +1,13 @@
 use std::borrow::Cow;
 
-use crate::types::frontend::ast::{CompareOpType, LogicalOpType, MathOpType, UVType};
+use crate::types::frontend::{
+    ast::{CompareOpType, LogicalOpType, MathOpType, UVType},
+    typechecker::EnvRef,
+};
 
 pub trait GetType {
     /// Get type of node / value
-    fn get_type(&self) -> UVType;
+    fn get_type(&self, env: EnvRef) -> UVType;
 }
 
 pub trait IsAssignable {

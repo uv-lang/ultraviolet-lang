@@ -22,19 +22,22 @@
                     <a />
                 </call>
 
+                <!-- If first argument greater than 1000 – interrupt recursion to avoid stack overflow -->
                 <if>
                     <test>
-                        <gte>
+                        <gt>
                             <a />
                             <int>1000</int>
-                        </gte>
+                        </gt>
                     </test>
                     <then>
                         <return />
                     </then>
                 </if>
 
-                <call rec><b />
+                <!-- Recursively call `rec` function -->
+                <call rec>
+                    <b />
                     <sum>
                         <a />
                         <b />
