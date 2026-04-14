@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-    traits::frontend::ast::GetType,
+    traits::frontend::ast::{GetType, GetTypeEnv},
     types::frontend::ast::{ASTBlockType, UVType},
 };
 
@@ -14,7 +14,7 @@ pub struct Environment {
     pub parent: Option<EnvRef>,
 }
 
-impl GetType for ASTBlockType {
+impl GetTypeEnv for ASTBlockType {
     fn get_type(&self, env: EnvRef) -> super::ast::UVType {
         match self {
             ASTBlockType::Program(_) => UVType::Void,
@@ -31,7 +31,7 @@ impl GetType for ASTBlockType {
             ASTBlockType::CompareOp(_compare_op) => todo!(),
             ASTBlockType::ForLoop(_) => UVType::Void,
             ASTBlockType::WhileLoop(_) => UVType::Void,
-            ASTBlockType::Value(v) => v.get_type(env),
+            ASTBlockType::Value(v) => v.get_type(),
             ASTBlockType::GroupBlock(_spanned) => todo!(),
             ASTBlockType::Return(rv) => match &rv.value {
                 Some(v) => v.get_type(env),

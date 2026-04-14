@@ -7,6 +7,11 @@ use crate::types::frontend::{
 
 pub trait GetType {
     /// Get type of node / value
+    fn get_type(&self) -> UVType;
+}
+
+pub trait GetTypeEnv {
+    /// Get type of node / value with provided environment
     fn get_type(&self, env: EnvRef) -> UVType;
 }
 
