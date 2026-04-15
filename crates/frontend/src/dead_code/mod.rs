@@ -35,20 +35,16 @@ impl CheckFlow {
      * stopping it from propagates below.
      */
     pub fn apply_flow(&mut self, upstream: Self, node: &ASTBlockType) {
-        let mut flow_type = upstream.flow_type;
-        match node {
-            ASTBlockType::FunctionDefinition(_)
-                if matches!(flow_type, DeadCodeAnalysisFlow::Return) =>
-            {
-                flow_type = DeadCodeAnalysisFlow::None
+        let flow_type = match (node, upstream.flow_type) {
+            (ASTBlockType::FunctionDefinition(_), DeadCodeAnalysisFlow::Return) => {
+                DeadCodeAnalysisFlow::None
             },
-            ASTBlockType::WhileLoop(_) | ASTBlockType::ForLoop(_)
-                if matches!(flow_type, DeadCodeAnalysisFlow::LoopDiverges) =>
-            {
-                flow_type = DeadCodeAnalysisFlow::None
-            },
-            _ => {},
-        }
+            (
+                ASTBlockType::WhileLoop(_) | ASTBlockType::ForLoop(_),
+                DeadCodeAnalysisFlow::LoopDiverges,
+            ) => DeadCodeAnalysisFlow::None,
+            (_, flow) => flow,
+        };
         self.errors.extend(upstream.errors);
         self.flow_type = flow_type;
     }
@@ -76,11 +72,11 @@ pub fn analyze_dead_code_program(ast: &ASTBlockType) -> Vec<SpannedError> {
     let mut errors = Vec::new();
     if let ASTBlockType::Program(p) = ast {
         if let Some(ASTBlockType::HeadBlock(h)) = &p.head {
-            errors.extend(analyze_dead_code(&h.value).errors);
+            errors.extend(analyze_dead_code(&h.value, false).errors);
         }
 
         if let ASTBlockType::MainBlock(m) = &p.main {
-            errors.extend(analyze_dead_code(&m.value).errors);
+            errors.extend(analyze_dead_code(&m.value, false).errors);
         }
     }
 
@@ -88,11 +84,14 @@ pub fn analyze_dead_code_program(ast: &ASTBlockType) -> Vec<SpannedError> {
 }
 
 /// Analyze code for unreachable elements
-pub fn analyze_dead_code<'a>(blocks: impl IntoIterator<Item = &'a ASTBlockType>) -> CheckFlow {
+pub fn analyze_dead_code<'a>(
+    blocks: impl IntoIterator<Item = &'a ASTBlockType>,
+    force_terminate: bool,
+) -> CheckFlow {
     let mut flow = CheckFlow::new();
 
     for block in blocks {
-        if flow.is_terminates() {
+        if flow.is_terminates() || force_terminate {
             flow.add_error(
                 SpannedError::new(
                     format!(
@@ -116,14 +115,20 @@ pub fn analyze_dead_code<'a>(blocks: impl IntoIterator<Item = &'a ASTBlockType>)
             ASTBlockType::GroupBlock(inner)
             | ASTBlockType::MainBlock(inner)
             | ASTBlockType::HeadBlock(inner) => {
-                flow.apply_flow(analyze_dead_code(inner.deref()), block)
+                flow.apply_flow(analyze_dead_code(inner.deref(), false), block)
             },
 
             ASTBlockType::ConditionalOp(cond) => {
-                let test_flow = analyze_dead_code(slice::from_ref(&cond.test));
+                let test_flow = analyze_one(&cond.test, false);
 
-                let then_flow = cond.then_body.as_deref().map(analyze_dead_code);
-                let else_flow = cond.else_body.as_deref().map(analyze_dead_code);
+                let then_flow = cond
+                    .then_body
+                    .as_deref()
+                    .map(|f| analyze_dead_code(f, false));
+                let else_flow = cond
+                    .else_body
+                    .as_deref()
+                    .map(|f| analyze_dead_code(f, false));
 
                 let then_terminates = then_flow.as_ref().is_some_and(|f| f.is_terminates());
                 let else_terminates = else_flow.as_ref().is_some_and(|f| f.is_terminates());
@@ -143,73 +148,38 @@ pub fn analyze_dead_code<'a>(blocks: impl IntoIterator<Item = &'a ASTBlockType>)
                 }
             },
 
-            ASTBlockType::ForLoop(f) => flow.apply_flow(analyze_dead_code(&*f.body), block),
-            ASTBlockType::WhileLoop(w) => flow.apply_flow(analyze_dead_code(&*w.body), block),
+            ASTBlockType::ForLoop(f) => {
+                flow.apply_flow(analyze_one(&f.start, false), block);
+                flow.apply_flow(analyze_one(&f.end, flow.is_terminates()), block);
+                if let Some(step) = &f.step {
+                    flow.apply_flow(analyze_one(step, flow.is_terminates()), block);
+                }
+                flow.apply_flow(analyze_dead_code(&*f.body, flow.is_terminates()), block)
+            },
+
+            ASTBlockType::WhileLoop(w) => {
+                flow.apply_flow(analyze_one(&w.test, false), block);
+                flow.apply_flow(analyze_dead_code(&*w.body, flow.is_terminates()), block)
+            },
 
             ASTBlockType::FunctionDefinition(f) => {
-                flow.apply_flow(analyze_dead_code(&*f.body), block)
+                flow.apply_flow(analyze_dead_code(&*f.body, false), block)
             },
 
             ASTBlockType::FunctionCall(fc) => {
-                for arg in &fc.args {
-                    let arg_flow = analyze_dead_code(slice::from_ref(&arg.value));
-                    let is_term = arg_flow.is_terminates();
-                    flow.apply_flow(arg_flow, block);
-
-                    if is_term {
-                        break;
-                    }
-                }
+                analyze_operands(fc.args.iter().map(|a| &a.value), &mut flow, block);
             },
 
-            ASTBlockType::CompareOp(cmp) => {
-                for arg in &cmp.operands {
-                    let arg_flow = analyze_dead_code(slice::from_ref(arg));
-                    let is_term = arg_flow.is_terminates();
-                    flow.apply_flow(arg_flow, block);
-
-                    if is_term {
-                        break;
-                    }
-                }
-            },
-
-            ASTBlockType::MathOp(cmp) => {
-                for arg in &cmp.operands {
-                    let arg_flow = analyze_dead_code(slice::from_ref(arg));
-                    let is_term = arg_flow.is_terminates();
-                    flow.apply_flow(arg_flow, block);
-
-                    if is_term {
-                        break;
-                    }
-                }
-            },
-
-            ASTBlockType::LogicalOp(cmp) => {
-                for arg in &cmp.operands {
-                    let arg_flow = analyze_dead_code(slice::from_ref(arg));
-                    let is_term = arg_flow.is_terminates();
-                    flow.apply_flow(arg_flow, block);
-
-                    if is_term {
-                        break;
-                    }
-                }
-            },
+            ASTBlockType::CompareOp(cmp) => analyze_operands(&cmp.operands, &mut flow, block),
+            ASTBlockType::MathOp(cmp) => analyze_operands(&cmp.operands, &mut flow, block),
+            ASTBlockType::LogicalOp(cmp) => analyze_operands(&cmp.operands, &mut flow, block),
 
             ASTBlockType::VariableAssignment(assign) => {
-                flow.apply_flow(
-                    analyze_dead_code(slice::from_ref(assign.value.deref().deref())),
-                    block,
-                );
+                flow.apply_flow(analyze_one(assign.value.deref().deref(), false), block);
             },
 
             ASTBlockType::VariableDefinition(assign) => {
-                flow.apply_flow(
-                    analyze_dead_code(slice::from_ref(assign.value.deref())),
-                    block,
-                );
+                flow.apply_flow(analyze_one(assign.value.deref(), false), block);
             },
 
             _ => {},
@@ -217,4 +187,24 @@ pub fn analyze_dead_code<'a>(blocks: impl IntoIterator<Item = &'a ASTBlockType>)
     }
 
     flow
+}
+
+fn analyze_operands<'a>(
+    operands: impl IntoIterator<Item = &'a ASTBlockType>,
+    flow: &mut CheckFlow,
+    block: &ASTBlockType,
+) {
+    for arg in operands {
+        let arg_flow = analyze_one(arg, false);
+        let is_term = arg_flow.is_terminates();
+        flow.apply_flow(arg_flow, block);
+
+        if is_term {
+            break;
+        }
+    }
+}
+
+fn analyze_one(node: &ASTBlockType, force: bool) -> CheckFlow {
+    analyze_dead_code(slice::from_ref(node), force)
 }

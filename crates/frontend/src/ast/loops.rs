@@ -34,7 +34,7 @@ pub fn parse_for_loop(node: &UVParseNode) -> GeneratorOutputType {
         Some(x) => x,
         None => {
             return Err(SpannedError::new(
-                "`for` loop must have an `iterator` child",
+                "`for` loop must have an `iter` child",
                 node.span,
             ));
         },

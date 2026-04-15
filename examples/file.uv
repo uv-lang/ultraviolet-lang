@@ -1,52 +1,18 @@
 <program>
     <main>
-        <fn>
-            <name>rec</name>
-
-            <arg>
-                <name>a</name>
-                <type>
-                    <int />
-                </type>
-            </arg>
-
-            <arg>
-                <name>b</name>
-                <type>
-                    <int />
-                </type>
-            </arg>
+        <for>
+            <iter>aaa</iter>
+            <start>
+                <return />
+            </start>
+            <end>
+                <return />
+            </end>
 
             <body>
-                <call println>
-                    <a />
-                </call>
-
-                <if>
-                    <test>
-                        <gte>
-                            <a />
-                            <int>1000</int>
-                        </gte>
-                    </test>
-                    <then>
-                        <return />
-                    </then>
-                </if>
-
-                <call rec><b />
-                    <sum>
-                        <a />
-                        <b />
-                    </sum>
-                </call>
+                <call aaa></call>
             </body>
-        </fn>
-
-        <call rec>
-            <int>0</int>
-            <int>1</int>
-        </call>
+        </for>
     </main>
 
 </program>

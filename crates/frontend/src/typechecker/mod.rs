@@ -1,0 +1,68 @@
+use ultraviolet_core::{
+    errors::SpannedError,
+    traits::frontend::ast::GetType,
+    types::frontend::{
+        ast::{ASTBlockType, ProgramBlock, UVType},
+        typechecker::{ControlFlow, EnvRef, Environment},
+    },
+};
+
+pub fn typecheck(block: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+    Ok(match block {
+        ASTBlockType::Program(p) => analyze_program(p, env)?,
+        ASTBlockType::MainBlock(m) => analyze_group(&m.value, env)?,
+        ASTBlockType::VariableDefinition(_variable_definition) => todo!(),
+        ASTBlockType::FunctionDefinition(_function_definition) => todo!(),
+        ASTBlockType::FunctionCall(_function_call) => todo!(),
+        ASTBlockType::VariableAssignment(_variable_assign) => todo!(),
+        ASTBlockType::VariableAccess(_variable_access) => todo!(),
+        ASTBlockType::ConditionalOp(_conditional_operator) => todo!(),
+        ASTBlockType::MathOp(_math_op) => todo!(),
+        ASTBlockType::LogicalOp(_logical_op) => todo!(),
+        ASTBlockType::CompareOp(_compare_op) => todo!(),
+        ASTBlockType::ForLoop(_for_loop) => todo!(),
+        ASTBlockType::WhileLoop(_while_loop) => todo!(),
+        ASTBlockType::Value(v) => ControlFlow::Simple(v.value.get_type()),
+        ASTBlockType::GroupBlock(g) => analyze_group(&g.value, env)?,
+        ASTBlockType::Return(r) => analyze_return(&r.value, env)?,
+        ASTBlockType::Continue(_) | ASTBlockType::Break(_) => ControlFlow::Simple(UVType::Void),
+
+        _ => ControlFlow::Simple(UVType::Void),
+    })
+}
+
+/// Analyze main program block
+fn analyze_program(pr: &ProgramBlock, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+    let new_env = Environment::new_child(env);
+    typecheck(&pr.main, new_env)?;
+
+    Ok(ControlFlow::Simple(UVType::Void))
+}
+
+fn analyze_group(blocks: &Vec<ASTBlockType>, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+    let new_env = Environment::new_child(env);
+
+    let mut last_type = UVType::Void;
+    for node in blocks {
+        match typecheck(node, new_env.clone())? {
+            ControlFlow::Simple(val) => last_type = val,
+            cf => return Ok(cf),
+        }
+    }
+
+    Ok(ControlFlow::Simple(last_type))
+}
+
+/// Analyze return block
+fn analyze_return(
+    body: &Option<Box<ASTBlockType>>,
+    env: EnvRef,
+) -> Result<ControlFlow, SpannedError> {
+    let Some(b) = body else {
+        return Ok(ControlFlow::Return(UVType::Void));
+    };
+
+    match typecheck(b, env)? {
+        ControlFlow::Simple(val) | ControlFlow::Return(val) => Ok(ControlFlow::Return(val)),
+    }
+}

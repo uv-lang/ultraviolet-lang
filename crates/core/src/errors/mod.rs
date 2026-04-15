@@ -1,7 +1,5 @@
-use std::fmt;
-
 use crate::{traits::frontend::Positional, types::frontend::Span};
-
+use std::fmt;
 pub mod error_renderer;
 
 pub enum ErrorType {
