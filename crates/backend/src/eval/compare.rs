@@ -1,8 +1,8 @@
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef},
-        frontend::ast::{CompareOp, CompareOpType, UVValue},
+        backend::{ControlFlow, EnvRef, UVRTValue},
+        frontend::ast::{CompareOp, CompareOpType},
     },
 };
 
@@ -13,7 +13,7 @@ impl EvalOps for CompareOp {
         self._eval_with_operands(&self.operands, env)
     }
 
-    fn eval_expr(&self, values: &[UVValue]) -> Result<UVValue, SpannedError> {
+    fn eval_expr(&self, values: &[UVRTValue]) -> Result<UVRTValue, SpannedError> {
         let mut iter = values.iter();
 
         let first = iter
@@ -39,6 +39,6 @@ impl EvalOps for CompareOp {
             },
         };
 
-        Ok(UVValue::Boolean(result))
+        Ok(UVRTValue::Boolean(result))
     }
 }

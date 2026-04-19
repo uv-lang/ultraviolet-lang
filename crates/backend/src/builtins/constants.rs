@@ -4,58 +4,49 @@
 * Contains text, mathematical and system constants,
 * derived from the Rust standard library
 */
-use lazy_static::lazy_static;
-use std::{
-    collections::HashMap,
-    f64::consts::{E, PI},
-};
+use std::f64::consts::{E, PI};
 use ultraviolet_core::types::{
-    backend::ControlFlow,
-    frontend::ast::{Number, UVValue},
+    backend::{EnvRef, UVRTValue},
+    frontend::ast::Number,
 };
 
-lazy_static! {
-    static ref BUILTIN_CONSTANTS: HashMap<&'static str, UVValue> = {
-        let mut m = HashMap::new();
-        m.insert("endl", UVValue::String("\n".to_string()));
-        m.insert("tab", UVValue::String("\t".to_string()));
-        m.insert("space", UVValue::String(" ".to_string()));
+/// Initialize built-in constants
+///
+/// Inserts constants into the provided environment
+pub fn init_builtin_constants(env: EnvRef) {
+    let mut borrowed_env = env.borrow_mut();
 
-        // FIXME: Can we use dots here?
-        m.insert("math.pi", UVValue::Number(Number::Float(PI)));
-        m.insert("math.exp", UVValue::Number(Number::Float(E)));
+    borrowed_env.define_variable("endl", UVRTValue::String("\n".to_string()), true);
+    borrowed_env.define_variable("tab", UVRTValue::String("\t".to_string()), true);
+    borrowed_env.define_variable("space", UVRTValue::String(" ".to_string()), true);
 
-        m.insert("os.name", UVValue::String(std::env::consts::OS.to_string()));
-        m.insert(
-            "os.arch",
-            UVValue::String(std::env::consts::ARCH.to_string()),
-        );
-        m.insert(
-            "os.family",
-            UVValue::String(std::env::consts::FAMILY.to_string()),
-        );
+    borrowed_env.define_variable("math.pi", UVRTValue::Number(Number::Float(PI)), true);
+    borrowed_env.define_variable("math.exp", UVRTValue::Number(Number::Float(E)), true);
 
-        m.insert(
-            "dll.prefix",
-            UVValue::String(std::env::consts::DLL_PREFIX.to_string()),
-        );
-        m.insert(
-            "dll.suffix",
-            UVValue::String(std::env::consts::DLL_SUFFIX.to_string()),
-        );
-        m
-    };
-}
+    borrowed_env.define_variable(
+        "os.name",
+        UVRTValue::String(std::env::consts::OS.to_string()),
+        true,
+    );
+    borrowed_env.define_variable(
+        "os.arch",
+        UVRTValue::String(std::env::consts::ARCH.to_string()),
+        true,
+    );
+    borrowed_env.define_variable(
+        "os.family",
+        UVRTValue::String(std::env::consts::FAMILY.to_string()),
+        true,
+    );
 
-/// Check if provided function name is built-in function
-pub fn is_builtin_constant(name: &str) -> bool {
-    BUILTIN_CONSTANTS.contains_key(name)
-}
-
-/// Execute builtin function by signature
-pub fn get_builtin_constant(name: &str) -> ControlFlow {
-    match BUILTIN_CONSTANTS.get(name) {
-        Some(v) => ControlFlow::Simple(v.clone()),
-        None => unreachable!(),
-    }
+    borrowed_env.define_variable(
+        "dll.prefix",
+        UVRTValue::String(std::env::consts::DLL_PREFIX.to_string()),
+        true,
+    );
+    borrowed_env.define_variable(
+        "dll.suffix",
+        UVRTValue::String(std::env::consts::DLL_SUFFIX.to_string()),
+        true,
+    );
 }

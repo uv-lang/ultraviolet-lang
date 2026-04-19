@@ -1,8 +1,8 @@
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef, Environment},
-        frontend::ast::{ForLoop, Number, UVValue, WhileLoop},
+        backend::{ControlFlow, EnvRef, Environment, UVRTValue},
+        frontend::ast::{ForLoop, Number, WhileLoop},
     },
 };
 
@@ -28,7 +28,7 @@ pub fn eval_for_loop(for_node: &ForLoop, env: EnvRef) -> Result<ControlFlow, Spa
 
         step
     } else {
-        UVValue::Number(Number::Int(1))
+        UVRTValue::Number(Number::Int(1))
     };
 
     // FIXME: Должен ли интерпретатор создавать итератор в родительском скоупе для
@@ -67,7 +67,7 @@ pub fn eval_for_loop(for_node: &ForLoop, env: EnvRef) -> Result<ControlFlow, Spa
     }
 
     env.borrow_mut().remove_symbol(&for_node.iterator.value);
-    Ok(ControlFlow::Simple(UVValue::Void))
+    Ok(ControlFlow::Simple(UVRTValue::Void))
 }
 
 /// Eval while loop
@@ -75,7 +75,7 @@ pub fn eval_while_loop(while_node: &WhileLoop, env: EnvRef) -> Result<ControlFlo
     loop {
         let test = eval(&while_node.test, env.clone())?;
         let test_res = match test {
-            ControlFlow::Simple(UVValue::Boolean(t)) => t,
+            ControlFlow::Simple(UVRTValue::Boolean(t)) => t,
             ControlFlow::Simple(_) => unreachable!("Typechecker bug"),
             _ => return Ok(test),
         };
@@ -93,5 +93,5 @@ pub fn eval_while_loop(while_node: &WhileLoop, env: EnvRef) -> Result<ControlFlo
         }
     }
 
-    Ok(ControlFlow::Simple(UVValue::Void))
+    Ok(ControlFlow::Simple(UVRTValue::Void))
 }

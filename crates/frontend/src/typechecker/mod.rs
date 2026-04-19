@@ -7,6 +7,8 @@ use ultraviolet_core::{
     },
 };
 
+mod variables;
+
 pub fn typecheck(block: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedError> {
     Ok(match block {
         ASTBlockType::Program(p) => analyze_program(p, env)?,
@@ -39,6 +41,10 @@ fn analyze_program(pr: &ProgramBlock, env: EnvRef) -> Result<ControlFlow, Spanne
     Ok(ControlFlow::Simple(UVType::Void))
 }
 
+/// Analyze group of block
+///
+/// Handle return and passes upstream
+/// Returns latest block type as group type
 fn analyze_group(blocks: &Vec<ASTBlockType>, env: EnvRef) -> Result<ControlFlow, SpannedError> {
     let new_env = Environment::new_child(env);
 

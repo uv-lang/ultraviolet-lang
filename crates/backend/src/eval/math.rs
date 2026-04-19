@@ -1,8 +1,8 @@
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef},
-        frontend::ast::{MathOp, MathOpType, UVValue},
+        backend::{ControlFlow, EnvRef, UVRTValue},
+        frontend::ast::{MathOp, MathOpType},
     },
 };
 
@@ -13,7 +13,7 @@ impl EvalOps for MathOp {
         self._eval_with_operands(&self.operands, env)
     }
 
-    fn eval_expr(&self, values: &[UVValue]) -> Result<UVValue, SpannedError> {
+    fn eval_expr(&self, values: &[UVRTValue]) -> Result<UVRTValue, SpannedError> {
         let mut iter = values.iter();
 
         let first = iter

@@ -9,7 +9,9 @@ use crate::{
             StringToUVLogicalOp, StringToUVMathOp, StringToUVType,
         },
     },
-    types::frontend::{Span, Spanned},
+    types::{
+        frontend::{Span, Spanned},
+    },
 };
 
 /// Number-like value
@@ -26,7 +28,6 @@ pub enum UVValue {
     String(String),
     Boolean(bool),
     Null,
-
     Void,
 }
 
@@ -82,6 +83,8 @@ pub enum UVType {
     Boolean,
     Null,
     Void,
+
+    Any,
 
     Union(Vec<UVType>),
 }

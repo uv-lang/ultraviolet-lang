@@ -1,13 +1,24 @@
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef},
-        frontend::ast::{ASTBlockType, UVValue},
+        backend::{ControlFlow, EnvRef, UVRTValue},
+        frontend::ast::ASTBlockType,
     },
 };
 
+use crate::builtins::{constants::init_builtin_constants, functions::init_builtin_functions};
+
 mod builtins;
-pub mod eval;
+mod eval;
+
+/** Evaluate code */
+pub fn eval(node: &ASTBlockType) -> Result<ControlFlow, SpannedError> {
+    let env = EnvRef::default();
+
+    init_builtin_constants(env.clone());
+    init_builtin_functions(env.clone());
+    eval::eval(node, env)
+}
 
 pub trait EvalOps {
     /// Evaluate operation
@@ -33,5 +44,5 @@ pub trait EvalOps {
         Ok(ControlFlow::Simple(self.eval_expr(values.as_slice())?))
     }
 
-    fn eval_expr(&self, values: &[UVValue]) -> Result<UVValue, SpannedError>;
+    fn eval_expr(&self, values: &[UVRTValue]) -> Result<UVRTValue, SpannedError>;
 }

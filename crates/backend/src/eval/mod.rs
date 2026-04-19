@@ -1,9 +1,5 @@
 use crate::{
     EvalOps,
-    builtins::{
-        constants::{get_builtin_constant, is_builtin_constant},
-        functions::{execute_builtin_function, is_builtin_function},
-    },
     eval::{
         conditional_op::eval_conditional_op,
         functions::{call_function, define_function},
@@ -15,11 +11,8 @@ use crate::{
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef, Environment},
-        frontend::{
-            Spanned,
-            ast::{ASTBlockType, UVValue},
-        },
+        backend::{ControlFlow, EnvRef, Environment, UVRTValue},
+        frontend::{Spanned, ast::ASTBlockType},
     },
 };
 mod compare;
@@ -42,21 +35,11 @@ pub fn eval(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedErro
         // Variables things
         ASTBlockType::VariableDefinition(def) => define_variable(def, env)?,
         ASTBlockType::VariableAssignment(var_assign) => assign_variable(var_assign, env)?,
-
-        // Builtin constants
-        // TODO: Local variables should override builtin constants
-        ASTBlockType::VariableAccess(var_acc) if is_builtin_constant(&var_acc.name) => {
-            get_builtin_constant(&var_acc.name)
-        },
-
         ASTBlockType::VariableAccess(var_acc) => access_variable(var_acc, env)?,
 
         // Functions things
         ASTBlockType::FunctionDefinition(function_definition) => {
             define_function(function_definition, env)?
-        },
-        ASTBlockType::FunctionCall(fc) if is_builtin_function(&fc.name) => {
-            execute_builtin_function(fc, env)?
         },
         ASTBlockType::FunctionCall(function_call) => call_function(function_call, env)?,
 
@@ -66,7 +49,7 @@ pub fn eval(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedErro
         ASTBlockType::CompareOp(compare_op) => compare_op.eval(env)?,
         ASTBlockType::ForLoop(for_loop) => eval_for_loop(for_loop, env)?,
         ASTBlockType::WhileLoop(while_loop) => eval_while_loop(while_loop, env)?,
-        ASTBlockType::Value(val) => ControlFlow::Simple(val.value.clone()),
+        ASTBlockType::Value(val) => ControlFlow::Simple(UVRTValue::from_uvvalue(val.value.clone())),
         ASTBlockType::GroupBlock(block) => eval_block(block, env)?,
         ASTBlockType::Return(block) => eval_return(block, env)?,
 
@@ -79,7 +62,7 @@ pub fn eval(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedErro
 fn eval_block(nodes: &Vec<ASTBlockType>, env: EnvRef) -> Result<ControlFlow, SpannedError> {
     let new_env = Environment::new_child(env);
 
-    let mut last_eval_simple_val = UVValue::Void;
+    let mut last_eval_simple_val = UVRTValue::Void;
     for node in nodes {
         match eval(node, new_env.clone())? {
             // FIXME: Should the block return the last calculated value?
@@ -97,11 +80,11 @@ fn eval_return(
     env: EnvRef,
 ) -> Result<ControlFlow, SpannedError> {
     let Some(ref b) = body.value else {
-        return Ok(ControlFlow::Return(UVValue::Void));
+        return Ok(ControlFlow::Return(UVRTValue::Void));
     };
 
     match eval(b, env)? {
         ControlFlow::Simple(val) | ControlFlow::Return(val) => Ok(ControlFlow::Return(val)),
-        ControlFlow::Break | ControlFlow::Continue => Ok(ControlFlow::Simple(UVValue::Void)),
+        ControlFlow::Break | ControlFlow::Continue => Ok(ControlFlow::Simple(UVRTValue::Void)),
     }
 }

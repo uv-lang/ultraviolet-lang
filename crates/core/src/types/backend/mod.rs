@@ -1,12 +1,16 @@
-use crate::types::frontend::ast::{ASTBlockType, UVValue};
+use crate::{
+    errors::SpannedError,
+    types::frontend::ast::{ASTBlockType, Number, UVValue},
+};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
+pub mod uvvalue_ops;
 
 pub type EnvRef = Rc<RefCell<Environment>>;
 
 /// Scope-based environment
 #[derive(Default, Debug)]
 pub struct Environment {
-    pub symbols: HashMap<String, Symbol>,
+    pub symbols: HashMap<String, Rc<RefCell<RTVariable>>>,
     pub parent: Option<EnvRef>,
 }
 
@@ -20,49 +24,25 @@ impl Environment {
     }
 
     /// Find symbol by name
-    pub fn find(&self, name: impl Into<String>) -> Option<Symbol> {
+    pub fn find_var(&self, name: impl Into<String>) -> Option<Rc<RefCell<RTVariable>>> {
         let n = name.into();
         if let Some(sym) = self.symbols.get(&n) {
             return Some(sym.clone());
         }
 
         if let Some(parent) = &self.parent {
-            return parent.borrow().find(&n);
+            return parent.borrow().find_var(&n);
         }
 
         None
     }
 
-    /// Find variable by name
-    pub fn find_var(&self, name: impl Into<String>) -> Option<Rc<RefCell<RTVariable>>> {
-        if let Some(Symbol::Variable(var)) = self.find(name) {
-            Some(var)
-        } else {
-            None
-        }
-    }
-
-    /// Find function by name
-    pub fn find_func(&self, name: impl Into<String>) -> Option<Rc<RefCell<RTFunction>>> {
-        if let Some(Symbol::Function(var)) = self.find(name) {
-            Some(var)
-        } else {
-            None
-        }
-    }
-
     /// Define variable in current scope
-    pub fn define_variable(&mut self, name: impl Into<String>, value: UVValue, constant: bool) {
+    pub fn define_variable(&mut self, name: impl Into<String>, value: UVRTValue, constant: bool) {
         self.symbols.insert(
             name.into(),
-            Symbol::Variable(Rc::new(RefCell::new(RTVariable::new_from(value, constant)))),
+            Rc::new(RefCell::new(RTVariable::new_from(value, constant))),
         );
-    }
-
-    /// Define function in current scope
-    pub fn define_function(&mut self, name: impl Into<String>, f: RTFunction) {
-        self.symbols
-            .insert(name.into(), Symbol::Function(Rc::new(RefCell::new(f))));
     }
 
     /// Remove symbol from CURRENT scope
@@ -71,41 +51,79 @@ impl Environment {
     }
 }
 
-/*
-impl Drop for Environment {
-    fn drop(&mut self) {
-        println!("Environment dropped");
-    }
+#[derive(Debug, Clone)]
+pub struct RTFunction {
+    pub args_names_order: Vec<String>,
+    pub body: Rc<Vec<ASTBlockType>>,
+    pub lexical_env: EnvRef,
 }
-*/
+
+pub type BuiltinFunctionSignature =
+    fn(args: &[UVRTValue], env: EnvRef) -> Result<ControlFlow, SpannedError>;
 
 #[derive(Debug, Clone)]
-pub enum Symbol {
-    Variable(Rc<RefCell<RTVariable>>),
-    Function(Rc<RefCell<RTFunction>>),
+/// Function built into the interpreter
+///
+/// Contains a reference to a function
+pub struct BuiltInFunction {
+    pub f: BuiltinFunctionSignature,
 }
 
-/*
-impl GetType for Symbol {
-    fn get_type(&self) -> UVType {
+impl BuiltInFunction {
+    pub fn new_from(f: BuiltinFunctionSignature) -> Self {
+        Self { f }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum UVRTValue {
+    Number(Number),
+    String(String),
+    Boolean(bool),
+    Null,
+    Void,
+
+    Function(RTFunction),
+    BuiltInFunction(BuiltInFunction),
+}
+
+impl std::fmt::Display for UVRTValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Symbol::Variable(rc) => rc.borrow().value.get_type(),
-            Symbol::Function(_) => todo!(),
+            UVRTValue::Number(n) => n.fmt(f),
+            UVRTValue::String(s) => write!(f, "{s}"),
+            UVRTValue::Boolean(b) => write!(f, "{b}"),
+            UVRTValue::Null => write!(f, "null"),
+            UVRTValue::Void => write!(f, "void"),
+            UVRTValue::Function(_) => write!(f, "<function>"),
+            UVRTValue::BuiltInFunction(_) => write!(f, "<built-in function>"),
         }
     }
 }
-*/
+
+impl UVRTValue {
+    /** Converts frontend UVValue to UVRTValue */
+    pub fn from_uvvalue(val: UVValue) -> Self {
+        match val {
+            UVValue::Number(number) => Self::Number(number),
+            UVValue::String(s) => Self::String(s),
+            UVValue::Boolean(b) => Self::Boolean(b),
+            UVValue::Null => Self::Null,
+            UVValue::Void => Self::Void,
+        }
+    }
+}
 
 /// Runtime variable struct
 #[derive(Debug, Clone)]
 pub struct RTVariable {
-    pub value: UVValue,
+    pub value: UVRTValue,
     pub constant: bool,
 }
 
 impl RTVariable {
     /// Create new variable from value
-    pub fn new_from(val: UVValue, constant: bool) -> Self {
+    pub fn new_from(val: UVRTValue, constant: bool) -> Self {
         Self {
             value: val,
             constant,
@@ -113,20 +131,13 @@ impl RTVariable {
     }
 }
 
-#[derive(Debug)]
-pub struct RTFunction {
-    pub args_names_order: Vec<String>,
-    pub body: Rc<Vec<ASTBlockType>>,
-    pub lexical_env: EnvRef,
-}
-
 /// Indicates, when block ended with return, break, etc...
 #[derive(Debug)]
 pub enum ControlFlow {
-    Simple(UVValue),
+    Simple(UVRTValue),
 
     /// Return propagates upstream
-    Return(UVValue),
+    Return(UVRTValue),
 
     Break,
     Continue,

@@ -1,57 +1,28 @@
-use lazy_static::lazy_static;
-use std::{
-    collections::HashMap,
-    io::{self, BufWriter, Write},
-};
+use std::io::{self, BufWriter, Write};
 use ultraviolet_core::{
     errors::SpannedError,
-    types::{
-        backend::{ControlFlow, EnvRef},
-        frontend::ast::{FunctionCall, UVValue},
-    },
+    types::backend::{BuiltInFunction, ControlFlow, EnvRef, UVRTValue},
 };
 
-use crate::eval::eval;
+/// Initialize built-in functions into environ
+pub fn init_builtin_functions(env: EnvRef) {
+    let mut borrowed_env = env.borrow_mut();
 
-type BuiltinFunctionSignature =
-    fn(args: &[UVValue], env: EnvRef) -> Result<ControlFlow, SpannedError>;
-
-lazy_static! {
-    static ref BUILTIN_FUNCTIONS: HashMap<&'static str, BuiltinFunctionSignature> = {
-        let mut m = HashMap::new();
-        m.insert("print", print as BuiltinFunctionSignature);
-        m.insert("println", println as BuiltinFunctionSignature);
-        m.insert("read", read as BuiltinFunctionSignature);
-        m
-    };
-}
-
-/// Check if provided function name is built-in function
-pub fn is_builtin_function(name: &str) -> bool {
-    BUILTIN_FUNCTIONS.contains_key(name)
-}
-
-/// Execute builtin function by signature
-pub fn execute_builtin_function(
-    fc: &FunctionCall,
-    env: EnvRef,
-) -> Result<ControlFlow, SpannedError> {
-    match BUILTIN_FUNCTIONS.get(fc.name.as_str()) {
-        Some(f) => {
-            let mut av = Vec::new();
-
-            for arg in &fc.args {
-                match eval(&arg.value, env.clone())? {
-                    // FIXME: Value should be passed by reference, not value!
-                    ControlFlow::Simple(v) => av.push(v),
-                    other => return Ok(other),
-                }
-            }
-
-            f(&av, env)
-        },
-        None => unreachable!(),
-    }
+    borrowed_env.define_variable(
+        "print",
+        UVRTValue::BuiltInFunction(BuiltInFunction::new_from(print)),
+        true,
+    );
+    borrowed_env.define_variable(
+        "println",
+        UVRTValue::BuiltInFunction(BuiltInFunction::new_from(println)),
+        true,
+    );
+    borrowed_env.define_variable(
+        "read",
+        UVRTValue::BuiltInFunction(BuiltInFunction::new_from(read)),
+        true,
+    );
 }
 
 /// Built-in `print` function
@@ -67,7 +38,7 @@ pub fn execute_builtin_function(
 /// ```
 ///
 /// Will output `34`
-fn print(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
+fn print(args: &[UVRTValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
     let stdout = io::stdout();
     let mut out = BufWriter::new(stdout.lock());
 
@@ -76,7 +47,7 @@ fn print(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
     }
 
     let _ = out.flush();
-    Ok(ControlFlow::Simple(UVValue::Void))
+    Ok(ControlFlow::Simple(UVRTValue::Void))
 }
 
 /// Built-in `println` function
@@ -92,11 +63,11 @@ fn print(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
 /// ```
 ///
 /// Will output
-/// ```
+/// ```plain
 /// 3
 /// 4
 /// ```
-fn println(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
+fn println(args: &[UVRTValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
     let stdout = io::stdout();
     let mut out = BufWriter::new(stdout.lock());
 
@@ -105,7 +76,7 @@ fn println(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> 
     }
 
     let _ = out.flush();
-    Ok(ControlFlow::Simple(UVValue::Void))
+    Ok(ControlFlow::Simple(UVRTValue::Void))
 }
 
 /// Built-in function for reading from stdin
@@ -115,7 +86,7 @@ fn println(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> 
 ///
 /// If the string is successfully received, returns UVValue::String,
 /// If getting the string failed, returns UVValue::Null
-fn read(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
+fn read(args: &[UVRTValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
     // Print an initial input prompt if provided
     if let Some(arg) = args.first() {
         print!("{arg}");
@@ -124,9 +95,9 @@ fn read(args: &[UVValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
 
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {
-        Ok(_) => Ok(ControlFlow::Simple(UVValue::String(
+        Ok(_) => Ok(ControlFlow::Simple(UVRTValue::String(
             input.trim_end().to_owned(),
         ))),
-        Err(_) => Ok(ControlFlow::Simple(UVValue::Null)),
+        Err(_) => Ok(ControlFlow::Simple(UVRTValue::Null)),
     }
 }

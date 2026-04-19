@@ -3,9 +3,9 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 pub type EnvRef = Rc<RefCell<Environment>>;
 
 /// Scope-based environment
-#[derive(Default, Debug)]
+#[derive(Default)]
 pub struct Environment {
-    pub symbols: HashMap<String, ()>,
+    pub symbols: HashMap<String, Symbol>,
     pub parent: Option<EnvRef>,
 }
 
@@ -22,4 +22,8 @@ impl Environment {
 pub enum ControlFlow {
     Return(UVType),
     Simple(UVType),
+}
+
+pub enum Symbol {
+    Variable(UVType),
 }

@@ -2,8 +2,8 @@ use crate::eval::{eval, eval_block};
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef, Environment},
-        frontend::ast::{ConditionalOperator, UVValue},
+        backend::{ControlFlow, EnvRef, Environment, UVRTValue},
+        frontend::ast::ConditionalOperator,
     },
 };
 
@@ -18,7 +18,7 @@ pub fn eval_conditional_op(
     };
 
     let test_result = match evaluated_test {
-        UVValue::Boolean(b) => b,
+        UVRTValue::Boolean(b) => b,
         _ => {
             return Err(SpannedError::new(
                 "Unexpected type for `test` expression. Expected `bool`",
@@ -38,5 +38,5 @@ pub fn eval_conditional_op(
         return eval_block(&body.value, new_env);
     }
 
-    Ok(ControlFlow::Simple(UVValue::Void))
+    Ok(ControlFlow::Simple(UVRTValue::Void))
 }

@@ -2,7 +2,6 @@ pub mod ast;
 pub mod lexer;
 pub mod tokens;
 pub mod typechecker;
-pub mod uvvalue_ops;
 
 use anyhow::{Context, Result};
 use std::{fs, ops::Deref, path::Path};

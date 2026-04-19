@@ -1,6 +1,6 @@
 use std::ops::{Add, Div, Mul, Rem, Sub};
 
-use crate::types::frontend::ast::{Number, UVValue};
+use crate::types::{backend::UVRTValue, frontend::ast::Number};
 
 impl Number {
     // FIXME: Is this correct?
@@ -13,65 +13,65 @@ impl Number {
     }
 }
 
-impl<'b> Add<&'b UVValue> for &UVValue {
-    type Output = UVValue;
+impl<'b> Add<&'b UVRTValue> for &UVRTValue {
+    type Output = UVRTValue;
 
-    fn add(self, rhs: &'b UVValue) -> Self::Output {
+    fn add(self, rhs: &'b UVRTValue) -> Self::Output {
         match (self, rhs) {
-            (UVValue::Number(lhs), UVValue::Number(rhs)) => {
-                UVValue::Number(Number::Float(lhs.to_f64().add(rhs.to_f64())))
+            (UVRTValue::Number(lhs), UVRTValue::Number(rhs)) => {
+                UVRTValue::Number(Number::Float(lhs.to_f64().add(rhs.to_f64())))
             },
             _ => unreachable!("Typechecker bug"),
         }
     }
 }
 
-impl<'b> Sub<&'b UVValue> for &UVValue {
-    type Output = UVValue;
+impl<'b> Sub<&'b UVRTValue> for &UVRTValue {
+    type Output = UVRTValue;
 
-    fn sub(self, rhs: &'b UVValue) -> Self::Output {
+    fn sub(self, rhs: &'b UVRTValue) -> Self::Output {
         match (self, rhs) {
-            (UVValue::Number(lhs), UVValue::Number(rhs)) => {
-                UVValue::Number(Number::Float(lhs.to_f64().sub(rhs.to_f64())))
+            (UVRTValue::Number(lhs), UVRTValue::Number(rhs)) => {
+                UVRTValue::Number(Number::Float(lhs.to_f64().sub(rhs.to_f64())))
             },
             _ => unreachable!("Typechecker bug"),
         }
     }
 }
 
-impl<'b> Mul<&'b UVValue> for &UVValue {
-    type Output = UVValue;
+impl<'b> Mul<&'b UVRTValue> for &UVRTValue {
+    type Output = UVRTValue;
 
-    fn mul(self, rhs: &'b UVValue) -> Self::Output {
+    fn mul(self, rhs: &'b UVRTValue) -> Self::Output {
         match (self, rhs) {
-            (UVValue::Number(lhs), UVValue::Number(rhs)) => {
-                UVValue::Number(Number::Float(lhs.to_f64().mul(rhs.to_f64())))
+            (UVRTValue::Number(lhs), UVRTValue::Number(rhs)) => {
+                UVRTValue::Number(Number::Float(lhs.to_f64().mul(rhs.to_f64())))
             },
             _ => unreachable!("Typechecker bug"),
         }
     }
 }
 
-impl<'b> Div<&'b UVValue> for &UVValue {
-    type Output = UVValue;
+impl<'b> Div<&'b UVRTValue> for &UVRTValue {
+    type Output = UVRTValue;
 
-    fn div(self, rhs: &'b UVValue) -> Self::Output {
+    fn div(self, rhs: &'b UVRTValue) -> Self::Output {
         match (self, rhs) {
-            (UVValue::Number(lhs), UVValue::Number(rhs)) => {
-                UVValue::Number(Number::Float(lhs.to_f64().div(rhs.to_f64())))
+            (UVRTValue::Number(lhs), UVRTValue::Number(rhs)) => {
+                UVRTValue::Number(Number::Float(lhs.to_f64().div(rhs.to_f64())))
             },
             _ => unreachable!("Typechecker bug"),
         }
     }
 }
 
-impl<'b> Rem<&'b UVValue> for &UVValue {
-    type Output = UVValue;
+impl<'b> Rem<&'b UVRTValue> for &UVRTValue {
+    type Output = UVRTValue;
 
-    fn rem(self, rhs: &'b UVValue) -> Self::Output {
+    fn rem(self, rhs: &'b UVRTValue) -> Self::Output {
         match (self, rhs) {
-            (UVValue::Number(lhs), UVValue::Number(rhs)) => {
-                UVValue::Number(Number::Float(lhs.to_f64().rem(rhs.to_f64())))
+            (UVRTValue::Number(lhs), UVRTValue::Number(rhs)) => {
+                UVRTValue::Number(Number::Float(lhs.to_f64().rem(rhs.to_f64())))
             },
             _ => unreachable!("Typechecker bug"),
         }
@@ -90,16 +90,16 @@ impl PartialEq for Number {
     }
 }
 
-impl PartialEq for UVValue {
+impl PartialEq for UVRTValue {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (UVValue::Number(a), UVValue::Number(b)) => a == b,
+            (UVRTValue::Number(a), UVRTValue::Number(b)) => a == b,
 
-            (UVValue::String(a), UVValue::String(b)) => a == b,
-            (UVValue::Boolean(a), UVValue::Boolean(b)) => a == b,
+            (UVRTValue::String(a), UVRTValue::String(b)) => a == b,
+            (UVRTValue::Boolean(a), UVRTValue::Boolean(b)) => a == b,
 
-            (UVValue::Null, UVValue::Null) => true,
-            (UVValue::Void, UVValue::Void) => true,
+            (UVRTValue::Null, UVRTValue::Null) => true,
+            (UVRTValue::Void, UVRTValue::Void) => true,
 
             _ => false,
         }
@@ -118,10 +118,10 @@ impl PartialOrd for Number {
     }
 }
 
-impl PartialOrd for UVValue {
+impl PartialOrd for UVRTValue {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         match (self, other) {
-            (UVValue::Number(a), UVValue::Number(b)) => a.partial_cmp(b),
+            (UVRTValue::Number(a), UVRTValue::Number(b)) => a.partial_cmp(b),
             _ => None,
         }
     }

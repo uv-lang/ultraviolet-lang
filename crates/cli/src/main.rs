@@ -1,10 +1,7 @@
 use std::path::Path;
 use ultraviolet_core::{
     errors::{SpannedError, error_renderer::ErrorRenderer},
-    types::{
-        backend::{ControlFlow, EnvRef},
-        frontend::SourceFile,
-    },
+    types::{backend::ControlFlow, frontend::SourceFile},
 };
 
 fn main() {
@@ -19,5 +16,5 @@ fn main() {
 
 fn run(source: &SourceFile) -> Result<ControlFlow, SpannedError> {
     let ast = frontend::process(source)?;
-    backend::eval::eval(&ast, EnvRef::default())
+    backend::eval(&ast)
 }

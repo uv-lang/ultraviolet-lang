@@ -1,8 +1,8 @@
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef, Environment, RTFunction},
-        frontend::ast::{FunctionCall, FunctionDefinition, UVValue},
+        backend::{ControlFlow, EnvRef, Environment, RTFunction, UVRTValue},
+        frontend::ast::{FunctionCall, FunctionCallArg, FunctionDefinition},
     },
 };
 
@@ -12,29 +12,44 @@ use crate::eval::{eval, eval_block};
 pub fn define_function(def: &FunctionDefinition, env: EnvRef) -> Result<ControlFlow, SpannedError> {
     let args: Vec<String> = def.arguments.iter().map(|e| e.name.value.clone()).collect();
 
-    env.borrow_mut().define_function(
+    env.borrow_mut().define_variable(
         def.name.value.clone(),
-        RTFunction {
+        UVRTValue::Function(RTFunction {
             args_names_order: args,
             body: def.body.clone(),
             lexical_env: env.clone(),
-        },
+        }),
+        false,
     );
 
-    Ok(ControlFlow::Simple(UVValue::Void))
+    // Maybe let the definition return the function itself?
+    Ok(ControlFlow::Simple(UVRTValue::Void))
 }
 
 /// Call function
 pub fn call_function(call: &FunctionCall, env: EnvRef) -> Result<ControlFlow, SpannedError> {
-    let Some(f) = env.borrow().find_func(call.name.clone()) else {
+    let Some(f) = env.borrow().find_var(call.name.clone()) else {
         return Err(SpannedError::new(
-            format!("Function `{}` not defined", call.name),
+            format!("`{}` not found", call.name),
             call.span,
         ));
     };
 
-    let f_struct = f.borrow();
-    let call_env = Environment::new_child(f_struct.lexical_env.clone());
+    if let UVRTValue::BuiltInFunction(f) = &f.borrow().value {
+        let evaluated_args = match eval_args(&call.args, env.clone())? {
+            Ok(args) => args,
+            Err(e) => return Ok(e),
+        };
+
+        return (f.f)(&evaluated_args, env);
+    }
+
+    let UVRTValue::Function(f_struct) = &f.borrow().value else {
+        return Err(SpannedError::new(
+            format!("`{}` is not callable", call.name),
+            call.span,
+        ));
+    };
 
     if f_struct.args_names_order.len() != call.args.len() {
         return Err(SpannedError::new(
@@ -48,7 +63,7 @@ pub fn call_function(call: &FunctionCall, env: EnvRef) -> Result<ControlFlow, Sp
         ));
     }
 
-    let mut evaluated_args = Vec::new();
+    let mut evaluated_args: Vec<UVRTValue> = Vec::new();
     for arg in &call.args {
         let v = eval(&arg.value, env.clone())?;
         evaluated_args.push(match v {
@@ -57,6 +72,7 @@ pub fn call_function(call: &FunctionCall, env: EnvRef) -> Result<ControlFlow, Sp
         });
     }
 
+    let call_env = Environment::new_child(f_struct.lexical_env.clone());
     for (name, value) in f_struct.args_names_order.iter().zip(evaluated_args) {
         call_env.borrow_mut().define_variable(name, value, true);
     }
@@ -64,9 +80,28 @@ pub fn call_function(call: &FunctionCall, env: EnvRef) -> Result<ControlFlow, Sp
     let body_res = eval_block(&f_struct.body, call_env)?;
     let result = match body_res {
         ControlFlow::Return(t) => t,
-        ControlFlow::Simple(_) => UVValue::Void,
+        ControlFlow::Simple(_) => UVRTValue::Void,
         cf => return Ok(cf),
     };
 
     Ok(ControlFlow::Simple(result))
+}
+
+/// Evaluate function args
+///
+/// FIXME: Nested result object is anti-pattern
+fn eval_args(
+    args: &Vec<FunctionCallArg>,
+    env: EnvRef,
+) -> Result<Result<Vec<UVRTValue>, ControlFlow>, SpannedError> {
+    let mut evaluated_args: Vec<UVRTValue> = Vec::new();
+    for arg in args {
+        let v = eval(&arg.value, env.clone())?;
+        evaluated_args.push(match v {
+            ControlFlow::Simple(v) => v,
+            fc => return Ok(Err(fc)),
+        });
+    }
+
+    Ok(Ok(evaluated_args))
 }
