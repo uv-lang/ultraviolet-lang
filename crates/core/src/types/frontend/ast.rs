@@ -9,9 +9,7 @@ use crate::{
             StringToUVLogicalOp, StringToUVMathOp, StringToUVType,
         },
     },
-    types::{
-        frontend::{Span, Spanned},
-    },
+    types::frontend::{Span, Spanned},
 };
 
 /// Number-like value
