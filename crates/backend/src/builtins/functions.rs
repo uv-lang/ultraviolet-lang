@@ -39,8 +39,7 @@ pub fn init_builtin_functions(env: EnvRef) {
 ///
 /// Will output `34`
 fn print(args: &[UVRTValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
-    let stdout = io::stdout();
-    let mut out = BufWriter::new(stdout.lock());
+    let mut out = io::stdout().lock();
 
     for arg in args {
         let _ = write!(out, "{arg}");
@@ -52,7 +51,7 @@ fn print(args: &[UVRTValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> 
 
 /// Built-in `println` function
 ///
-/// A newline character is added after each argument is printed.
+/// A newline character is added after last argument.
 ///
 /// Example:
 /// ```xml
@@ -64,16 +63,18 @@ fn print(args: &[UVRTValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> 
 ///
 /// Will output
 /// ```plain
-/// 3
-/// 4
+/// 3 4
 /// ```
 fn println(args: &[UVRTValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
-    let stdout = io::stdout();
-    let mut out = BufWriter::new(stdout.lock());
+    let mut out = io::stdout().lock();
 
-    for arg in args {
-        let _ = writeln!(out, "{arg}");
+    for (i, arg) in args.iter().enumerate() {
+        if i > 0 {
+            let _ = write!(out, " ");
+        }
+        let _ = write!(out, "{arg}");
     }
+    let _ = writeln!(out);
 
     let _ = out.flush();
     Ok(ControlFlow::Simple(UVRTValue::Void))

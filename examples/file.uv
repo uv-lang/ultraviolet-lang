@@ -1,52 +1,8 @@
 <program>
     <main>
-        <fn>
-            <name>rec</name>
+    
 
-            <arg>
-                <name>a</name>
-                <type>
-                    <int />
-                </type>
-            </arg>
-
-            <arg>
-                <name>b</name>
-                <type>
-                    <int />
-                </type>
-            </arg>
-
-            <body>
-                <call println>
-                    <a />
-                </call>
-
-                <!-- If first argument greater than 1000 – interrupt recursion to avoid stack overflow -->
-                <if>
-                    <test>
-                        <gt>
-                            <a />
-                            <int>1000</int>
-                        </gt>
-                    </test>
-                    <then>
-                        <return />
-                    </then>
-                </if>
-
-                <!-- Recursively call `rec` function -->
-                <call rec>
-                    <b />
-                    <sum>
-                        <a />
-                        <b />
-                    </sum>
-                </call>
-            </body>
-        </fn>
-
-        <call rec>
+        <call println>
             <int>0</int>
             <int>1</int>
         </call>

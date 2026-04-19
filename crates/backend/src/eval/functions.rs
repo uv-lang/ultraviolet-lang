@@ -37,8 +37,8 @@ pub fn call_function(call: &FunctionCall, env: EnvRef) -> Result<ControlFlow, Sp
 
     if let UVRTValue::BuiltInFunction(f) = &f.borrow().value {
         let evaluated_args = match eval_args(&call.args, env.clone())? {
-            Ok(args) => args,
-            Err(e) => return Ok(e),
+            EvalArgsResult::Values(v) => v,
+            EvalArgsResult::Flow(cf) => return Ok(cf),
         };
 
         return (f.f)(&evaluated_args, env);
@@ -63,14 +63,10 @@ pub fn call_function(call: &FunctionCall, env: EnvRef) -> Result<ControlFlow, Sp
         ));
     }
 
-    let mut evaluated_args: Vec<UVRTValue> = Vec::new();
-    for arg in &call.args {
-        let v = eval(&arg.value, env.clone())?;
-        evaluated_args.push(match v {
-            ControlFlow::Simple(v) => v,
-            fc => return Ok(fc),
-        });
-    }
+    let evaluated_args = match eval_args(&call.args, env.clone())? {
+        EvalArgsResult::Values(v) => v,
+        EvalArgsResult::Flow(cf) => return Ok(cf),
+    };
 
     let call_env = Environment::new_child(f_struct.lexical_env.clone());
     for (name, value) in f_struct.args_names_order.iter().zip(evaluated_args) {
@@ -87,21 +83,24 @@ pub fn call_function(call: &FunctionCall, env: EnvRef) -> Result<ControlFlow, Sp
     Ok(ControlFlow::Simple(result))
 }
 
-/// Evaluate function args
+/// Possible return types for calculating arguments
 ///
-/// FIXME: Nested result object is anti-pattern
-fn eval_args(
-    args: &Vec<FunctionCallArg>,
-    env: EnvRef,
-) -> Result<Result<Vec<UVRTValue>, ControlFlow>, SpannedError> {
+/// The value inside Flow is propagated upstream
+enum EvalArgsResult {
+    Values(Vec<UVRTValue>),
+    Flow(ControlFlow),
+}
+
+/// Evaluate function args
+fn eval_args(args: &Vec<FunctionCallArg>, env: EnvRef) -> Result<EvalArgsResult, SpannedError> {
     let mut evaluated_args: Vec<UVRTValue> = Vec::new();
     for arg in args {
         let v = eval(&arg.value, env.clone())?;
         evaluated_args.push(match v {
             ControlFlow::Simple(v) => v,
-            fc => return Ok(Err(fc)),
+            fc => return Ok(EvalArgsResult::Flow(fc)),
         });
     }
 
-    Ok(Ok(evaluated_args))
+    Ok(EvalArgsResult::Values(evaluated_args))
 }
