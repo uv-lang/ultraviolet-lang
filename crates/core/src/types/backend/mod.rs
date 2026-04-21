@@ -1,8 +1,11 @@
 use crate::{
     errors::SpannedError,
-    types::{EnvRef, frontend::ast::{ASTBlockType, Number, UVValue}},
+    types::{
+        EnvRef,
+        frontend::ast::{ASTBlockType, Number, UVValue},
+    },
 };
-use std::{rc::Rc};
+use std::rc::Rc;
 pub mod uvvalue_ops;
 
 #[derive(Debug, Clone)]

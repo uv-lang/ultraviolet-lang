@@ -2,7 +2,9 @@ use crate::eval::{eval, eval_block};
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        EnvRef, Environment, backend::{ControlFlow, RTVariable, UVRTValue}, frontend::ast::ConditionalOperator
+        EnvRef, Environment,
+        backend::{ControlFlow, RTVariable, UVRTValue},
+        frontend::ast::ConditionalOperator,
     },
 };
 

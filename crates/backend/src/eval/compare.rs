@@ -1,7 +1,9 @@
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        EnvRef, backend::{ControlFlow, RTVariable, UVRTValue}, frontend::ast::{CompareOp, CompareOpType}
+        EnvRef,
+        backend::{ControlFlow, RTVariable, UVRTValue},
+        frontend::ast::{CompareOp, CompareOpType},
     },
 };
 
