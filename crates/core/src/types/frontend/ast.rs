@@ -72,6 +72,12 @@ impl std::fmt::Display for UVValue {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct UVFunctionType {
+    pub args: Vec<UVType>,
+    pub returns: UVType,
+}
+
 /// Ultraviolet primitive types
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum UVType {
@@ -81,10 +87,36 @@ pub enum UVType {
     Boolean,
     Null,
     Void,
+    Function(Box<UVFunctionType>),
 
     Any,
 
     Union(Vec<UVType>),
+}
+
+impl std::fmt::Display for UVType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UVType::Int => write!(f, "int"),
+            UVType::Float => write!(f, "float"),
+            UVType::String => write!(f, "str"),
+            UVType::Boolean => write!(f, "bool"),
+            UVType::Null => write!(f, "null"),
+            UVType::Void => write!(f, "void"),
+            UVType::Function(_) => write!(f, "<function>"),
+            UVType::Any => write!(f, "any"),
+            UVType::Union(u) => {
+                write!(
+                    f,
+                    "union <{}>",
+                    u.iter()
+                        .map(|i| i.to_string())
+                        .collect::<Vec<_>>()
+                        .join(" | ")
+                )
+            },
+        }
+    }
 }
 
 impl UVType {

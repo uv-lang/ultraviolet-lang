@@ -1,11 +1,14 @@
 <program>
     <main>
-    
-
-        <call println>
-            <int>0</int>
-            <int>1</int>
-        </call>
+        <let>
+            <name>aaa</name>
+            <type>
+                <float />
+            </type>
+            <value>
+                <int>5</int>
+            </value>
+        </let>
     </main>
 
 </program>

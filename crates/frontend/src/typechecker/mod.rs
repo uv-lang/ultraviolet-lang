@@ -7,17 +7,21 @@ use ultraviolet_core::{
     },
 };
 
+use crate::typechecker::variables::check_variable_definition;
+
 mod variables;
 
 pub fn typecheck(block: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedError> {
     Ok(match block {
         ASTBlockType::Program(p) => analyze_program(p, env)?,
         ASTBlockType::MainBlock(m) => analyze_group(&m.value, env)?,
-        ASTBlockType::VariableDefinition(_variable_definition) => todo!(),
-        ASTBlockType::FunctionDefinition(_function_definition) => todo!(),
-        ASTBlockType::FunctionCall(_function_call) => todo!(),
+
+        ASTBlockType::VariableDefinition(vd) => check_variable_definition(vd, env)?,
         ASTBlockType::VariableAssignment(_variable_assign) => todo!(),
         ASTBlockType::VariableAccess(_variable_access) => todo!(),
+
+        ASTBlockType::FunctionDefinition(_function_definition) => todo!(),
+        ASTBlockType::FunctionCall(_function_call) => todo!(),
         ASTBlockType::ConditionalOp(_conditional_operator) => todo!(),
         ASTBlockType::MathOp(_math_op) => todo!(),
         ASTBlockType::LogicalOp(_logical_op) => todo!(),

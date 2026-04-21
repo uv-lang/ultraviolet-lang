@@ -1,4 +1,4 @@
-use std::io::{self, BufWriter, Write};
+use std::io::{self, Write};
 use ultraviolet_core::{
     errors::SpannedError,
     types::backend::{BuiltInFunction, ControlFlow, EnvRef, UVRTValue},

@@ -31,7 +31,7 @@ pub fn process(source: &SourceFile) -> Result<ASTBlockType, SpannedError> {
             .for_each(|e| println!("{}", e.display_with_source(source)));
     }
 
-    //typecheck(&ast, EnvRef::default())?;
+    typecheck(&ast, EnvRef::default())?;
 
     Ok(ast)
 }

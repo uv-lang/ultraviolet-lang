@@ -5,7 +5,7 @@ pub type EnvRef = Rc<RefCell<Environment>>;
 /// Scope-based environment
 #[derive(Default)]
 pub struct Environment {
-    pub symbols: HashMap<String, Symbol>,
+    pub symbols: HashMap<String, Rc<RefCell<Variable>>>,
     pub parent: Option<EnvRef>,
 }
 
@@ -17,6 +17,14 @@ impl Environment {
             parent: Some(parent),
         }))
     }
+
+    /// Define variable type in current scope
+    pub fn define_variable(&mut self, name: impl Into<String>, t: UVType, constant: bool) {
+        self.symbols.insert(
+            name.into(),
+            Rc::new(RefCell::new(Variable::new_from(t, constant))),
+        );
+    }
 }
 
 pub enum ControlFlow {
@@ -24,6 +32,19 @@ pub enum ControlFlow {
     Simple(UVType),
 }
 
-pub enum Symbol {
-    Variable(UVType),
+/// Typecheck variable struct
+#[derive(Debug, Clone)]
+pub struct Variable {
+    pub value: UVType,
+    pub constant: bool,
+}
+
+impl Variable {
+    /// Create new variable from value
+    pub fn new_from(val: UVType, constant: bool) -> Self {
+        Self {
+            value: val,
+            constant,
+        }
+    }
 }
