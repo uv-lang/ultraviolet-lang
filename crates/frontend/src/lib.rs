@@ -1,6 +1,9 @@
 use ultraviolet_core::{
     errors::{SpannedError, error_renderer::ErrorRenderer},
-    types::frontend::{SourceFile, ast::ASTBlockType, typechecker::EnvRef},
+    types::{
+        Environment,
+        frontend::{SourceFile, ast::ASTBlockType},
+    },
 };
 
 use crate::{
@@ -31,7 +34,7 @@ pub fn process(source: &SourceFile) -> Result<ASTBlockType, SpannedError> {
             .for_each(|e| println!("{}", e.display_with_source(source)));
     }
 
-    typecheck(&ast, EnvRef::default())?;
+    typecheck(&ast, Environment::new())?;
 
     Ok(ast)
 }

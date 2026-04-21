@@ -1,15 +1,14 @@
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef, UVRTValue},
-        frontend::ast::{CompareOp, CompareOpType},
+        EnvRef, backend::{ControlFlow, RTVariable, UVRTValue}, frontend::ast::{CompareOp, CompareOpType}
     },
 };
 
 use crate::EvalOps;
 
 impl EvalOps for CompareOp {
-    fn eval(&self, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+    fn eval(&self, env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
         self._eval_with_operands(&self.operands, env)
     }
 

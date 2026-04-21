@@ -2,15 +2,14 @@ use crate::eval::{eval, eval_block};
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef, Environment, UVRTValue},
-        frontend::ast::ConditionalOperator,
+        EnvRef, Environment, backend::{ControlFlow, RTVariable, UVRTValue}, frontend::ast::ConditionalOperator
     },
 };
 
 /// Evaluate conditional operator
 pub fn eval_conditional_op(
     co: &ConditionalOperator,
-    env: EnvRef,
+    env: EnvRef<RTVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let cf = eval(&co.test, env.clone())?;
     let ControlFlow::Simple(evaluated_test) = cf else {

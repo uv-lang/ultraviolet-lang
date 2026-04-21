@@ -2,13 +2,14 @@
     <main>
         <let>
             <name>aaa</name>
-            <type>
-                <float />
-            </type>
             <value>
                 <int>5</int>
             </value>
         </let>
+
+        <aaa>
+            <float>1.5</float>
+        </aaa>
     </main>
 
 </program>

@@ -1,7 +1,8 @@
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef, UVRTValue},
+        EnvRef, Environment,
+        backend::{ControlFlow, RTVariable, UVRTValue},
         frontend::ast::ASTBlockType,
     },
 };
@@ -13,7 +14,7 @@ mod eval;
 
 /** Evaluate code */
 pub fn eval(node: &ASTBlockType) -> Result<ControlFlow, SpannedError> {
-    let env = EnvRef::default();
+    let env = Environment::new();
 
     init_builtin_constants(env.clone());
     init_builtin_functions(env.clone());
@@ -22,13 +23,13 @@ pub fn eval(node: &ASTBlockType) -> Result<ControlFlow, SpannedError> {
 
 pub trait EvalOps {
     /// Evaluate operation
-    fn eval(&self, env: EnvRef) -> Result<ControlFlow, SpannedError>;
+    fn eval(&self, env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError>;
 
     /// Evaluate operands and eval expr
     fn _eval_with_operands(
         &self,
         ops: &Vec<ASTBlockType>,
-        env: EnvRef,
+        env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
         let mut values = Vec::new();
 

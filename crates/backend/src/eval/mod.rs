@@ -11,7 +11,8 @@ use crate::{
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef, Environment, UVRTValue},
+        EnvRef, Environment,
+        backend::{ControlFlow, RTVariable, UVRTValue},
         frontend::{Spanned, ast::ASTBlockType},
     },
 };
@@ -24,7 +25,7 @@ mod math;
 mod program;
 mod variables;
 
-pub fn eval(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+pub fn eval(node: &ASTBlockType, env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
     Ok(match node {
         // Main program and others service blocks
         ASTBlockType::Program(program_block) => eval_program(program_block, env)?,
@@ -59,7 +60,10 @@ pub fn eval(node: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedErro
 }
 
 /// Eval every block in node vector
-fn eval_block(nodes: &Vec<ASTBlockType>, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+fn eval_block(
+    nodes: &Vec<ASTBlockType>,
+    env: EnvRef<RTVariable>,
+) -> Result<ControlFlow, SpannedError> {
     let new_env = Environment::new_child(env);
 
     let mut last_eval_simple_val = UVRTValue::Void;
@@ -77,7 +81,7 @@ fn eval_block(nodes: &Vec<ASTBlockType>, env: EnvRef) -> Result<ControlFlow, Spa
 /// Evaluate return block
 fn eval_return(
     body: &Spanned<Option<Box<ASTBlockType>>>,
-    env: EnvRef,
+    env: EnvRef<RTVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let Some(ref b) = body.value else {
         return Ok(ControlFlow::Return(UVRTValue::Void));

@@ -1,27 +1,36 @@
 use std::io::{self, Write};
 use ultraviolet_core::{
     errors::SpannedError,
-    types::backend::{BuiltInFunction, ControlFlow, EnvRef, UVRTValue},
+    types::{
+        EnvRef,
+        backend::{BuiltInFunction, ControlFlow, RTVariable, UVRTValue},
+    },
 };
 
 /// Initialize built-in functions into environ
-pub fn init_builtin_functions(env: EnvRef) {
+pub fn init_builtin_functions(env: EnvRef<RTVariable>) {
     let mut borrowed_env = env.borrow_mut();
 
     borrowed_env.define_variable(
         "print",
-        UVRTValue::BuiltInFunction(BuiltInFunction::new_from(print)),
-        true,
+        RTVariable::new_from(
+            UVRTValue::BuiltInFunction(BuiltInFunction::new_from(print)),
+            true,
+        ),
     );
     borrowed_env.define_variable(
         "println",
-        UVRTValue::BuiltInFunction(BuiltInFunction::new_from(println)),
-        true,
+        RTVariable::new_from(
+            UVRTValue::BuiltInFunction(BuiltInFunction::new_from(println)),
+            true,
+        ),
     );
     borrowed_env.define_variable(
         "read",
-        UVRTValue::BuiltInFunction(BuiltInFunction::new_from(read)),
-        true,
+        RTVariable::new_from(
+            UVRTValue::BuiltInFunction(BuiltInFunction::new_from(read)),
+            true,
+        ),
     );
 }
 
@@ -38,7 +47,7 @@ pub fn init_builtin_functions(env: EnvRef) {
 /// ```
 ///
 /// Will output `34`
-fn print(args: &[UVRTValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
+fn print(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
     let mut out = io::stdout().lock();
 
     for arg in args {
@@ -65,7 +74,7 @@ fn print(args: &[UVRTValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> 
 /// ```plain
 /// 3 4
 /// ```
-fn println(args: &[UVRTValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
+fn println(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
     let mut out = io::stdout().lock();
 
     for (i, arg) in args.iter().enumerate() {
@@ -87,7 +96,7 @@ fn println(args: &[UVRTValue], _env: EnvRef) -> Result<ControlFlow, SpannedError
 ///
 /// If the string is successfully received, returns UVValue::String,
 /// If getting the string failed, returns UVValue::Null
-fn read(args: &[UVRTValue], _env: EnvRef) -> Result<ControlFlow, SpannedError> {
+fn read(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
     // Print an initial input prompt if provided
     if let Some(arg) = args.first() {
         print!("{arg}");

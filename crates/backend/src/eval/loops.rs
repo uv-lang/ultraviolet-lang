@@ -1,7 +1,8 @@
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef, Environment, UVRTValue},
+        EnvRef, Environment,
+        backend::{ControlFlow, RTVariable, UVRTValue},
         frontend::ast::{ForLoop, Number, WhileLoop},
     },
 };
@@ -9,7 +10,10 @@ use ultraviolet_core::{
 use crate::eval::{eval, eval_block};
 
 /// Evaluate for loop
-pub fn eval_for_loop(for_node: &ForLoop, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+pub fn eval_for_loop(
+    for_node: &ForLoop,
+    env: EnvRef<RTVariable>,
+) -> Result<ControlFlow, SpannedError> {
     let start_flow = eval(&for_node.start, env.clone())?;
     let ControlFlow::Simple(start) = start_flow else {
         return Ok(start_flow);
@@ -33,8 +37,10 @@ pub fn eval_for_loop(for_node: &ForLoop, env: EnvRef) -> Result<ControlFlow, Spa
 
     // FIXME: Должен ли интерпретатор создавать итератор в родительском скоупе для
     // снижения количества аллокаций для нового скоупа?
-    env.borrow_mut()
-        .define_variable(for_node.iterator.value.clone(), start.clone(), false);
+    env.borrow_mut().define_variable(
+        for_node.iterator.value.clone(),
+        RTVariable::new_from(start.clone(), false),
+    );
 
     let loop_env = Environment::new_child(env.clone());
 
@@ -71,7 +77,10 @@ pub fn eval_for_loop(for_node: &ForLoop, env: EnvRef) -> Result<ControlFlow, Spa
 }
 
 /// Eval while loop
-pub fn eval_while_loop(while_node: &WhileLoop, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+pub fn eval_while_loop(
+    while_node: &WhileLoop,
+    env: EnvRef<RTVariable>,
+) -> Result<ControlFlow, SpannedError> {
     loop {
         let test = eval(&while_node.test, env.clone())?;
         let test_res = match test {

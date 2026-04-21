@@ -1,65 +1,19 @@
 use crate::{
     errors::SpannedError,
-    types::frontend::ast::{ASTBlockType, Number, UVValue},
+    types::{EnvRef, frontend::ast::{ASTBlockType, Number, UVValue}},
 };
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{rc::Rc};
 pub mod uvvalue_ops;
-
-pub type EnvRef = Rc<RefCell<Environment>>;
-
-/// Scope-based environment
-#[derive(Default, Debug)]
-pub struct Environment {
-    pub symbols: HashMap<String, Rc<RefCell<RTVariable>>>,
-    pub parent: Option<EnvRef>,
-}
-
-impl Environment {
-    /// Create new children environment from parent
-    pub fn new_child(parent: EnvRef) -> EnvRef {
-        Rc::new(RefCell::new(Self {
-            symbols: HashMap::new(),
-            parent: Some(parent),
-        }))
-    }
-
-    /// Find symbol by name
-    pub fn find_var(&self, name: impl Into<String>) -> Option<Rc<RefCell<RTVariable>>> {
-        let n = name.into();
-        if let Some(sym) = self.symbols.get(&n) {
-            return Some(sym.clone());
-        }
-
-        if let Some(parent) = &self.parent {
-            return parent.borrow().find_var(&n);
-        }
-
-        None
-    }
-
-    /// Define variable in current scope
-    pub fn define_variable(&mut self, name: impl Into<String>, value: UVRTValue, constant: bool) {
-        self.symbols.insert(
-            name.into(),
-            Rc::new(RefCell::new(RTVariable::new_from(value, constant))),
-        );
-    }
-
-    /// Remove symbol from CURRENT scope
-    pub fn remove_symbol(&mut self, name: impl Into<String>) -> bool {
-        self.symbols.remove(&name.into()).is_some()
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct RTFunction {
     pub args_names_order: Vec<String>,
     pub body: Rc<Vec<ASTBlockType>>,
-    pub lexical_env: EnvRef,
+    pub lexical_env: EnvRef<RTVariable>,
 }
 
 pub type BuiltinFunctionSignature =
-    fn(args: &[UVRTValue], env: EnvRef) -> Result<ControlFlow, SpannedError>;
+    fn(args: &[UVRTValue], env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError>;
 
 #[derive(Debug, Clone)]
 /// Function built into the interpreter

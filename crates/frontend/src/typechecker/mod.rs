@@ -1,23 +1,29 @@
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::ast::GetType,
-    types::frontend::{
-        ast::{ASTBlockType, ProgramBlock, UVType},
-        typechecker::{ControlFlow, EnvRef, Environment},
+    types::{
+        EnvRef, Environment,
+        frontend::{
+            ast::{ASTBlockType, ProgramBlock, UVType},
+            typechecker::{ControlFlow, UVTypeVariable},
+        },
     },
 };
 
-use crate::typechecker::variables::check_variable_definition;
+use crate::typechecker::variables::{check_variable_assign, check_variable_definition};
 
 mod variables;
 
-pub fn typecheck(block: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+pub fn typecheck(
+    block: &ASTBlockType,
+    env: EnvRef<UVTypeVariable>,
+) -> Result<ControlFlow, SpannedError> {
     Ok(match block {
         ASTBlockType::Program(p) => analyze_program(p, env)?,
         ASTBlockType::MainBlock(m) => analyze_group(&m.value, env)?,
 
         ASTBlockType::VariableDefinition(vd) => check_variable_definition(vd, env)?,
-        ASTBlockType::VariableAssignment(_variable_assign) => todo!(),
+        ASTBlockType::VariableAssignment(va) => check_variable_assign(va, env)?,
         ASTBlockType::VariableAccess(_variable_access) => todo!(),
 
         ASTBlockType::FunctionDefinition(_function_definition) => todo!(),
@@ -38,7 +44,10 @@ pub fn typecheck(block: &ASTBlockType, env: EnvRef) -> Result<ControlFlow, Spann
 }
 
 /// Analyze main program block
-fn analyze_program(pr: &ProgramBlock, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+fn analyze_program(
+    pr: &ProgramBlock,
+    env: EnvRef<UVTypeVariable>,
+) -> Result<ControlFlow, SpannedError> {
     let new_env = Environment::new_child(env);
     typecheck(&pr.main, new_env)?;
 
@@ -49,7 +58,10 @@ fn analyze_program(pr: &ProgramBlock, env: EnvRef) -> Result<ControlFlow, Spanne
 ///
 /// Handle return and passes upstream
 /// Returns latest block type as group type
-fn analyze_group(blocks: &Vec<ASTBlockType>, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+fn analyze_group(
+    blocks: &Vec<ASTBlockType>,
+    env: EnvRef<UVTypeVariable>,
+) -> Result<ControlFlow, SpannedError> {
     let new_env = Environment::new_child(env);
 
     let mut last_type = UVType::Void;
@@ -66,7 +78,7 @@ fn analyze_group(blocks: &Vec<ASTBlockType>, env: EnvRef) -> Result<ControlFlow,
 /// Analyze return block
 fn analyze_return(
     body: &Option<Box<ASTBlockType>>,
-    env: EnvRef,
+    env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let Some(b) = body else {
         return Ok(ControlFlow::Return(UVType::Void));

@@ -2,7 +2,8 @@ use crate::eval::eval;
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef, Environment, UVRTValue},
+        EnvRef, Environment,
+        backend::{ControlFlow, RTVariable, UVRTValue},
         frontend::ast::{VariableAccess, VariableAssign, VariableDefinition},
     },
 };
@@ -10,7 +11,7 @@ use ultraviolet_core::{
 /// Define variable
 pub fn define_variable(
     var_def: &VariableDefinition,
-    env: EnvRef,
+    env: EnvRef<RTVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     if env.borrow().find_var(var_def.name.value.clone()).is_some() {
         return Err(SpannedError::new(
@@ -23,8 +24,7 @@ pub fn define_variable(
         ControlFlow::Simple(value) => {
             env.borrow_mut().define_variable(
                 var_def.name.value.clone(),
-                value.clone(),
-                var_def.is_const,
+                RTVariable::new_from(value.clone(), var_def.is_const),
             );
             Ok(ControlFlow::Simple(UVRTValue::Void))
         },
@@ -33,7 +33,10 @@ pub fn define_variable(
 }
 
 /// Access variable by value
-pub fn access_variable(var_acc: &VariableAccess, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+pub fn access_variable(
+    var_acc: &VariableAccess,
+    env: EnvRef<RTVariable>,
+) -> Result<ControlFlow, SpannedError> {
     match env.borrow().find_var(var_acc.name.clone()) {
         Some(sym) => Ok(ControlFlow::Simple(sym.borrow().clone().value)),
         None => Err(SpannedError::new(
@@ -46,7 +49,7 @@ pub fn access_variable(var_acc: &VariableAccess, env: EnvRef) -> Result<ControlF
 /// Assign to a variable
 pub fn assign_variable(
     assign_var: &VariableAssign,
-    env: EnvRef,
+    env: EnvRef<RTVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let sym = env
         .borrow()

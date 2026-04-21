@@ -1,7 +1,8 @@
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef, Environment, RTFunction, UVRTValue},
+        EnvRef, Environment,
+        backend::{ControlFlow, RTFunction, RTVariable, UVRTValue},
         frontend::ast::{FunctionCall, FunctionCallArg, FunctionDefinition},
     },
 };
@@ -9,17 +10,22 @@ use ultraviolet_core::{
 use crate::eval::{eval, eval_block};
 
 /// Defines function in provided scope
-pub fn define_function(def: &FunctionDefinition, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+pub fn define_function(
+    def: &FunctionDefinition,
+    env: EnvRef<RTVariable>,
+) -> Result<ControlFlow, SpannedError> {
     let args: Vec<String> = def.arguments.iter().map(|e| e.name.value.clone()).collect();
 
     env.borrow_mut().define_variable(
         def.name.value.clone(),
-        UVRTValue::Function(RTFunction {
-            args_names_order: args,
-            body: def.body.clone(),
-            lexical_env: env.clone(),
-        }),
-        false,
+        RTVariable::new_from(
+            UVRTValue::Function(RTFunction {
+                args_names_order: args,
+                body: def.body.clone(),
+                lexical_env: env.clone(),
+            }),
+            false,
+        ),
     );
 
     // Maybe let the definition return the function itself?
@@ -27,7 +33,10 @@ pub fn define_function(def: &FunctionDefinition, env: EnvRef) -> Result<ControlF
 }
 
 /// Call function
-pub fn call_function(call: &FunctionCall, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+pub fn call_function(
+    call: &FunctionCall,
+    env: EnvRef<RTVariable>,
+) -> Result<ControlFlow, SpannedError> {
     let Some(f) = env.borrow().find_var(call.name.clone()) else {
         return Err(SpannedError::new(
             format!("`{}` not found", call.name),
@@ -70,7 +79,9 @@ pub fn call_function(call: &FunctionCall, env: EnvRef) -> Result<ControlFlow, Sp
 
     let call_env = Environment::new_child(f_struct.lexical_env.clone());
     for (name, value) in f_struct.args_names_order.iter().zip(evaluated_args) {
-        call_env.borrow_mut().define_variable(name, value, true);
+        call_env
+            .borrow_mut()
+            .define_variable(name, RTVariable::new_from(value, true));
     }
 
     let body_res = eval_block(&f_struct.body, call_env)?;
@@ -92,7 +103,10 @@ enum EvalArgsResult {
 }
 
 /// Evaluate function args
-fn eval_args(args: &Vec<FunctionCallArg>, env: EnvRef) -> Result<EvalArgsResult, SpannedError> {
+fn eval_args(
+    args: &Vec<FunctionCallArg>,
+    env: EnvRef<RTVariable>,
+) -> Result<EvalArgsResult, SpannedError> {
     let mut evaluated_args: Vec<UVRTValue> = Vec::new();
     for arg in args {
         let v = eval(&arg.value, env.clone())?;

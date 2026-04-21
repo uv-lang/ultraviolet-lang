@@ -1,7 +1,8 @@
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        backend::{ControlFlow, EnvRef, UVRTValue},
+        EnvRef,
+        backend::{ControlFlow, RTVariable, UVRTValue},
         frontend::ast::{MathOp, MathOpType},
     },
 };
@@ -9,7 +10,7 @@ use ultraviolet_core::{
 use crate::EvalOps;
 
 impl EvalOps for MathOp {
-    fn eval(&self, env: EnvRef) -> Result<ControlFlow, SpannedError> {
+    fn eval(&self, env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
         self._eval_with_operands(&self.operands, env)
     }
 
