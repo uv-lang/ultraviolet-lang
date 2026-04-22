@@ -7,7 +7,7 @@ use crate::types::{
 };
 
 /// Initializes builtin function types into the passed environment
-pub fn init_builtins_types(env: EnvRef<UVTypeVariable>) {
+pub fn init_builtin_types_functions(env: EnvRef<UVTypeVariable>) {
     let mut borrowed_env = env.borrow_mut();
 
     borrowed_env.define_variable(
