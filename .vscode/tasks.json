@@ -69,8 +69,7 @@
                     "label": "$(beaker) Test"
                 }
             }
-        }
-        ,
+        },
         {
             "label": "Clippy",
             "detail": "Run Clippy Test",
@@ -89,6 +88,27 @@
             "options": {
                 "statusbar": {
                     "label": "$(sparkle) Clippy"
+                }
+            }
+        },
+        {
+            "label": "Rust fmt",
+            "detail": "Run rust fmt",
+            "type": "shell",
+            "command": "cargo fmt",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "runOptions": {
+                "reevaluateOnRerun": true
+            },
+            "options": {
+                "statusbar": {
+                    "label": "$(sparkle) Rust fmt"
                 }
             }
         }

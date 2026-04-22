@@ -1,10 +1,14 @@
 use crate::{
     errors::SpannedError,
     types::{
-        EnvRef, Environment, frontend::ast::{ASTBlockType, Number, UVValue}
+        EnvRef, Environment,
+        frontend::ast::{ASTBlockType, Number, UVValue},
     },
 };
-use std::{cell::RefCell, rc::{Rc, Weak}};
+use std::{
+    cell::RefCell,
+    rc::{Rc, Weak},
+};
 pub mod uvvalue_ops;
 
 #[derive(Debug, Clone)]
