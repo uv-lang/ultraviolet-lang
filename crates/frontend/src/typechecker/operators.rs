@@ -18,7 +18,7 @@ pub fn check_math_op(
 ) -> Result<ControlFlow, SpannedError> {
     let mut op_types = Vec::new();
     for operand in &op.operands {
-        let t = match typecheck(&operand, env.clone())? {
+        let t = match typecheck(operand, env.clone())? {
             ControlFlow::Simple(t) => t,
             cf => return Ok(cf),
         };
@@ -99,7 +99,7 @@ pub fn check_logical_op(
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     for operand in &op.operands {
-        let t = match typecheck(&operand, env.clone())? {
+        let t = match typecheck(operand, env.clone())? {
             ControlFlow::Simple(t) => t,
             cf => return Ok(cf),
         };

@@ -32,13 +32,13 @@ pub fn typecheck(
         ASTBlockType::VariableAssignment(va) => check_variable_assign(va, env)?,
         ASTBlockType::VariableAccess(va) => check_variable_access(va, env)?,
 
-        ASTBlockType::FunctionDefinition(fd) => check_function_definition(&fd, env)?,
-        ASTBlockType::FunctionCall(fc) => check_function_call(&fc, env)?,
+        ASTBlockType::FunctionDefinition(fd) => check_function_definition(fd, env)?,
+        ASTBlockType::FunctionCall(fc) => check_function_call(fc, env)?,
 
-        ASTBlockType::ConditionalOp(co) => check_conditional_op(&co, env)?,
-        ASTBlockType::MathOp(mo) => check_math_op(&mo, env)?,
-        ASTBlockType::LogicalOp(lo) => check_logical_op(&lo, env)?,
-        ASTBlockType::CompareOp(co) => check_compare_op(&co, env)?,
+        ASTBlockType::ConditionalOp(co) => check_conditional_op(co, env)?,
+        ASTBlockType::MathOp(mo) => check_math_op(mo, env)?,
+        ASTBlockType::LogicalOp(lo) => check_logical_op(lo, env)?,
+        ASTBlockType::CompareOp(co) => check_compare_op(co, env)?,
 
         ASTBlockType::ForLoop(_for_loop) => todo!(),
         ASTBlockType::WhileLoop(_while_loop) => todo!(),
