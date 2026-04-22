@@ -98,7 +98,7 @@ pub fn eval_while_loop(
         }
 
         let loop_env = Environment::new_child(env.clone());
-        let result = eval_block(&while_node.body, loop_env.clone())?;
+        let result = eval_block(&while_node.body, loop_env)?;
         match result {
             ControlFlow::Simple(_) | ControlFlow::Continue => {},
             ControlFlow::Break => break,

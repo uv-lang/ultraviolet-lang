@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
@@ -22,7 +24,7 @@ pub fn define_function(
             UVRTValue::Function(RTFunction {
                 args_names_order: args,
                 body: def.body.clone(),
-                lexical_env: env.clone(),
+                lexical_env: Rc::downgrade(&env),
             }),
             false,
         ),
@@ -77,7 +79,12 @@ pub fn call_function(
         EvalArgsResult::Flow(cf) => return Ok(cf),
     };
 
-    let call_env = Environment::new_child(f_struct.lexical_env.clone());
+    let call_env = Environment::new_child(
+        f_struct
+            .lexical_env
+            .upgrade()
+            .ok_or_else(|| SpannedError::new("Lexical environment no longer exists", call.span))?,
+    );
     for (name, value) in f_struct.args_names_order.iter().zip(evaluated_args) {
         call_env
             .borrow_mut()

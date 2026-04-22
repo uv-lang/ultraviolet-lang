@@ -1,13 +1,42 @@
 <program>
-
-    <head>
-    </head>
-
     <main>
 
-        <call println>
-            <os.arch />
-        </call>
+        <let>
+            <name>i</name>
+            <value>
+                <int>0</int>
+            </value>
+        </let>
+
+        <while>
+            <test>
+                <lt>
+                    <i />
+                    <int>1000000</int>
+                </lt>
+            </test>
+
+            <body>
+
+                <!-- создаём новые переменные каждый раз -->
+                <let>
+                    <name>tmp</name>
+                    <value>
+                        <sum>
+                            <i />
+                            <int>1</int>
+                        </sum>
+                    </value>
+                </let>
+
+                <fn>
+                    <name>evil</name>
+
+                    <body></body>
+                </fn>
+
+            </body>
+        </while>
 
     </main>
 </program>

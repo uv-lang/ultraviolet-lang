@@ -1,18 +1,17 @@
 use crate::{
     errors::SpannedError,
     types::{
-        EnvRef,
-        frontend::ast::{ASTBlockType, Number, UVValue},
+        EnvRef, Environment, frontend::ast::{ASTBlockType, Number, UVValue}
     },
 };
-use std::rc::Rc;
+use std::{cell::RefCell, rc::{Rc, Weak}};
 pub mod uvvalue_ops;
 
 #[derive(Debug, Clone)]
 pub struct RTFunction {
     pub args_names_order: Vec<String>,
     pub body: Rc<Vec<ASTBlockType>>,
-    pub lexical_env: EnvRef<RTVariable>,
+    pub lexical_env: Weak<RefCell<Environment<RTVariable>>>,
 }
 
 pub type BuiltinFunctionSignature =
