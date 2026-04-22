@@ -1,12 +1,22 @@
-use std::path::Path;
+use std::{env::args, path::Path};
 use ultraviolet_core::{
     errors::{SpannedError, error_renderer::ErrorRenderer},
     types::{backend::ControlFlow, frontend::SourceFile},
 };
 
-fn main() {
-    let source = SourceFile::load(Path::new("./examples/file.uv")).unwrap();
+use crate::help::print_help;
 
+mod help;
+
+fn main() {
+    let args: Vec<String> = args().collect();
+
+    let path = match args.get(1) {
+        Some(path) => path,
+        None => print_help(),
+    };
+
+    let source = SourceFile::load(Path::new(path)).unwrap();
     let ret = run(&source).map_err(|err| {
         eprintln!("{}", err.display_with_source(&source));
     });

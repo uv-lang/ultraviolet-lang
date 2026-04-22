@@ -7,7 +7,9 @@
             "type": "shell",
             "command": "cargo",
             "args": [
-                "run"
+                "run",
+                "--",
+                "examples/file.uv"
             ],
             "group": {
                 "kind": "test",
