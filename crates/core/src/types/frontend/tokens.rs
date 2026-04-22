@@ -129,7 +129,7 @@ impl Positional for UVParseBody {
     }
 }
 
-impl<T: Positional + Clone> UnwrapOptionError<T> for Option<T> {
+impl<T: Clone> UnwrapOptionError<T> for Option<T> {
     fn unwrap_or_spanned(&self, parent_span: Span) -> Result<T, crate::errors::SpannedError> {
         self.clone().ok_or(SpannedError::new(
             "[INTERNAL ERROR] Cannot unwrap Option value",

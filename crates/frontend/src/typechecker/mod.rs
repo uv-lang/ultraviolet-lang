@@ -12,11 +12,13 @@ use ultraviolet_core::{
 
 use crate::typechecker::{
     functions::{check_function_call, check_function_definition},
+    loops::{check_for_loop, check_while_loop},
     operators::{check_compare_op, check_conditional_op, check_logical_op, check_math_op},
     variables::{check_variable_access, check_variable_assign, check_variable_definition},
 };
 
 mod functions;
+mod loops;
 mod operators;
 mod variables;
 
@@ -40,8 +42,8 @@ pub fn typecheck(
         ASTBlockType::LogicalOp(lo) => check_logical_op(lo, env)?,
         ASTBlockType::CompareOp(co) => check_compare_op(co, env)?,
 
-        ASTBlockType::ForLoop(_for_loop) => todo!(),
-        ASTBlockType::WhileLoop(_while_loop) => todo!(),
+        ASTBlockType::ForLoop(fl) => check_for_loop(fl, env)?,
+        ASTBlockType::WhileLoop(wl) => check_while_loop(wl, env)?,
 
         ASTBlockType::Value(v) => ControlFlow::Simple(v.value.get_type()),
         ASTBlockType::GroupBlock(g) => analyze_group(&g.value, env)?,

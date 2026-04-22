@@ -47,7 +47,7 @@ pub fn eval_for_loop(
     loop {
         let current = env.borrow().find_var(&for_node.iterator.value).unwrap(); // Lol, is this even panicable?
 
-        if current.borrow().value >= end {
+        if current.borrow().value > end {
             break;
         }
 

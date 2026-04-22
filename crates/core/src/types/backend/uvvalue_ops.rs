@@ -2,6 +2,8 @@ use std::ops::{Add, Div, Mul, Rem, Sub};
 
 use crate::types::{backend::UVRTValue, frontend::ast::Number};
 
+// FIXME: FUCK TYPECAST TO FLOAT!!!
+
 impl Number {
     // FIXME: Is this correct?
     /// Cast number to f64
