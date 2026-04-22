@@ -4,7 +4,7 @@ use ultraviolet_core::{
     types::{
         EnvRef,
         frontend::{
-            ast::{UVType, VariableAssign, VariableDefinition},
+            ast::{UVType, VariableAccess, VariableAssign, VariableDefinition},
             typechecker::{ControlFlow, UVTypeVariable},
         },
     },
@@ -17,27 +17,34 @@ pub fn check_variable_definition(
     vd: &VariableDefinition,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
-    let val = match typecheck(&vd.value.value, env.clone())? {
+    let mut val = match typecheck(&vd.value.value, env.clone())? {
         ControlFlow::Simple(uvtype) => uvtype,
         cf => return Ok(cf),
     };
 
-    if let Some(expected) = &vd.expected_type
-        && !expected.value.is_assignable_from(&val)
-    {
+    if let Some(expected) = &vd.expected_type {
+        if !expected.value.is_assignable_from(&val) {
+            return Err(SpannedError::new(
+                format!(
+                    "Expected type `{}`, got `{}` for variable `{}`",
+                    expected.value, val, vd.name.value
+                ),
+                vd.value.span,
+            ));
+        }
+
+        val = expected.value.clone();
+    }
+
+    if env.borrow().find_var(&vd.name.value).is_some() {
         return Err(SpannedError::new(
-            format!(
-                "Mismatched types: variable `{}` expected type `{}` but type `{}` is provided",
-                vd.name.value, expected.value, val
-            ),
-            vd.value.span,
+            format!("Variable with name {} already defined", vd.name.value),
+            vd.span,
         ));
     }
 
-    env.borrow_mut().define_variable(
-        vd.name.value.clone(),
-        UVTypeVariable::new_from(val, vd.is_const),
-    );
+    env.borrow_mut()
+        .define_variable(&vd.name.value, UVTypeVariable::new_from(val, vd.is_const));
 
     Ok(ControlFlow::Simple(UVType::Void))
 }
@@ -47,9 +54,9 @@ pub fn check_variable_assign(
     va: &VariableAssign,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
-    let Some(var_rc) = env.borrow().find_var(va.name.clone()) else {
+    let Some(var_rc) = env.borrow().find_var(&va.name) else {
         return Err(SpannedError::new(
-            format!("Variable `{}` not found", va.name),
+            format!("Variable `{}` not defined", va.name),
             va.span,
         ));
     };
@@ -70,12 +77,27 @@ pub fn check_variable_assign(
     if !var.value.is_assignable_from(&t) {
         return Err(SpannedError::new(
             format!(
-                "Mismatched types: variable `{}` expected type `{}` but type `{}` is provided",
-                va.name, var.value, t
+                "Expected type `{}`, got `{}` for variable `{}`",
+                var.value, t, va.name
             ),
             va.value.span,
         ));
     }
 
     Ok(ControlFlow::Simple(UVType::Void))
+}
+
+/// Check variable is defined and get its type
+pub fn check_variable_access(
+    va: &VariableAccess,
+    env: EnvRef<UVTypeVariable>,
+) -> Result<ControlFlow, SpannedError> {
+    let Some(var_rc) = env.borrow().find_var(&va.name) else {
+        return Err(SpannedError::new(
+            format!("Variable `{}` not defined", va.name),
+            va.span,
+        ));
+    };
+
+    Ok(ControlFlow::Simple(var_rc.borrow().value.clone()))
 }

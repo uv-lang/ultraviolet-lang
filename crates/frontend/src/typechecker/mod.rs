@@ -10,7 +10,9 @@ use ultraviolet_core::{
     },
 };
 
-use crate::typechecker::variables::{check_variable_assign, check_variable_definition};
+use crate::typechecker::variables::{
+    check_variable_access, check_variable_assign, check_variable_definition,
+};
 
 mod variables;
 
@@ -24,10 +26,11 @@ pub fn typecheck(
 
         ASTBlockType::VariableDefinition(vd) => check_variable_definition(vd, env)?,
         ASTBlockType::VariableAssignment(va) => check_variable_assign(va, env)?,
-        ASTBlockType::VariableAccess(_variable_access) => todo!(),
+        ASTBlockType::VariableAccess(va) => check_variable_access(va, env)?,
 
         ASTBlockType::FunctionDefinition(_function_definition) => todo!(),
         ASTBlockType::FunctionCall(_function_call) => todo!(),
+        
         ASTBlockType::ConditionalOp(_conditional_operator) => todo!(),
         ASTBlockType::MathOp(_math_op) => todo!(),
         ASTBlockType::LogicalOp(_logical_op) => todo!(),

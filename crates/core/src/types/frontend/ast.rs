@@ -108,7 +108,7 @@ impl std::fmt::Display for UVType {
             UVType::Union(u) => {
                 write!(
                     f,
-                    "union <{}>",
+                    "{}",
                     u.iter()
                         .map(|i| i.to_string())
                         .collect::<Vec<_>>()
