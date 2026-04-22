@@ -1,24 +1,55 @@
 <program>
     <main>
-        <let>
-            <name>aaa</name>
-            <type>
-                <union>
+        <fn>
+            <name>rec</name>
+
+            <arg>
+                <name>a</name>
+                <type>
                     <int />
-                    <null />
-                </union>
-            </type>
+                </type>
+            </arg>
 
-            <value>
-                <int>5</int>
-            </value>
-        </let>
+            <arg>
+                <name>b</name>
+                <type>
+                    <int />
+                </type>
+            </arg>
 
-        <aaa>
-            <null />
-        </aaa>
+            <body>
+                <call println>
+                    <a />
+                </call>
 
-        <aaa />
+                <!-- If first argument greater than 1000 – interrupt recursion to avoid stack overflow -->
+                <if>
+                    <test>
+                        <gt>
+                            <a />
+                            <int>1000</int>
+                        </gt>
+                    </test>
+                    <then>
+                        <return />
+                    </then>
+                </if>
+
+                <!-- Recursively call `rec` function -->
+                <call rec>
+                    <b />
+                    <sum>
+                        <a />
+                        <b />
+                    </sum>
+                </call>
+            </body>
+        </fn>
+
+        <call rec>
+            <int>0</int>
+            <int>1</int>
+        </call>
     </main>
 
 </program>

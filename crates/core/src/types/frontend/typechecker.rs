@@ -14,10 +14,7 @@ pub struct UVTypeVariable {
 
 impl UVTypeVariable {
     /// Create new variable from value
-    pub fn new_from(val: UVType, constant: bool) -> Self {
-        Self {
-            value: val,
-            constant,
-        }
+    pub fn new_from(t: UVType, constant: bool) -> Self {
+        Self { value: t, constant }
     }
 }

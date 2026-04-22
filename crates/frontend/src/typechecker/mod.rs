@@ -10,10 +10,14 @@ use ultraviolet_core::{
     },
 };
 
-use crate::typechecker::variables::{
-    check_variable_access, check_variable_assign, check_variable_definition,
+use crate::typechecker::{
+    functions::{check_function_call, check_function_definition},
+    operators::{check_compare_op, check_conditional_op, check_logical_op, check_math_op},
+    variables::{check_variable_access, check_variable_assign, check_variable_definition},
 };
 
+mod functions;
+mod operators;
 mod variables;
 
 pub fn typecheck(
@@ -28,15 +32,17 @@ pub fn typecheck(
         ASTBlockType::VariableAssignment(va) => check_variable_assign(va, env)?,
         ASTBlockType::VariableAccess(va) => check_variable_access(va, env)?,
 
-        ASTBlockType::FunctionDefinition(_function_definition) => todo!(),
-        ASTBlockType::FunctionCall(_function_call) => todo!(),
-        
-        ASTBlockType::ConditionalOp(_conditional_operator) => todo!(),
-        ASTBlockType::MathOp(_math_op) => todo!(),
-        ASTBlockType::LogicalOp(_logical_op) => todo!(),
-        ASTBlockType::CompareOp(_compare_op) => todo!(),
+        ASTBlockType::FunctionDefinition(fd) => check_function_definition(&fd, env)?,
+        ASTBlockType::FunctionCall(fc) => check_function_call(&fc, env)?,
+
+        ASTBlockType::ConditionalOp(co) => check_conditional_op(&co, env)?,
+        ASTBlockType::MathOp(mo) => check_math_op(&mo, env)?,
+        ASTBlockType::LogicalOp(lo) => check_logical_op(&lo, env)?,
+        ASTBlockType::CompareOp(co) => check_compare_op(&co, env)?,
+
         ASTBlockType::ForLoop(_for_loop) => todo!(),
         ASTBlockType::WhileLoop(_while_loop) => todo!(),
+
         ASTBlockType::Value(v) => ControlFlow::Simple(v.value.get_type()),
         ASTBlockType::GroupBlock(g) => analyze_group(&g.value, env)?,
         ASTBlockType::Return(r) => analyze_return(&r.value, env)?,

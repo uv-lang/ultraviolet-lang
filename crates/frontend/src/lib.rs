@@ -2,7 +2,8 @@ use ultraviolet_core::{
     errors::{SpannedError, error_renderer::ErrorRenderer},
     types::{
         Environment,
-        frontend::{SourceFile, ast::ASTBlockType},
+        builtins::functions_types::init_builtins_types,
+        frontend::{SourceFile, ast::ASTBlockType, typechecker::UVTypeVariable},
     },
 };
 
@@ -34,7 +35,9 @@ pub fn process(source: &SourceFile) -> Result<ASTBlockType, SpannedError> {
             .for_each(|e| println!("{}", e.display_with_source(source)));
     }
 
-    typecheck(&ast, Environment::new())?;
+    let env = Environment::<UVTypeVariable>::new();
+    init_builtins_types(env.clone());
+    typecheck(&ast, env)?;
 
     Ok(ast)
 }

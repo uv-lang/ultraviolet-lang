@@ -32,8 +32,8 @@ pub enum UVValue {
 impl GetType for Number {
     fn get_type(&self) -> UVType {
         match self {
-            Number::Int(_) => UVType::Int,
-            Number::Float(_) => UVType::Float,
+            Number::Int(_) => UVType::Number(UVNumberType::Int),
+            Number::Float(_) => UVType::Number(UVNumberType::Float),
         }
     }
 }
@@ -72,22 +72,47 @@ impl std::fmt::Display for UVValue {
     }
 }
 
+// ------------------------- Functions ------------------------------------
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UVFunctionType {
     pub args: Vec<UVType>,
     pub returns: UVType,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum UVBuiltinFunctionArguments {
+    Any,
+    Args(Vec<UVType>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct UVBuiltinFunctionType {
+    pub args: UVBuiltinFunctionArguments,
+    pub returns: UVType,
+}
+
+// ------------------------------------------------------------------------
+
+/// Ultraviolet number types
+///
+/// Must be ordered by type width
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum UVNumberType {
+    Int,
+    Float,
+}
+
 /// Ultraviolet primitive types
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum UVType {
-    Int,
-    Float,
+    Number(UVNumberType),
     String,
     Boolean,
     Null,
     Void,
     Function(Box<UVFunctionType>),
+    BuiltInFunction(Box<UVBuiltinFunctionType>),
 
     Any,
 
@@ -97,13 +122,16 @@ pub enum UVType {
 impl std::fmt::Display for UVType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UVType::Int => write!(f, "int"),
-            UVType::Float => write!(f, "float"),
+            UVType::Number(n) => match n {
+                UVNumberType::Int => write!(f, "int"),
+                UVNumberType::Float => write!(f, "float"),
+            },
             UVType::String => write!(f, "str"),
             UVType::Boolean => write!(f, "bool"),
             UVType::Null => write!(f, "null"),
             UVType::Void => write!(f, "void"),
             UVType::Function(_) => write!(f, "<function>"),
+            UVType::BuiltInFunction(_) => write!(f, "<built-in function>"),
             UVType::Any => write!(f, "any"),
             UVType::Union(u) => {
                 write!(
@@ -147,6 +175,11 @@ impl UVType {
             t => out.push(t.clone()),
         }
     }
+
+    /// Get wider number type
+    pub fn wider_type(vec: &[UVNumberType]) -> Option<UVNumberType> {
+        vec.iter().max().cloned()
+    }
 }
 
 impl IsAssignable for UVType {
@@ -156,8 +189,13 @@ impl IsAssignable for UVType {
         }
 
         match (self, other) {
+            (UVType::Number(a), UVType::Number(b)) => b <= a,
+
             (_, UVType::Union(types)) => types.iter().all(|t| self.is_assignable_from(t)),
             (UVType::Union(types), _) => types.iter().any(|t| t.is_assignable_from(other)),
+
+            (UVType::Any, _) => true,
+            (_, UVType::Any) => false,
 
             _ => false,
         }
@@ -169,8 +207,8 @@ impl IsAssignable for UVType {
 impl StringToUVType for str {
     fn to_uvtype(&self) -> Option<UVType> {
         match self {
-            "int" => Some(UVType::Int),
-            "float" => Some(UVType::Float),
+            "int" => Some(UVType::Number(UVNumberType::Int)),
+            "float" => Some(UVType::Number(UVNumberType::Float)),
             "str" => Some(UVType::String),
             "bool" => Some(UVType::Boolean),
             "null" => Some(UVType::Null),
@@ -530,6 +568,7 @@ pub struct FunctionCall {
 
 #[cfg(test)]
 mod tests {
+    use crate::types::frontend::ast::UVNumberType;
     use crate::{
         traits::frontend::ast::{IsAssignable, StringToUVType},
         types::frontend::ast::UVType,
@@ -537,9 +576,15 @@ mod tests {
 
     #[test]
     fn parse_type() {
-        assert_eq!(String::from("int").to_uvtype(), Some(UVType::Int));
+        assert_eq!(
+            String::from("int").to_uvtype(),
+            Some(UVType::Number(UVNumberType::Int))
+        );
         assert_eq!(String::from("bool").to_uvtype(), Some(UVType::Boolean));
-        assert_eq!(String::from("float").to_uvtype(), Some(UVType::Float));
+        assert_eq!(
+            String::from("float").to_uvtype(),
+            Some(UVType::Number(UVNumberType::Float))
+        );
         assert_eq!(String::from("null").to_uvtype(), Some(UVType::Null));
         assert_eq!(String::from("str").to_uvtype(), Some(UVType::String));
 
@@ -548,15 +593,26 @@ mod tests {
 
     #[test]
     fn type_compatible_with() {
-        assert!(UVType::Union(vec![UVType::Int, UVType::Null]).is_assignable_from(&UVType::Null));
-
         assert!(
-            UVType::Union(vec![UVType::Int, UVType::Float])
-                .is_assignable_from(&UVType::Union(vec![UVType::Int]))
+            UVType::Union(vec![UVType::Number(UVNumberType::Float), UVType::Null])
+                .is_assignable_from(&UVType::Null)
         );
 
-        assert!(!UVType::Int.is_assignable_from(&UVType::Union(vec![UVType::Int, UVType::Null])));
+        assert!(
+            UVType::Union(vec![
+                UVType::Number(UVNumberType::Int),
+                UVType::Number(UVNumberType::Float)
+            ])
+            .is_assignable_from(&UVType::Union(vec![UVType::Number(UVNumberType::Int)]))
+        );
 
-        assert!(!UVType::Int.is_assignable_from(&UVType::Boolean));
+        assert!(
+            !UVType::Number(UVNumberType::Int).is_assignable_from(&UVType::Union(vec![
+                UVType::Number(UVNumberType::Int),
+                UVType::Null
+            ]))
+        );
+
+        assert!(!UVType::Number(UVNumberType::Int).is_assignable_from(&UVType::Boolean));
     }
 }

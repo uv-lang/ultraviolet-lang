@@ -1,6 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 pub mod backend;
+pub mod builtins;
 pub mod frontend;
 
 pub type EnvRef<T> = Rc<RefCell<Environment<T>>>;

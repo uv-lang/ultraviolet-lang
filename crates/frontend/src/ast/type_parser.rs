@@ -1,7 +1,11 @@
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::token_parser::UnwrapOptionError,
-    types::frontend::{Spanned, ast::UVType, tokens::UVParseNode},
+    types::frontend::{
+        Spanned,
+        ast::{UVNumberType, UVType},
+        tokens::UVParseNode,
+    },
 };
 
 /// Parse Ultraviolet type into UVType
@@ -24,8 +28,8 @@ pub fn parse_type_raw(node: &UVParseNode) -> Result<UVType, SpannedError> {
     }
 
     Ok(match node.name.as_str() {
-        "int" => UVType::Int,
-        "float" => UVType::Float,
+        "int" => UVType::Number(UVNumberType::Int),
+        "float" => UVType::Number(UVNumberType::Float),
         "str" => UVType::String,
         "bool" => UVType::Boolean,
         "null" => UVType::Null,
