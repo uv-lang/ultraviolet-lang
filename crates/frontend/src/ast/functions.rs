@@ -30,25 +30,27 @@ pub fn parse_function_definition(node: &UVParseNode) -> GeneratorOutputType {
 
     // ---------------------------- Name ----------------------------
 
-    let name_block = node.get_one_tag_by_name("name").ok_or(SpannedError::new(
-        "Function definition should have an inner <name> tag",
-        node.span,
-    ))?;
+    let name = match node.get_one_tag_by_name("name") {
+        Some(name_block) => {
+            if name_block.children_len() != 1 || !name_block.all_literals() {
+                return Err(SpannedError::new("Invalid function name", name_block.span));
+            }
 
-    if name_block.children_len() != 1 || !name_block.all_literals() {
-        return Err(SpannedError::new("Invalid function name", name_block.span));
-    }
+            let name = name_block
+                .get_inner_literal()
+                .unwrap_or_spanned(node.span)?;
 
-    let name = name_block
-        .get_inner_literal()
-        .unwrap_or_spanned(node.span)?;
+            if !is_valid_identifier(name) {
+                return Err(SpannedError::new(
+                    format!("`{}` is not a valid name for function", name.deref()),
+                    name.span,
+                ));
+            }
 
-    if !is_valid_identifier(name) {
-        return Err(SpannedError::new(
-            format!("`{}` is not a valid name for function", name.deref()),
-            name.span,
-        ));
-    }
+            Some(name)
+        },
+        None => None,
+    };
 
     // -------------------------- Arguments -------------------------
     let arguments = parse_arguments_definition(node.get_many_tags_by_name("arg"))?;
@@ -64,7 +66,7 @@ pub fn parse_function_definition(node: &UVParseNode) -> GeneratorOutputType {
 
     Ok(ASTBlockType::FunctionDefinition(Box::new(
         FunctionDefinition {
-            name: name.clone(),
+            name: name.cloned(),
             arguments,
             return_type: validate_and_parse_inner_type_block(node, "returns")?,
             body: Rc::new(parse_children_vec(body)?),

@@ -38,16 +38,18 @@ pub fn check_function_definition(
         .map(|t| t.value)
         .unwrap_or(UVType::Void);
 
-    env.borrow_mut().define_variable(
-        &fd.name.value,
-        UVTypeVariable::new_from(
-            UVType::Function(Box::new(UVFunctionType {
-                args,
-                returns: exp.clone(),
-            })),
-            true,
-        ),
-    );
+    let mut returns = UVType::Void;
+    let f = UVType::Function(Box::new(UVFunctionType {
+        args,
+        returns: exp.clone(),
+    }));
+
+    if let Some(name) = &fd.name {
+        env.borrow_mut()
+            .define_variable(&name.value, UVTypeVariable::new_from(f, true));
+    } else {
+        returns = f;
+    }
 
     let body = match analyze_group(&fd.body, inner_env)? {
         ControlFlow::Return(t) => t,
@@ -64,7 +66,7 @@ pub fn check_function_definition(
         ));
     }
 
-    Ok(ControlFlow::Simple(UVType::Void))
+    Ok(ControlFlow::Simple(returns))
 }
 
 /// Typecheck function call

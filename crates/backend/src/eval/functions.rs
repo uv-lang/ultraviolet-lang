@@ -18,20 +18,19 @@ pub fn define_function(
 ) -> Result<ControlFlow, SpannedError> {
     let args: Vec<String> = def.arguments.iter().map(|e| e.name.value.clone()).collect();
 
-    env.borrow_mut().define_variable(
-        def.name.value.clone(),
-        RTVariable::new_from(
-            UVRTValue::Function(RTFunction {
-                args_names_order: args,
-                body: def.body.clone(),
-                lexical_env: Rc::downgrade(&env),
-            }),
-            false,
-        ),
-    );
+    let f = UVRTValue::Function(RTFunction {
+        args_names_order: args,
+        body: def.body.clone(),
+        lexical_env: Rc::downgrade(&env),
+    });
 
-    // Maybe let the definition return the function itself?
-    Ok(ControlFlow::Simple(UVRTValue::Void))
+    if let Some(name) = &def.name {
+        env.borrow_mut()
+            .define_variable(name.value.clone(), RTVariable::new_from(f, true));
+        return Ok(ControlFlow::Simple(UVRTValue::Void));
+    }
+
+    Ok(ControlFlow::Simple(f))
 }
 
 /// Call function

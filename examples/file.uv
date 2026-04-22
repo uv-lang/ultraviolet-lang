@@ -1,42 +1,18 @@
 <program>
     <main>
-
         <let>
-            <name>i</name>
+            <name>f</name>
             <value>
-                <int>0</int>
+                <fn>
+                    <body>
+                        <call println>
+                            <str>Hello, anonym function!</str>
+                        </call>
+                    </body>
+                </fn>
             </value>
         </let>
 
-        <while>
-            <test>
-                <lt>
-                    <i />
-                    <int>1000000</int>
-                </lt>
-            </test>
-
-            <body>
-
-                <!-- создаём новые переменные каждый раз -->
-                <let>
-                    <name>tmp</name>
-                    <value>
-                        <sum>
-                            <i />
-                            <int>1</int>
-                        </sum>
-                    </value>
-                </let>
-
-                <fn>
-                    <name>evil</name>
-
-                    <body></body>
-                </fn>
-
-            </body>
-        </while>
-
+        <call f />
     </main>
 </program>

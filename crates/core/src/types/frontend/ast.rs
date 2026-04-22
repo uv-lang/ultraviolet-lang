@@ -540,7 +540,7 @@ pub struct FunctionDefinitionArg {
 
 #[derive(Debug)]
 pub struct FunctionDefinition {
-    pub name: Spanned<String>,
+    pub name: Option<Spanned<String>>,
     pub arguments: Vec<FunctionDefinitionArg>,
     pub return_type: Option<Spanned<UVType>>,
 
