@@ -54,7 +54,7 @@ pub fn check_for_loop(
     };
 
     let step = if let Some(s) = &fl.step {
-        match typecheck(&s, env.clone())? {
+        match typecheck(s, env.clone())? {
             ControlFlow::Simple(UVType::Number(t)) => t,
             cf => return Ok(cf),
         }
