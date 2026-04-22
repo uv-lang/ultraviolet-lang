@@ -1,7 +1,10 @@
 use std::{env::args, path::Path};
 use ultraviolet_core::{
     errors::{SpannedError, error_renderer::ErrorRenderer},
-    types::{backend::ControlFlow, frontend::SourceFile},
+    types::{
+        backend::{ControlFlow, UVRTValue},
+        frontend::{SourceFile, ast::Number},
+    },
 };
 
 use crate::help::print_help;
@@ -16,12 +19,26 @@ fn main() {
         None => print_help(),
     };
 
-    let source = SourceFile::load(Path::new(path)).unwrap();
-    let ret = run(&source).map_err(|err| {
+    let source = match SourceFile::load(Path::new(path)) {
+        Ok(s) => s,
+        Err(err) => {
+            eprintln!("Can't open source file: {}", err);
+            std::process::exit(-1);
+        },
+    };
+
+    let ret = run(&source).unwrap_or_else(|err| {
         eprintln!("{}", err.display_with_source(&source));
+        ControlFlow::Simple(UVRTValue::Number(Number::Int(-1)))
     });
 
-    println!("{ret:?}");
+    let return_code = match ret {
+        ControlFlow::Simple(UVRTValue::Number(Number::Int(v)))
+        | ControlFlow::Return(UVRTValue::Number(Number::Int(v))) => v,
+        _ => 0,
+    };
+
+    std::process::exit(return_code.try_into().unwrap_or(0));
 }
 
 fn run(source: &SourceFile) -> Result<ControlFlow, SpannedError> {
