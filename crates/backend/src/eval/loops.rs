@@ -1,5 +1,6 @@
 use ultraviolet_core::{
     errors::SpannedError,
+    traits::frontend::token_parser::UnwrapOptionError,
     types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTVariable, UVRTValue},
@@ -45,7 +46,10 @@ pub fn eval_for_loop(
     let loop_env = Environment::new_child(env.clone());
 
     loop {
-        let current = env.borrow().find_var(&for_node.iterator.value).unwrap(); // Lol, is this even panicable?
+        let current = env
+            .borrow()
+            .find_var(&for_node.iterator.value)
+            .unwrap_or_spanned(for_node.iterator.span)?;
 
         if current.borrow().value > end {
             break;
@@ -64,7 +68,7 @@ pub fn eval_for_loop(
         (*env
             .borrow_mut()
             .find_var(&for_node.iterator.value)
-            .unwrap()
+            .unwrap_or_spanned(for_node.iterator.span)?
             .borrow_mut())
         .value = new_val;
 
