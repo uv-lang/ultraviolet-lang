@@ -3,8 +3,9 @@ use ultraviolet_core::{
     types::{
         EnvRef, Environment,
         frontend::{
-            ast::{CompareOp, CompareOpType, ConditionalOperator, LogicalOp, MathOp, UVType},
+            ast::{CompareOp, CompareOpType, ConditionalOperator, LogicalOp, MathOp},
             typechecker::{ControlFlow, UVTypeVariable},
+            types::UVType,
         },
     },
 };

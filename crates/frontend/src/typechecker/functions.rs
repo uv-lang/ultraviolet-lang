@@ -5,11 +5,9 @@ use ultraviolet_core::{
         EnvRef, Environment,
         frontend::{
             Span,
-            ast::{
-                FunctionCall, FunctionCallArg, FunctionDefinition, UVBuiltinFunctionArguments,
-                UVFunctionType, UVType,
-            },
+            ast::{FunctionCall, FunctionCallArg, FunctionDefinition},
             typechecker::{ControlFlow, UVTypeVariable},
+            types::{UVBuiltinFunctionArguments, UVFunctionType, UVType},
         },
     },
 };

@@ -1,4 +1,4 @@
-use crate::types::frontend::ast::UVType;
+use crate::types::frontend::types::UVType;
 
 pub enum ControlFlow {
     Return(UVType),

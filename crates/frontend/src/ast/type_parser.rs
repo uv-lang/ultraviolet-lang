@@ -3,8 +3,8 @@ use ultraviolet_core::{
     traits::frontend::token_parser::UnwrapOptionError,
     types::frontend::{
         Spanned,
-        ast::{UVNumberType, UVType},
         tokens::UVParseNode,
+        types::{UVNumberType, UVType},
     },
 };
 

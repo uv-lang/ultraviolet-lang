@@ -4,8 +4,9 @@ use ultraviolet_core::{
     types::{
         EnvRef,
         frontend::{
-            ast::{UVType, VariableAccess, VariableAssign, VariableDefinition},
+            ast::{VariableAccess, VariableAssign, VariableDefinition},
             typechecker::{ControlFlow, UVTypeVariable},
+            types::UVType,
         },
     },
 };

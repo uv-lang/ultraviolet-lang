@@ -4,8 +4,9 @@ use ultraviolet_core::{
     types::{
         EnvRef, Environment,
         frontend::{
-            ast::{ForLoop, UVNumberType, UVType, WhileLoop},
+            ast::{ForLoop, WhileLoop},
             typechecker::{ControlFlow, UVTypeVariable},
+            types::{UVNumberType, UVType},
         },
     },
 };

@@ -1,8 +1,8 @@
 use crate::types::{
     EnvRef,
     frontend::{
-        ast::{UVNumberType, UVType},
         typechecker::UVTypeVariable,
+        types::{UVNumberType, UVType},
     },
 };
 

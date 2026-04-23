@@ -1,0 +1,145 @@
+use crate::traits::frontend::ast::{IsAssignable, StringToUVType};
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct UVFunctionType {
+    pub args: Vec<UVType>,
+    pub returns: UVType,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum UVBuiltinFunctionArguments {
+    Any,
+    Args(Vec<UVType>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct UVBuiltinFunctionType {
+    pub args: UVBuiltinFunctionArguments,
+    pub returns: UVType,
+}
+
+// ------------------------------------------------------------------------
+
+/// Ultraviolet number types
+///
+/// Must be ordered by type width
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum UVNumberType {
+    Int,
+    Float,
+}
+
+/// Ultraviolet primitive types
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum UVType {
+    Number(UVNumberType),
+    String,
+    Boolean,
+    Null,
+    Void,
+    Function(Box<UVFunctionType>),
+    BuiltInFunction(Box<UVBuiltinFunctionType>),
+
+    Any,
+
+    Union(Vec<UVType>),
+}
+
+impl std::fmt::Display for UVType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UVType::Number(n) => match n {
+                UVNumberType::Int => write!(f, "int"),
+                UVNumberType::Float => write!(f, "float"),
+            },
+            UVType::String => write!(f, "str"),
+            UVType::Boolean => write!(f, "bool"),
+            UVType::Null => write!(f, "null"),
+            UVType::Void => write!(f, "void"),
+            UVType::Function(_) => write!(f, "<function>"),
+            UVType::BuiltInFunction(_) => write!(f, "<built-in function>"),
+            UVType::Any => write!(f, "any"),
+            UVType::Union(u) => {
+                write!(
+                    f,
+                    "{}",
+                    u.iter()
+                        .map(|i| i.to_string())
+                        .collect::<Vec<_>>()
+                        .join(" | ")
+                )
+            },
+        }
+    }
+}
+
+impl UVType {
+    /// Create new union type
+    pub fn new_union(types: Vec<UVType>) -> UVType {
+        let mut flat = Vec::new();
+
+        for t in types {
+            t.flatten_into(&mut flat);
+        }
+
+        flat.sort();
+        flat.dedup();
+
+        if flat.len() == 1 {
+            flat.into_iter().next().unwrap()
+        } else {
+            UVType::Union(flat)
+        }
+    }
+
+    /// Flat Union type to provided output vector
+    pub fn flatten_into(&self, out: &mut Vec<Self>) {
+        match self {
+            Self::Union(types) => {
+                types.iter().for_each(|t| t.flatten_into(out));
+            },
+            t => out.push(t.clone()),
+        }
+    }
+
+    /// Get wider number type
+    pub fn wider_type(vec: &[UVNumberType]) -> Option<UVNumberType> {
+        vec.iter().max().cloned()
+    }
+}
+
+impl IsAssignable for UVType {
+    fn is_assignable_from(&self, other: &UVType) -> bool {
+        if self == other {
+            return true;
+        }
+
+        match (self, other) {
+            (UVType::Number(a), UVType::Number(b)) => b <= a,
+
+            (_, UVType::Union(types)) => types.iter().all(|t| self.is_assignable_from(t)),
+            (UVType::Union(types), _) => types.iter().any(|t| t.is_assignable_from(other)),
+
+            (UVType::Any, _) => true,
+            (_, UVType::Any) => false,
+
+            _ => false,
+        }
+    }
+}
+
+// -------------------- String-Type conversion --------------
+
+impl StringToUVType for str {
+    fn to_uvtype(&self) -> Option<UVType> {
+        match self {
+            "int" => Some(UVType::Number(UVNumberType::Int)),
+            "float" => Some(UVType::Number(UVNumberType::Float)),
+            "str" => Some(UVType::String),
+            "bool" => Some(UVType::Boolean),
+            "null" => Some(UVType::Null),
+            "void" => Some(UVType::Void),
+            _ => None,
+        }
+    }
+}

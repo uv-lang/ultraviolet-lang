@@ -4,8 +4,9 @@ use ultraviolet_core::{
     types::{
         EnvRef, Environment,
         frontend::{
-            ast::{ASTBlockType, ProgramBlock, UVType},
+            ast::{ASTBlockType, ProgramBlock},
             typechecker::{ControlFlow, UVTypeVariable},
+            types::UVType,
         },
     },
 };

@@ -1,8 +1,8 @@
 use crate::types::{
     EnvRef,
     frontend::{
-        ast::{UVBuiltinFunctionArguments, UVBuiltinFunctionType, UVType},
         typechecker::UVTypeVariable,
+        types::{UVBuiltinFunctionArguments, UVBuiltinFunctionType, UVType},
     },
 };
 

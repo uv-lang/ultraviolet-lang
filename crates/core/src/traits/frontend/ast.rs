@@ -3,8 +3,9 @@ use std::borrow::Cow;
 use crate::types::{
     EnvRef,
     frontend::{
-        ast::{CompareOpType, LogicalOpType, MathOpType, UVType},
+        ast::{CompareOpType, LogicalOpType, MathOpType},
         typechecker::UVTypeVariable,
+        types::UVType,
     },
 };
 
