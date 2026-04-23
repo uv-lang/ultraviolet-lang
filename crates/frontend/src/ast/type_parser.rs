@@ -10,6 +10,8 @@ use ultraviolet_core::{
 
 /// Parse Ultraviolet type into UVType
 pub fn parse_type_raw(node: &UVParseNode) -> Result<UVType, SpannedError> {
+    // Allow clippy not to collapse match-if, since this is exactly the behavior we need
+    #[allow(clippy::collapsible_match)]
     match node.name.as_str() {
         "union" | "fn" => {
             if node.self_closing {
