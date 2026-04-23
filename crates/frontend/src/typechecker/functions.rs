@@ -154,7 +154,10 @@ fn validate_args(
             return Err(SpannedError::new(
                 format!(
                     "Argument #{} for function `{}` mismatch. Expected `{}`, but `{}` provided ",
-                    i + 1, name, a, b
+                    i + 1,
+                    name,
+                    a,
+                    b
                 ),
                 span,
             ));
