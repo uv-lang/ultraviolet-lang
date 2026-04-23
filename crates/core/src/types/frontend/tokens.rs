@@ -1,6 +1,8 @@
+use std::borrow::Cow;
+
 use crate::{
     errors::SpannedError,
-    traits::frontend::{Positional, token_parser::UnwrapOptionError},
+    traits::frontend::{Positional, ast::GetBlockName, token_parser::UnwrapOptionError},
     types::frontend::{Span, Spanned},
 };
 
@@ -118,6 +120,15 @@ impl Positional for UVParseNode {
 pub enum UVParseBody {
     String(Spanned<String>),
     Tag(Box<UVParseNode>),
+}
+
+impl<'a> GetBlockName<'a> for UVParseBody {
+    fn get_block_name(&'a self) -> std::borrow::Cow<'a, str> {
+        match self {
+            UVParseBody::String(str) => Cow::Borrowed(&str.value),
+            UVParseBody::Tag(node) => Cow::Borrowed(&node.name),
+        }
+    }
 }
 
 impl Positional for UVParseBody {

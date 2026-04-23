@@ -56,7 +56,18 @@ impl std::fmt::Display for UVType {
             UVType::Boolean => write!(f, "bool"),
             UVType::Null => write!(f, "null"),
             UVType::Void => write!(f, "void"),
-            UVType::Function(_) => write!(f, "<function>"),
+            UVType::Function(func) => {
+                write!(
+                    f,
+                    "({}) -> {}",
+                    func.args
+                        .iter()
+                        .map(|i| i.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", "),
+                    func.returns
+                )
+            },
             UVType::BuiltInFunction(_) => write!(f, "<built-in function>"),
             UVType::Any => write!(f, "any"),
             UVType::Union(u) => {

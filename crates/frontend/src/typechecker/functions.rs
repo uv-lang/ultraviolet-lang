@@ -149,15 +149,16 @@ fn validate_args(
         ));
     }
 
-    if expected
-        .iter()
-        .zip(actual)
-        .any(|(a, b)| !a.is_assignable_from(b))
-    {
-        return Err(SpannedError::new(
-            format!("Arguments types for function `{}` mismatch", name),
-            span,
-        ));
+    for (i, (a, b)) in expected.iter().zip(actual).enumerate() {
+        if !a.is_assignable_from(b) {
+            return Err(SpannedError::new(
+                format!(
+                    "Argument #{} for function `{}` mismatch. Expected `{}`, but `{}` provided ",
+                    i + 1, name, a, b
+                ),
+                span,
+            ));
+        }
     }
 
     Ok(())
