@@ -155,7 +155,7 @@ fn validate_args(
         .filter(|f| !matches!(f, UVType::Optional(_)))
         .count();
 
-    if min_args > actual.len() || expected.len() < actual.len(){
+    if min_args > actual.len() || expected.len() < actual.len() {
         return Err(SpannedError::new(
             format!(
                 "Function `{}` expects {} arguments, but {} provided",
