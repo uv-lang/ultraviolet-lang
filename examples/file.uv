@@ -1,51 +1,17 @@
 <program>
     <main>
-        <fn>
-            <name>higher_order_function</name>
 
-            <arg>
-                <name>passed_f</name>
-                <type>
-                    <fn>
-                        <arg>
-                            <int />
-                        </arg>
-                    </fn>
-                </type>
-            </arg>
-
-            <arg>
-                <name>number</name>
-                <type>
-                    <int />
-                </type>
-            </arg>
-
-            <body>
-                <call passed_f>
-                    <number />
+        <let>
+            <name>a</name>
+            <value>
+                <call read>
+                    <str>Input: </str>
                 </call>
-            </body>
-        </fn>
+            </value>
+        </let>
 
-        <call higher_order_function>
-            <fn>
-                <arg>
-                    <name>number</name>
-                    <type>
-                        <int />
-                    </type>
-                </arg>
-            
-                <body>
-                    <call println>
-                        <str>Hello, bro! Your number is:</str>
-                        <number />
-                    </call>
-                </body>
-            </fn>
-            <int>67</int>
+        <call println>
+            <a />
         </call>
     </main>
 </program>
-

@@ -1,3 +1,6 @@
+use colored::Colorize;
+use std::ops::Deref;
+
 use crate::traits::frontend::ast::{IsAssignable, StringToUVType};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -43,19 +46,20 @@ pub enum UVType {
     Any,
 
     Union(Vec<UVType>),
+    Optional(Box<UVType>),
 }
 
 impl std::fmt::Display for UVType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             UVType::Number(n) => match n {
-                UVNumberType::Int => write!(f, "int"),
-                UVNumberType::Float => write!(f, "float"),
+                UVNumberType::Int => write!(f, "<int />"),
+                UVNumberType::Float => write!(f, "<float />"),
             },
-            UVType::String => write!(f, "str"),
-            UVType::Boolean => write!(f, "bool"),
-            UVType::Null => write!(f, "null"),
-            UVType::Void => write!(f, "void"),
+            UVType::String => write!(f, "<str />"),
+            UVType::Boolean => write!(f, "<bool />"),
+            UVType::Null => write!(f, "<null />"),
+            UVType::Void => write!(f, "<void />"),
             UVType::Function(func) => {
                 write!(
                     f,
@@ -69,16 +73,19 @@ impl std::fmt::Display for UVType {
                 )
             },
             UVType::BuiltInFunction(_) => write!(f, "<built-in function>"),
-            UVType::Any => write!(f, "any"),
+            UVType::Any => write!(f, "<any />"),
             UVType::Union(u) => {
                 write!(
                     f,
-                    "{}",
+                    "<union>{}</union>",
                     u.iter()
                         .map(|i| i.to_string())
                         .collect::<Vec<_>>()
-                        .join(" | ")
+                        .join(" ")
                 )
+            },
+            UVType::Optional(t) => {
+                write!(f, "<optional>{}</optional>", t.to_string().green().bold())
             },
         }
     }
@@ -113,6 +120,14 @@ impl UVType {
         }
     }
 
+    /// Flatten optional type
+    pub fn flat_optional(self) -> UVType {
+        match self {
+            UVType::Optional(t) => t.flat_optional(),
+            t => t,
+        }
+    }
+
     /// Get wider number type
     pub fn wider_type(vec: &[UVNumberType]) -> Option<UVNumberType> {
         vec.iter().max().cloned()
@@ -130,6 +145,8 @@ impl IsAssignable for UVType {
 
             (_, UVType::Union(types)) => types.iter().all(|t| self.is_assignable_from(t)),
             (UVType::Union(types), _) => types.iter().any(|t| t.is_assignable_from(other)),
+
+            (UVType::Optional(lv), rv) => lv.deref() == rv,
 
             (UVType::Any, _) => true,
             (_, UVType::Any) => false,

@@ -61,6 +61,8 @@ pub fn call_function(
         ));
     };
 
+    // This check is performed by typechecker
+    /*
     if f_struct.args_names_order.len() != call.args.len() {
         return Err(SpannedError::new(
             format!(
@@ -72,6 +74,7 @@ pub fn call_function(
             call.span,
         ));
     }
+    */
 
     let evaluated_args = match eval_args(&call.args, env.clone())? {
         EvalArgsResult::Values(v) => v,

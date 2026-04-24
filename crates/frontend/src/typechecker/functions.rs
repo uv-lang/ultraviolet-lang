@@ -22,7 +22,20 @@ pub fn check_function_definition(
     let inner_env = Environment::new_child(env.clone());
 
     let mut args = Vec::new();
+    let mut trailing_optional = false;
     for arg in &fd.arguments {
+        // Trailing optional check
+        match arg.arg_type.value {
+            UVType::Optional(_) => trailing_optional = true,
+            _ if trailing_optional => {
+                return Err(SpannedError::new(
+                    "Non-optional argument cannot be trailing",
+                    arg.span,
+                ));
+            },
+            _ => {},
+        }
+
         inner_env.borrow_mut().define_variable(
             &arg.name.value,
             UVTypeVariable::new_from(arg.arg_type.value.clone(), true),
@@ -137,7 +150,12 @@ fn validate_args(
     name: &str,
     span: Span,
 ) -> Result<(), SpannedError> {
-    if expected.len() != actual.len() {
+    let min_args = expected
+        .iter()
+        .filter(|f| !matches!(f, UVType::Optional(_)))
+        .count();
+
+    if min_args > actual.len() || expected.len() < actual.len(){
         return Err(SpannedError::new(
             format!(
                 "Function `{}` expects {} arguments, but {} provided",

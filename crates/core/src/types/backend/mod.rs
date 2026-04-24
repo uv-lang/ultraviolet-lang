@@ -15,6 +15,8 @@ pub mod uvvalue_ops;
 pub struct RTFunction {
     pub args_names_order: Vec<String>,
     pub body: Rc<Vec<ASTBlockType>>,
+
+    // FIXME:! The function should take a snapshot of the environment, not a link to it
     pub lexical_env: Weak<RefCell<Environment<RTVariable>>>,
 }
 

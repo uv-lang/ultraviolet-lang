@@ -13,10 +13,10 @@ pub fn parse_type_raw(node: &UVParseNode) -> Result<UVType, SpannedError> {
     // Allow clippy not to collapse match-if, since this is exactly the behavior we need
     #[allow(clippy::collapsible_match)]
     match node.name.as_str() {
-        "union" | "fn" => {
+        "union" | "fn" | "optional" => {
             if node.self_closing {
                 return Err(SpannedError::new(
-                    "This type cannot be used as individual type",
+                    "This type cannot be individual",
                     node.span,
                 ));
             }
@@ -38,6 +38,8 @@ pub fn parse_type_raw(node: &UVParseNode) -> Result<UVType, SpannedError> {
         "null" => UVType::Null,
         "union" => parse_union(node)?,
         "fn" => parse_fn_type(node)?,
+        // TODO: Make this accessible from user env
+        // "optional" => parse_optional(node)?,
         _ => {
             return Err(SpannedError::new(
                 format!("Unknown type `{}`", node.name),
@@ -133,3 +135,17 @@ pub fn parse_fn_type(node: &UVParseNode) -> Result<UVType, SpannedError> {
 
     Ok(UVType::Function(Box::new(UVFunctionType { args, returns })))
 }
+
+// Parse optional value
+/*
+fn parse_optional(node: &UVParseNode) -> Result<UVType, SpannedError> {
+    let child = node.get_tag_at(0).ok_or(SpannedError::new(
+        "Optional value should contain other type",
+        node.span,
+    ))?;
+
+    Ok(UVType::Optional(Box::new(
+        parse_type_raw(child)?.flat_optional(),
+    )))
+}
+*/

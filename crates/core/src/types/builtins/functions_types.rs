@@ -36,7 +36,9 @@ pub fn init_builtin_types_functions(env: EnvRef<UVTypeVariable>) {
         "read",
         UVTypeVariable::new_from(
             UVType::BuiltInFunction(Box::new(UVBuiltinFunctionType {
-                args: UVBuiltinFunctionArguments::Args(vec![UVType::Any]),
+                args: UVBuiltinFunctionArguments::Args(vec![UVType::Optional(Box::new(
+                    UVType::String,
+                ))]),
                 returns: UVType::String,
             })),
             true,
