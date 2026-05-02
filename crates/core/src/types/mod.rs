@@ -1,5 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
+use crate::types::frontend::{SourceFile, ast::ASTBlockType};
+
 pub mod backend;
 pub mod builtins;
 pub mod frontend;
@@ -53,4 +55,12 @@ impl<T> Environment<T> {
     pub fn remove_symbol(&mut self, name: impl Into<String>) -> bool {
         self.symbols.remove(&name.into()).is_some()
     }
+}
+
+/// Structure containing ast, modules, source file and environment
+pub struct SourceCode<T> {
+    pub ast: ASTBlockType,
+    pub source_file: SourceFile,
+    pub env: EnvRef<T>,
+    /* pub modules: Vec<Modules> */
 }

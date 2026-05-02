@@ -7,7 +7,7 @@ use ultraviolet_core::{
     },
 };
 
-use crate::builtins::{constants::init_builtin_constants, functions::init_builtin_functions};
+use crate::builtins::DefineBuiltinsRT;
 
 mod builtins;
 mod eval;
@@ -15,9 +15,8 @@ mod eval;
 /** Evaluate code */
 pub fn eval(node: &ASTBlockType) -> Result<ControlFlow, SpannedError> {
     let env = Environment::new();
+    env.define_builtins();
 
-    init_builtin_constants(env.clone());
-    init_builtin_functions(env.clone());
     eval::eval(node, env)
 }
 

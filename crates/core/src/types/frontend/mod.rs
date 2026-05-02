@@ -10,8 +10,8 @@ use std::{fs, ops::Deref, path::Path};
 use crate::traits::frontend::Positional;
 
 /// Representation of input file
-pub struct SourceFile<'a> {
-    pub path: &'a Path,
+pub struct SourceFile {
+    pub path: Box<Path>,
     pub code: String,
 
     /// Indexes of each line starts
@@ -21,16 +21,16 @@ pub struct SourceFile<'a> {
     char_to_byte: Vec<usize>,
 }
 
-impl<'a> SourceFile<'a> {
+impl SourceFile {
     /**
     Load source file from Path
 
     Returns `Err` when provided file not found or cannot be read
     */
-    pub fn load(path: &'a Path) -> Result<Self> {
+    pub fn load(path: &Path) -> Result<Self> {
         let code: String = fs::read_to_string(path)?;
         Ok(Self {
-            path,
+            path: path.into(),
             code: code.clone(),
             char_to_byte: code.char_indices().map(|(i, _)| i).collect(),
             line_starts: std::iter::once(0)
@@ -71,7 +71,7 @@ impl<'a> SourceFile<'a> {
     }
 
     /// Get full line by provided line No
-    pub fn get_line_content(&'a self, line: usize) -> Result<&'a str> {
+    pub fn get_line_content(&self, line: usize) -> Result<&str> {
         let line_index_start = self.line_starts.get(line).context("")?;
         let code_len = self.code.len();
         let line_index_end = self.line_starts.get(line + 1).unwrap_or(&code_len);
