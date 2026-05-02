@@ -1,6 +1,6 @@
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::ast::IsAssignable,
+    traits::frontend::{ast::IsAssignable, token_parser::UnwrapOptionError},
     types::{
         EnvRef, Environment,
         frontend::{
@@ -9,6 +9,7 @@ use ultraviolet_core::{
             typechecker::{ControlFlow, UVTypeVariable},
             types::{UVBuiltinFunctionArguments, UVFunctionType, UVType},
         },
+        resolve_sym,
     },
 };
 
@@ -56,8 +57,17 @@ pub fn check_function_definition(
     }));
 
     if let Some(name) = &fd.name {
-        env.borrow_mut()
-            .define_variable(&name.value, UVTypeVariable::new_from(f, true));
+        if name.value.len() > 1 {
+            return Err(SpannedError::new(
+                "You cannot define function outside current scope",
+                name.span,
+            ));
+        }
+
+        env.borrow_mut().define_variable(
+            name.value.first().unwrap_or_spanned(name.span)?,
+            UVTypeVariable::new_from(f, true),
+        );
     } else {
         returns = f;
     }
@@ -85,9 +95,9 @@ pub fn check_function_call(
     fc: &FunctionCall,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
-    let Some(var) = env.borrow().find_var(fc.name.clone()) else {
+    let Some(var) = resolve_sym(fc.name.clone(), env.clone()) else {
         return Err(SpannedError::new(
-            format!("Function `{}` not found", fc.name),
+            format!("Function `{}` not found", fc.name.join(".")),
             fc.span,
         ));
     };
@@ -98,23 +108,24 @@ pub fn check_function_call(
     };
 
     let value = &var.borrow().value;
+    let joined_name = fc.name.join(".");
 
     match value {
         UVType::BuiltInFunction(f) => {
             if let UVBuiltinFunctionArguments::Args(expected) = &f.args {
-                validate_args(expected, &args_types, &fc.name, fc.span)?;
+                validate_args(expected, &args_types, &joined_name, fc.span)?;
             }
 
             Ok(ControlFlow::Simple(f.returns.clone()))
         },
 
         UVType::Function(f) => {
-            validate_args(&f.args, &args_types, &fc.name, fc.span)?;
+            validate_args(&f.args, &args_types, &joined_name, fc.span)?;
             Ok(ControlFlow::Simple(f.returns.clone()))
         },
 
         _ => Err(SpannedError::new(
-            format!("`{}` is not callable", fc.name),
+            format!("`{}` is not callable", &joined_name),
             fc.span,
         )),
     }

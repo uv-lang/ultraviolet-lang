@@ -115,8 +115,8 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
             ASTBlockType::HeadBlock(_) => Cow::Borrowed("head"),
             ASTBlockType::MainBlock(_) => Cow::Borrowed("main"),
             ASTBlockType::VariableDefinition(_) => Cow::Borrowed("let"),
-            ASTBlockType::VariableAssignment(a) => Cow::Borrowed(&a.name),
-            ASTBlockType::VariableAccess(a) => Cow::Borrowed(&a.name),
+            ASTBlockType::VariableAssignment(a) => Cow::Owned(a.name.join(".")),
+            ASTBlockType::VariableAccess(a) => Cow::Owned(a.name.join(".")),
 
             ASTBlockType::MathOp(m) => Cow::Owned(m.op_type.to_string().to_lowercase()),
             ASTBlockType::LogicalOp(l) => Cow::Owned(l.op_type.to_string().to_lowercase()),
@@ -176,7 +176,7 @@ pub struct ProgramBlock {
 
 #[derive(Debug)]
 pub struct VariableDefinition {
-    pub name: Spanned<String>,
+    pub name: Spanned<Vec<String>>,
     pub value: Spanned<ASTBlockType>,
     pub expected_type: Option<Spanned<UVType>>,
     pub is_const: bool,
@@ -188,7 +188,7 @@ pub struct VariableDefinition {
 
 #[derive(Debug)]
 pub struct VariableAssign {
-    pub name: String,
+    pub name: Vec<String>,
     pub value: Spanned<Box<ASTBlockType>>,
 
     pub span: Span,
@@ -198,7 +198,7 @@ pub struct VariableAssign {
 
 #[derive(Debug)]
 pub struct VariableAccess {
-    pub name: String,
+    pub name: Vec<String>,
     pub span: Span,
 }
 
@@ -397,7 +397,7 @@ pub struct FunctionDefinitionArg {
 
 #[derive(Debug)]
 pub struct FunctionDefinition {
-    pub name: Option<Spanned<String>>,
+    pub name: Option<Spanned<Vec<String>>>,
     pub arguments: Vec<FunctionDefinitionArg>,
     pub return_type: Option<Spanned<UVType>>,
 
@@ -416,7 +416,7 @@ pub struct FunctionCallArg {
 
 #[derive(Debug)]
 pub struct FunctionCall {
-    pub name: String,
+    pub name: Vec<String>,
     pub args: Vec<FunctionCallArg>,
 
     pub span: Span,

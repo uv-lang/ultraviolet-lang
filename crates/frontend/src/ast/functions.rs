@@ -3,11 +3,16 @@ use std::{ops::Deref, rc::Rc};
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::{Positional, token_parser::UnwrapOptionError},
-    types::frontend::{
-        ast::{
-            ASTBlockType, FunctionCall, FunctionCallArg, FunctionDefinition, FunctionDefinitionArg,
+    types::{
+        frontend::{
+            Spanned,
+            ast::{
+                ASTBlockType, FunctionCall, FunctionCallArg, FunctionDefinition,
+                FunctionDefinitionArg,
+            },
+            tokens::UVParseNode,
         },
-        tokens::UVParseNode,
+        process_sym_name,
     },
 };
 
@@ -47,7 +52,10 @@ pub fn parse_function_definition(node: &UVParseNode) -> GeneratorOutputType {
                 ));
             }
 
-            Some(name)
+            Some(Spanned::new(
+                process_sym_name(name.value.clone()),
+                name.span,
+            ))
         },
         None => None,
     };
@@ -66,7 +74,7 @@ pub fn parse_function_definition(node: &UVParseNode) -> GeneratorOutputType {
 
     Ok(ASTBlockType::FunctionDefinition(Box::new(
         FunctionDefinition {
-            name: name.cloned(),
+            name,
             arguments,
             return_type: validate_and_parse_inner_type_block(node, "returns")?,
             body: Rc::new(parse_children_vec(body)?),
@@ -131,7 +139,7 @@ pub fn parse_function_call(node: &UVParseNode) -> GeneratorOutputType {
     }
 
     Ok(ASTBlockType::FunctionCall(FunctionCall {
-        name: node.extra_param.clone(),
+        name: process_sym_name(node.extra_param.clone()),
         args: parse_function_call_arguments(node.get_all_tags())?,
         span: node.span,
     }))

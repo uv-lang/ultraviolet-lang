@@ -54,3 +54,16 @@ impl<T> Environment<T> {
         self.symbols.remove(&name.into()).is_some()
     }
 }
+
+/// Splits provided name by `.` delimiter
+pub fn process_sym_name(name: String) -> Vec<String> {
+    name.split('.').map(str::to_string).collect()
+}
+
+/// Resolve symbol from provided environment, and modules (unimplemented)
+pub fn resolve_sym<T>(name: Vec<String>, env: EnvRef<T>) -> Option<Rc<RefCell<T>>> {
+    match name.len() {
+        1 => env.borrow().find_var(name.first().unwrap()),
+        _ => todo!(),
+    }
+}

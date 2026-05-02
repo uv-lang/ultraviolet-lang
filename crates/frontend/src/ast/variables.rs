@@ -3,10 +3,13 @@ use std::ops::Deref;
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::{Positional, token_parser::UnwrapOptionError},
-    types::frontend::{
-        Spanned,
-        ast::{ASTBlockType, VariableAccess, VariableAssign, VariableDefinition},
-        tokens::UVParseNode,
+    types::{
+        frontend::{
+            Spanned,
+            ast::{ASTBlockType, VariableAccess, VariableAssign, VariableDefinition},
+            tokens::UVParseNode,
+        },
+        process_sym_name,
     },
 };
 
@@ -74,7 +77,7 @@ pub fn parse_var_definition(node: &UVParseNode) -> GeneratorOutputType {
 
     Ok(ASTBlockType::VariableDefinition(Box::new(
         VariableDefinition {
-            name: Spanned::new(name.deref().clone(), name_block.span),
+            name: Spanned::new(process_sym_name(name.to_string()), name_block.span),
             value: Spanned::new(generate_ast(value)?, value_block.span),
             expected_type: validate_and_parse_inner_type_block(node, "type")?,
             is_const,
@@ -111,7 +114,7 @@ pub fn parse_var_assign(node: &UVParseNode) -> GeneratorOutputType {
         .ok_or(SpannedError::new("Cannot get inner tag", node.span))?;
 
     Ok(ASTBlockType::VariableAssignment(VariableAssign {
-        name: node.name.clone(),
+        name: process_sym_name(node.name.clone()),
         value: Spanned::new(Box::new(generate_ast(value)?), value.span),
         span: node.span,
     }))
@@ -127,7 +130,7 @@ pub fn parse_var_access(node: &UVParseNode) -> GeneratorOutputType {
     }
 
     Ok(ASTBlockType::VariableAccess(VariableAccess {
-        name: node.name.clone(),
+        name: process_sym_name(node.name.clone()),
         span: node.span,
     }))
 }
