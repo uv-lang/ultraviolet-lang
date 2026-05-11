@@ -6,11 +6,7 @@ use ultraviolet_core::{
         ast::{StringToUVCompareOp, StringToUVLogicalOp, StringToUVMathOp, StringToUVType},
         token_parser::UnwrapOptionError,
     },
-    types::frontend::{
-        Spanned,
-        ast::{ASTBlockType, ProgramBlock},
-        tokens::UVParseNode,
-    },
+    types::frontend::{Spanned, ast::ASTBlockType, tokens::UVParseNode},
 };
 
 use crate::ast::{
@@ -20,6 +16,7 @@ use crate::ast::{
     logical_op::parse_logical_op,
     loops::{parse_for_loop, parse_while_loop},
     math_op::parse_math_op,
+    modules::parse_module_import,
     values::parse_value,
     variables::{parse_var_access, parse_var_assign, parse_var_definition},
 };
@@ -31,6 +28,7 @@ mod functions;
 mod logical_op;
 mod loops;
 mod math_op;
+mod modules;
 mod type_parser;
 mod values;
 mod variables;
@@ -46,35 +44,16 @@ fn is_valid_identifier(s: &str) -> bool {
 
 /// Parse `program` content
 pub fn gen_main_ast(node: &UVParseNode) -> GeneratorOutputType {
-    if node.name.ne("program") {
+    if node.name.ne("main") {
         return Err(SpannedError::new(
-            "The program must begin with the <program> tag",
+            "The program must begin with the <main> tag",
             node.span,
         ));
     }
-
-    let head_parsed = if let Some(h) = node.get_one_tag_by_name("head") {
-        Some(ASTBlockType::HeadBlock(Spanned::new(
-            parse_children_vec(h)?,
-            h.span,
-        )))
-    } else {
-        None
-    };
-
-    let main = ASTBlockType::MainBlock(Spanned::new(
-        parse_children_vec(node.get_one_tag_by_name("main").ok_or(SpannedError::new(
-            "Main block in <program> is required",
-            node.span,
-        ))?)?,
+    Ok(ASTBlockType::CodeBlock(Spanned::new(
+        parse_children_vec(node)?,
         node.span,
-    ));
-
-    Ok(ASTBlockType::Program(Box::new(ProgramBlock {
-        head: head_parsed,
-        main,
-        span: node.span,
-    })))
+    )))
 }
 
 /// Main recursively invoked parsing function
@@ -111,6 +90,9 @@ pub fn generate_ast(node: &UVParseNode) -> GeneratorOutputType {
 
         // Parse function call
         "call" => parse_function_call(node)?,
+
+        // Parse modules import
+        "import" if !node.self_closing => parse_module_import(node)?,
 
         // Values such as int, float, etc.
         name if name.to_uvtype().is_some() => parse_value(node)?,

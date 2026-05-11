@@ -4,7 +4,7 @@ use ultraviolet_core::{
     types::{
         EnvRef, Environment,
         frontend::{
-            ast::{ASTBlockType, ProgramBlock},
+            ast::ASTBlockType,
             typechecker::{ControlFlow, UVTypeVariable},
             types::UVType,
         },
@@ -28,8 +28,7 @@ pub fn typecheck(
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     Ok(match block {
-        ASTBlockType::Program(p) => analyze_program(p, env)?,
-        ASTBlockType::MainBlock(m) => analyze_group(&m.value, env)?,
+        ASTBlockType::CodeBlock(m) => analyze_group(&m.value, env)?,
 
         ASTBlockType::VariableDefinition(vd) => check_variable_definition(vd, env)?,
         ASTBlockType::VariableAssignment(va) => check_variable_assign(va, env)?,
@@ -53,17 +52,6 @@ pub fn typecheck(
 
         _ => ControlFlow::Simple(UVType::Void),
     })
-}
-
-/// Analyze main program block
-fn analyze_program(
-    pr: &ProgramBlock,
-    env: EnvRef<UVTypeVariable>,
-) -> Result<ControlFlow, SpannedError> {
-    let new_env = Environment::new_child(env);
-    typecheck(&pr.main, new_env)?;
-
-    Ok(ControlFlow::Simple(UVType::Void))
 }
 
 /// Analyze group of block

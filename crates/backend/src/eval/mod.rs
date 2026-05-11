@@ -4,7 +4,6 @@ use crate::{
         conditional_op::eval_conditional_op,
         functions::{call_function, define_function},
         loops::{eval_for_loop, eval_while_loop},
-        program::eval_program,
         variables::{access_variable, assign_variable, define_variable},
     },
 };
@@ -22,16 +21,12 @@ mod functions;
 mod logical;
 mod loops;
 mod math;
-mod program;
 mod variables;
 
 pub fn eval(node: &ASTBlockType, env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
     Ok(match node {
         // Main program and others service blocks
-        ASTBlockType::Program(program_block) => eval_program(program_block, env)?,
-        ASTBlockType::HeadBlock(blocks) | ASTBlockType::MainBlock(blocks) => {
-            eval_block(blocks, env)?
-        },
+        ASTBlockType::CodeBlock(code) => eval_block(code, env)?,
 
         // Variables things
         ASTBlockType::VariableDefinition(def) => define_variable(def, env)?,
@@ -56,6 +51,8 @@ pub fn eval(node: &ASTBlockType, env: EnvRef<RTVariable>) -> Result<ControlFlow,
 
         ASTBlockType::Break(_) => ControlFlow::Break,
         ASTBlockType::Continue(_) => ControlFlow::Continue,
+
+        _ => todo!(),
     })
 }
 

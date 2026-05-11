@@ -70,14 +70,8 @@ impl CheckFlow {
 /// Program analyze
 pub fn analyze_dead_code_program(ast: &ASTBlockType) -> Vec<SpannedError> {
     let mut errors = Vec::new();
-    if let ASTBlockType::Program(p) = ast {
-        if let Some(ASTBlockType::HeadBlock(h)) = &p.head {
-            errors.extend(analyze_dead_code(&h.value, false).errors);
-        }
-
-        if let ASTBlockType::MainBlock(m) = &p.main {
-            errors.extend(analyze_dead_code(&m.value, false).errors);
-        }
+    if let ASTBlockType::CodeBlock(p) = ast {
+        errors.extend(analyze_dead_code(&p.value, false).errors);
     }
 
     errors
@@ -112,9 +106,7 @@ pub fn analyze_dead_code<'a>(
             },
 
             // For simple blocks, just check code and propagates terminal
-            ASTBlockType::GroupBlock(inner)
-            | ASTBlockType::MainBlock(inner)
-            | ASTBlockType::HeadBlock(inner) => {
+            ASTBlockType::GroupBlock(inner) => {
                 flow.apply_flow(analyze_dead_code(inner.deref(), false), block)
             },
 

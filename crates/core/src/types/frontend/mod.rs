@@ -130,3 +130,9 @@ impl<T> Deref for Spanned<T> {
         &self.value
     }
 }
+
+/// Represents a module, that should be imported
+pub struct ModuleImport {
+    pub name: Spanned<String>,
+    pub alias: Option<Spanned<String>>,
+}

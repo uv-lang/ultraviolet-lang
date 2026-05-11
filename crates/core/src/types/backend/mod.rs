@@ -11,7 +11,7 @@ use std::{
 };
 pub mod uvvalue_ops;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct RTFunction {
     pub args_names_order: Vec<String>,
     pub body: Rc<Vec<ASTBlockType>>,
@@ -37,7 +37,7 @@ impl BuiltInFunction {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum UVRTValue {
     Number(Number),
     String(String),
@@ -77,7 +77,7 @@ impl UVRTValue {
 }
 
 /// Runtime variable struct
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct RTVariable {
     pub value: UVRTValue,
     pub constant: bool,
@@ -94,7 +94,6 @@ impl RTVariable {
 }
 
 /// Indicates, when block ended with return, break, etc...
-#[derive(Debug)]
 pub enum ControlFlow {
     Simple(UVRTValue),
 

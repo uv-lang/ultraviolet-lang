@@ -5,17 +5,16 @@
 Язык имеет синтаксис, схожий с синтаксисом HTML или XML, что делает его простым для парсинга и *почти* понятным для чтения. Сам по себе язык статически строго типизируемый, что достигается строгой проверкой на типы в процессе работы фронтенда языка.
 
 ```xml
-<program>
-<head>
-    <!-- Include external libraries -->
-    <include>
-        <str>math</str>
-    </include>
-    <include>
-        <str>string</str>
-    </include>
-</head>
 <main>
+    <!-- Import external modules -->
+    <import>
+        <name>math</name>
+    </import>
+    <import>
+        <name>string</name>
+        <as>str</as>
+    </import>
+
     <!-- 
         Data types
         All literals must be wrapped in their data type
@@ -151,18 +150,6 @@
     </variable_name>
 
 
-
-    <!-- Increment and decrement -->
-    <!-- Variables can be passed by pointer using <var ptr /> -->
-    <!-- Пока что я без понятия как реализовывать это в интерпретаторе, так что сделаем уже позже -->
-    <inc>
-        <ref>variable_name</ref>
-    </inc>
-    <dec>
-        <ref>variable_name</ref>
-    </dec>
-
-
     <!-- Conditional operators -->
     <if>
         <test>
@@ -293,8 +280,6 @@
         </call>
     </call>
 </main>
-
-</program>
 
 
 <!-- Code below — just for test -->

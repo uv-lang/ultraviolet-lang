@@ -1,14 +1,12 @@
-<program>
-<head>
-    <!-- Include external libraries -->
-    <include>
-        <str>math</str>
-    </include>
-    <include>
-        <str>string</str>
-    </include>
-</head>
 <main>
+    <!-- Include external libraries -->
+    <import>
+        <name>math</name>
+    </import>
+    <import>
+        <name>string</name>
+    </import>
+
     <!-- 
         Data types
         All literals must be wrapped in their data type
@@ -286,5 +284,3 @@
         </call>
     </call>
 </main>
-
-</program>>

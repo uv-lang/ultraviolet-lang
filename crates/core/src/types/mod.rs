@@ -58,9 +58,9 @@ impl<T> Environment<T> {
 }
 
 /// Structure containing ast, modules, source file and environment
-pub struct SourceCode<T> {
+pub struct SourceCode {
     pub ast: ASTBlockType,
     pub source_file: SourceFile,
-    pub env: EnvRef<T>,
-    /* pub modules: Vec<Modules> */
+    pub modules: HashMap<String, SourceCode>,
+    /* exports */
 }

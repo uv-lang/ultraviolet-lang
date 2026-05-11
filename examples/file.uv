@@ -1,17 +1,5 @@
-<program>
-    <main>
-
-        <let>
-            <name>a</name>
-            <value>
-                <call read>
-                    <str>Input: </str>
-                </call>
-            </value>
-        </let>
-
-        <call println>
-            <a />
-        </call>
-    </main>
-</program>
+<main>
+    <import>
+        <name>math</name>
+    </import>
+</main>

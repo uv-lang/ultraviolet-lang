@@ -10,7 +10,7 @@ use crate::{
         },
     },
     types::frontend::{
-        Span, Spanned,
+        ModuleImport, Span, Spanned,
         types::{UVNumberType, UVType},
     },
 };
@@ -76,12 +76,8 @@ impl std::fmt::Display for UVValue {
 }
 
 // --------------------------- AST-TYPES ---------------------------
-#[derive(Debug)]
 pub enum ASTBlockType {
-    Program(Box<ProgramBlock>),
-
-    HeadBlock(Spanned<Vec<ASTBlockType>>),
-    MainBlock(Spanned<Vec<ASTBlockType>>),
+    CodeBlock(Spanned<Vec<ASTBlockType>>),
 
     VariableDefinition(Box<VariableDefinition>),
     FunctionDefinition(Box<FunctionDefinition>),
@@ -106,14 +102,14 @@ pub enum ASTBlockType {
     Return(Spanned<Option<Box<ASTBlockType>>>),
     Continue(Spanned<()>),
     Break(Spanned<()>),
+
+    ModuleImport(Spanned<ModuleImport>),
 }
 
 impl<'a> GetBlockName<'a> for ASTBlockType {
     fn get_block_name(&'a self) -> Cow<'a, str> {
         match self {
-            ASTBlockType::Program(_) => Cow::Borrowed("program"),
-            ASTBlockType::HeadBlock(_) => Cow::Borrowed("head"),
-            ASTBlockType::MainBlock(_) => Cow::Borrowed("main"),
+            ASTBlockType::CodeBlock(_) => Cow::Borrowed("code"),
             ASTBlockType::VariableDefinition(_) => Cow::Borrowed("let"),
             ASTBlockType::VariableAssignment(a) => Cow::Borrowed(&a.name),
             ASTBlockType::VariableAccess(a) => Cow::Borrowed(&a.name),
@@ -132,6 +128,8 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
             ASTBlockType::FunctionDefinition(_) => Cow::Borrowed("fn"),
             ASTBlockType::FunctionCall(_) => Cow::Borrowed("call"),
             ASTBlockType::ConditionalOp(_) => Cow::Borrowed("if"),
+
+            ASTBlockType::ModuleImport(_) => Cow::Borrowed("import"),
         }
     }
 }
@@ -139,9 +137,7 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
 impl Positional for ASTBlockType {
     fn get_span(&self) -> Span {
         match self {
-            ASTBlockType::Program(p) => p.span,
-            ASTBlockType::HeadBlock(a) => a.span,
-            ASTBlockType::MainBlock(a) => a.span,
+            ASTBlockType::CodeBlock(p) => p.span,
             ASTBlockType::VariableDefinition(v) => v.span,
             ASTBlockType::FunctionDefinition(f) => f.span,
             ASTBlockType::FunctionCall(f) => f.span,
@@ -158,23 +154,13 @@ impl Positional for ASTBlockType {
             ASTBlockType::Return(a) => a.span,
             ASTBlockType::Continue(c) => c.span,
             ASTBlockType::Break(b) => b.span,
+            ASTBlockType::ModuleImport(i) => i.span,
         }
     }
 }
 
-// --------------------------- PROGRAM BLOCK ------------------------
-
-#[derive(Debug)]
-pub struct ProgramBlock {
-    pub head: Option<ASTBlockType>,
-    pub main: ASTBlockType,
-
-    pub span: Span,
-}
-
 // --------------------------- VariableDefinition BLOCK ------------------------
 
-#[derive(Debug)]
 pub struct VariableDefinition {
     pub name: Spanned<String>,
     pub value: Spanned<ASTBlockType>,
@@ -186,7 +172,6 @@ pub struct VariableDefinition {
 
 // ------------------------- Variable Assign ---------------------------------
 
-#[derive(Debug)]
 pub struct VariableAssign {
     pub name: String,
     pub value: Spanned<Box<ASTBlockType>>,
@@ -196,14 +181,12 @@ pub struct VariableAssign {
 
 // ------------------------ Variable Access ----------------------------------
 
-#[derive(Debug)]
 pub struct VariableAccess {
     pub name: String,
     pub span: Span,
 }
 
 // ------------------------ Math Operations ----------------------------------
-#[derive(Debug)]
 pub struct MathOp {
     pub op_type: MathOpType,
     pub operands: Vec<ASTBlockType>,
@@ -269,7 +252,6 @@ impl fmt::Display for CompareOpType {
     }
 }
 
-#[derive(Debug)]
 pub struct CompareOp {
     pub op_type: CompareOpType,
     pub operands: Vec<ASTBlockType>,
@@ -318,7 +300,6 @@ impl fmt::Display for LogicalOpType {
     }
 }
 
-#[derive(Debug)]
 pub struct LogicalOp {
     pub op_type: LogicalOpType,
     pub operands: Vec<ASTBlockType>,
@@ -353,7 +334,6 @@ impl StringToUVLogicalOp for str {
 }
 
 // --------------------------- For loop --------------------------------------
-#[derive(Debug)]
 pub struct ForLoop {
     pub iterator: Spanned<String>,
     pub start: ASTBlockType,
@@ -366,7 +346,6 @@ pub struct ForLoop {
 
 // ---------------------------- While loop -----------------------------------
 
-#[derive(Debug)]
 pub struct WhileLoop {
     pub test: ASTBlockType,
     pub body: Spanned<Vec<ASTBlockType>>,
@@ -376,7 +355,6 @@ pub struct WhileLoop {
 
 // ---------------------- Conditional Operator -------------------------------
 
-#[derive(Debug)]
 pub struct ConditionalOperator {
     pub test: ASTBlockType,
     pub then_body: Option<Spanned<Vec<ASTBlockType>>>,
@@ -387,7 +365,6 @@ pub struct ConditionalOperator {
 
 // ----------------------- Function Definition --------------------------------
 
-#[derive(Debug)]
 pub struct FunctionDefinitionArg {
     pub name: Spanned<String>,
     pub arg_type: Spanned<UVType>,
@@ -395,7 +372,6 @@ pub struct FunctionDefinitionArg {
     pub span: Span,
 }
 
-#[derive(Debug)]
 pub struct FunctionDefinition {
     pub name: Option<Spanned<String>>,
     pub arguments: Vec<FunctionDefinitionArg>,
@@ -407,14 +383,12 @@ pub struct FunctionDefinition {
 }
 
 // ------------------------- Function Call -----------------------------------
-#[derive(Debug)]
 pub struct FunctionCallArg {
     pub value: ASTBlockType,
 
     pub span: Span,
 }
 
-#[derive(Debug)]
 pub struct FunctionCall {
     pub name: String,
     pub args: Vec<FunctionCallArg>,
