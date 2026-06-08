@@ -9,18 +9,8 @@ use crate::{
             StringToUVMathOp,
         },
     },
-    types::frontend::{
-        ModuleImport, Span, Spanned,
-        types::{UVNumberType, UVType},
-    },
+    types::frontend::{ModuleImport, Span, Spanned, number::Number, types::UVType},
 };
-
-/// Number-like value
-#[derive(Debug, Clone)]
-pub enum Number {
-    Int(i64),
-    Float(f64),
-}
 
 /// Typed value container
 #[derive(Debug, Clone)]
@@ -32,15 +22,6 @@ pub enum UVValue {
     Void,
 }
 
-impl GetType for Number {
-    fn get_type(&self) -> UVType {
-        match self {
-            Number::Int(_) => UVType::Number(UVNumberType::Int),
-            Number::Float(_) => UVType::Number(UVNumberType::Float),
-        }
-    }
-}
-
 impl GetType for UVValue {
     fn get_type(&self) -> UVType {
         match self {
@@ -50,15 +31,6 @@ impl GetType for UVValue {
             UVValue::Null => UVType::Null,
 
             UVValue::Void => UVType::Void,
-        }
-    }
-}
-
-impl std::fmt::Display for Number {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Number::Int(i) => write!(f, "{i}"),
-            Number::Float(fl) => write!(f, "{fl}"),
         }
     }
 }
@@ -399,22 +371,21 @@ pub struct FunctionCall {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::frontend::ast::UVNumberType;
     use crate::{
         traits::frontend::ast::{IsAssignable, StringToUVType},
-        types::frontend::ast::UVType,
+        types::frontend::{ast::UVType, number::UVNumberType},
     };
 
     #[test]
     fn parse_type() {
         assert_eq!(
-            String::from("int").to_uvtype(),
-            Some(UVType::Number(UVNumberType::Int))
+            String::from("i32").to_uvtype(),
+            Some(UVType::Number(UVNumberType::I32))
         );
         assert_eq!(String::from("bool").to_uvtype(), Some(UVType::Boolean));
         assert_eq!(
-            String::from("float").to_uvtype(),
-            Some(UVType::Number(UVNumberType::Float))
+            String::from("f64").to_uvtype(),
+            Some(UVType::Number(UVNumberType::F64))
         );
         assert_eq!(String::from("null").to_uvtype(), Some(UVType::Null));
         assert_eq!(String::from("str").to_uvtype(), Some(UVType::String));
@@ -425,25 +396,25 @@ mod tests {
     #[test]
     fn type_compatible_with() {
         assert!(
-            UVType::Union(vec![UVType::Number(UVNumberType::Float), UVType::Null])
+            UVType::Union(vec![UVType::Number(UVNumberType::F64), UVType::Null])
                 .is_assignable_from(&UVType::Null)
         );
 
         assert!(
             UVType::Union(vec![
-                UVType::Number(UVNumberType::Int),
-                UVType::Number(UVNumberType::Float)
+                UVType::Number(UVNumberType::I64),
+                UVType::Number(UVNumberType::F64)
             ])
-            .is_assignable_from(&UVType::Union(vec![UVType::Number(UVNumberType::Int)]))
+            .is_assignable_from(&UVType::Union(vec![UVType::Number(UVNumberType::I64)]))
         );
 
         assert!(
-            !UVType::Number(UVNumberType::Int).is_assignable_from(&UVType::Union(vec![
-                UVType::Number(UVNumberType::Int),
+            !UVType::Number(UVNumberType::I64).is_assignable_from(&UVType::Union(vec![
+                UVType::Number(UVNumberType::I64),
                 UVType::Null
             ]))
         );
 
-        assert!(!UVType::Number(UVNumberType::Int).is_assignable_from(&UVType::Boolean));
+        assert!(!UVType::Number(UVNumberType::I64).is_assignable_from(&UVType::Boolean));
     }
 }

@@ -1,6 +1,7 @@
 use crate::types::{
     EnvRef,
     frontend::{
+        number::UVNumberType,
         typechecker::UVTypeVariable,
         types::{UVBuiltinFunctionArguments, UVBuiltinFunctionType, UVType},
     },
@@ -40,6 +41,17 @@ pub fn init_builtin_types_functions(env: EnvRef<UVTypeVariable>) {
                     UVType::String,
                 ))]),
                 returns: UVType::String,
+            })),
+            true,
+        ),
+    );
+
+    borrowed_env.define_variable(
+        "sin",
+        UVTypeVariable::new_from(
+            UVType::BuiltInFunction(Box::new(UVBuiltinFunctionType {
+                args: UVBuiltinFunctionArguments::Args(vec![UVType::Number(UVNumberType::F64)]),
+                returns: UVType::Number(UVNumberType::F64),
             })),
             true,
         ),

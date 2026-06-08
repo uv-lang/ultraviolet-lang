@@ -1,10 +1,14 @@
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::{Positional, ast::GetBlockName, token_parser::UnwrapOptionError},
+    traits::frontend::{
+        Positional,
+        ast::{GetBlockName, StringToUVType},
+        token_parser::UnwrapOptionError,
+    },
     types::frontend::{
         Spanned,
         tokens::UVParseNode,
-        types::{UVFunctionType, UVNumberType, UVType},
+        types::{UVFunctionType, UVType},
     },
 };
 
@@ -30,14 +34,14 @@ pub fn parse_type_raw(node: &UVParseNode) -> Result<UVType, SpannedError> {
         _ => {},
     }
 
+    if let Some(t) = node.name.as_str().to_uvtype() {
+        return Ok(t);
+    }
+
     Ok(match node.name.as_str() {
-        "int" => UVType::Number(UVNumberType::Int),
-        "float" => UVType::Number(UVNumberType::Float),
-        "str" => UVType::String,
-        "bool" => UVType::Boolean,
-        "null" => UVType::Null,
         "union" => parse_union(node)?,
         "fn" => parse_fn_type(node)?,
+        
         // TODO: Make this accessible from user env
         // "optional" => parse_optional(node)?,
         _ => {

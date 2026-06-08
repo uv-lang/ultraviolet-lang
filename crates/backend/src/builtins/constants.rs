@@ -8,7 +8,7 @@ use std::f64::consts::{E, PI};
 use ultraviolet_core::types::{
     EnvRef,
     backend::{RTVariable, UVRTValue},
-    frontend::ast::Number,
+    frontend::number::Number,
 };
 
 /// Initialize built-in constants
@@ -32,11 +32,11 @@ pub fn init_builtin_constants(env: EnvRef<RTVariable>) {
 
     borrowed_env.define_variable(
         "math.pi",
-        RTVariable::new_from(UVRTValue::Number(Number::Float(PI)), true),
+        RTVariable::new_from(UVRTValue::Number(Number::F64(PI)), true),
     );
     borrowed_env.define_variable(
         "math.exp",
-        RTVariable::new_from(UVRTValue::Number(Number::Float(E)), true),
+        RTVariable::new_from(UVRTValue::Number(Number::F64(E)), true),
     );
 
     borrowed_env.define_variable(

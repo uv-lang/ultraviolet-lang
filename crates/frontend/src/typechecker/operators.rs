@@ -1,5 +1,6 @@
 use ultraviolet_core::{
     errors::SpannedError,
+    traits::frontend::{Positional, ast::IsAssignable, token_parser::UnwrapOptionError},
     types::{
         EnvRef, Environment,
         frontend::{
@@ -17,34 +18,29 @@ pub fn check_math_op(
     op: &MathOp,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
-    let mut op_types = Vec::new();
+    let op_type = match typecheck(op.operands.first().unwrap_or_spanned(op.span)?, env.clone())? {
+        ControlFlow::Simple(t) => t,
+        cf => return Ok(cf),
+    };
+
     for operand in &op.operands {
         let t = match typecheck(operand, env.clone())? {
             ControlFlow::Simple(t) => t,
             cf => return Ok(cf),
         };
 
-        let number_type = match t {
-            UVType::Number(n) => n,
-            other => {
-                return Err(SpannedError::new(
-                    format!("Math operator expects number, but `{}` provided", other),
-                    op.span,
-                ));
-            },
-        };
-
-        op_types.push(number_type);
+        if !op_type.is_assignable_from(&t) {
+            return Err(SpannedError::new(
+                format!(
+                    "Type mismatch for math operation: Expected `{}`, got `{}`",
+                    op_type, t
+                ),
+                operand.get_span(),
+            ));
+        }
     }
 
-    let wider = UVType::wider_type(&op_types).ok_or_else(|| {
-        SpannedError::new(
-            "Math operator requires at least one operand".to_string(),
-            op.span,
-        )
-    })?;
-
-    Ok(ControlFlow::Simple(UVType::Number(wider)))
+    Ok(ControlFlow::Simple(op_type))
 }
 
 /// Typecheck conditional operator

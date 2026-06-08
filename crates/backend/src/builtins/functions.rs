@@ -4,6 +4,7 @@ use ultraviolet_core::{
     types::{
         EnvRef,
         backend::{BuiltInFunction, ControlFlow, RTVariable, UVRTValue},
+        frontend::number::Number,
     },
 };
 
@@ -29,6 +30,14 @@ pub fn init_builtin_functions(env: EnvRef<RTVariable>) {
         "read",
         RTVariable::new_from(
             UVRTValue::BuiltInFunction(BuiltInFunction::new_from(read)),
+            true,
+        ),
+    );
+
+    borrowed_env.define_variable(
+        "sin",
+        RTVariable::new_from(
+            UVRTValue::BuiltInFunction(BuiltInFunction::new_from(sin)),
             true,
         ),
     );
@@ -110,4 +119,15 @@ fn read(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, Spa
         ))),
         Err(_) => Ok(ControlFlow::Simple(UVRTValue::Null)),
     }
+}
+
+/// Wrapper over standard sine function
+fn sin(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
+    let Some(UVRTValue::Number(Number::F64(n))) = args.first() else {
+        unreachable!()
+    };
+
+    Ok(ControlFlow::Simple(UVRTValue::Number(Number::F64(
+        f64::sin(*n),
+    ))))
 }

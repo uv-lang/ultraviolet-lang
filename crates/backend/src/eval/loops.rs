@@ -1,10 +1,13 @@
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::token_parser::UnwrapOptionError,
+    traits::frontend::{ast::GetType, token_parser::UnwrapOptionError},
     types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTVariable, UVRTValue},
-        frontend::ast::{ForLoop, Number, WhileLoop},
+        frontend::{
+            ast::{ForLoop, WhileLoop},
+            number::Number,
+        },
     },
 };
 
@@ -33,7 +36,12 @@ pub fn eval_for_loop(
 
         step
     } else {
-        UVRTValue::Number(Number::Int(1))
+        UVRTValue::Number(Number::auto(1, start.get_type()).map_err(|e| {
+            SpannedError::new(
+                format!("Runtime Error: Cannot cast step for `for` loop: {}", e),
+                for_node.span,
+            )
+        })?)
     };
 
     // FIXME: Должен ли интерпретатор создавать итератор в родительском скоупе для

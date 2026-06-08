@@ -42,9 +42,11 @@ pub fn eval(node: &ASTBlockType, env: EnvRef<RTVariable>) -> Result<ControlFlow,
         ASTBlockType::ConditionalOp(co) => eval_conditional_op(co, env)?,
         ASTBlockType::MathOp(math_op) => math_op.eval(env)?,
         ASTBlockType::LogicalOp(logical_op) => logical_op.eval(env)?,
+
         ASTBlockType::CompareOp(compare_op) => compare_op.eval(env)?,
         ASTBlockType::ForLoop(for_loop) => eval_for_loop(for_loop, env)?,
         ASTBlockType::WhileLoop(while_loop) => eval_while_loop(while_loop, env)?,
+
         ASTBlockType::Value(val) => ControlFlow::Simple(UVRTValue::from_uvvalue(val.value.clone())),
         ASTBlockType::GroupBlock(block) => eval_block(block, env)?,
         ASTBlockType::Return(block) => eval_return(block, env)?,
@@ -66,7 +68,6 @@ fn eval_block(
     let mut last_eval_simple_val = UVRTValue::Void;
     for node in nodes {
         match eval(node, new_env.clone())? {
-            // FIXME: Should the block return the last calculated value?
             ControlFlow::Simple(val) => last_eval_simple_val = val,
             cf => return Ok(cf),
         }

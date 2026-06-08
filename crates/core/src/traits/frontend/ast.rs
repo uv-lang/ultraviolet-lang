@@ -4,6 +4,7 @@ use crate::types::{
     EnvRef,
     frontend::{
         ast::{CompareOpType, LogicalOpType, MathOpType},
+        number::UVNumberType,
         typechecker::UVTypeVariable,
         types::UVType,
     },
@@ -34,6 +35,14 @@ pub trait StringToUVType {
     /// Example:
     /// `String::from("int").to_uvtype();`
     fn to_uvtype(&self) -> Option<UVType>;
+}
+
+pub trait StringToUVNumberType {
+    /// Convert string-representation to a Ultraviolet Number type
+    ///
+    /// Example:
+    /// `String::from("int").to_uvtype();`
+    fn to_uv_number_type(&self) -> Option<UVNumberType>;
 }
 
 pub trait StringToUVMathOp {

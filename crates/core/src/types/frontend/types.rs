@@ -1,7 +1,10 @@
 use colored::Colorize;
 use std::ops::Deref;
 
-use crate::traits::frontend::ast::{IsAssignable, StringToUVType};
+use crate::{
+    traits::frontend::ast::{IsAssignable, StringToUVNumberType, StringToUVType},
+    types::frontend::number::UVNumberType,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UVFunctionType {
@@ -23,15 +26,6 @@ pub struct UVBuiltinFunctionType {
 
 // ------------------------------------------------------------------------
 
-/// Ultraviolet number types
-///
-/// Must be ordered by type width
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum UVNumberType {
-    Int,
-    Float,
-}
-
 /// Ultraviolet primitive types
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum UVType {
@@ -52,10 +46,7 @@ pub enum UVType {
 impl std::fmt::Display for UVType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UVType::Number(n) => match n {
-                UVNumberType::Int => write!(f, "<int />"),
-                UVNumberType::Float => write!(f, "<float />"),
-            },
+            UVType::Number(n) => n.fmt(f),
             UVType::String => write!(f, "<str />"),
             UVType::Boolean => write!(f, "<bool />"),
             UVType::Null => write!(f, "<null />"),
@@ -128,9 +119,18 @@ impl UVType {
         }
     }
 
-    /// Get wider number type
-    pub fn wider_type(vec: &[UVNumberType]) -> Option<UVNumberType> {
-        vec.iter().max().cloned()
+    /// Checks if all provided types is eq
+    pub fn all_eq(vec: &[Self]) -> bool {
+        let mut i = vec.iter();
+        let f = i.next().unwrap();
+
+        for el in i {
+            if !f.is_assignable_from(el) {
+                return false;
+            }
+        }
+
+        true
     }
 }
 
@@ -141,8 +141,6 @@ impl IsAssignable for UVType {
         }
 
         match (self, other) {
-            (UVType::Number(a), UVType::Number(b)) => b <= a,
-
             (_, UVType::Union(types)) => types.iter().all(|t| self.is_assignable_from(t)),
             (UVType::Union(types), _) => types.iter().any(|t| t.is_assignable_from(other)),
 
@@ -160,9 +158,11 @@ impl IsAssignable for UVType {
 
 impl StringToUVType for str {
     fn to_uvtype(&self) -> Option<UVType> {
+        if let Some(n) = self.to_uv_number_type() {
+            return Some(UVType::Number(n));
+        }
+
         match self {
-            "int" => Some(UVType::Number(UVNumberType::Int)),
-            "float" => Some(UVType::Number(UVNumberType::Float)),
             "str" => Some(UVType::String),
             "bool" => Some(UVType::Boolean),
             "null" => Some(UVType::Null),

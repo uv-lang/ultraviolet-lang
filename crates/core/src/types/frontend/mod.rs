@@ -1,5 +1,6 @@
 pub mod ast;
 pub mod lexer;
+pub mod number;
 pub mod tokens;
 pub mod typechecker;
 pub mod types;

@@ -1,12 +1,12 @@
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::token_parser::UnwrapOptionError,
     types::{
         EnvRef, Environment,
         frontend::{
             ast::{ForLoop, WhileLoop},
+            number::UVNumberType,
             typechecker::{ControlFlow, UVTypeVariable},
-            types::{UVNumberType, UVType},
+            types::UVType,
         },
     },
 };
@@ -60,13 +60,19 @@ pub fn check_for_loop(
             cf => return Ok(cf),
         }
     } else {
-        UVNumberType::Int
+        start.clone()
     };
 
-    let iter_type = UVType::wider_type(&[start, end, step]).unwrap_or_spanned(fl.span)?;
+    if !UVNumberType::all_eq(&[&start, &end, &step]) {
+        return Err(SpannedError::new(
+            "All loop parameters should be same type",
+            fl.span,
+        ));
+    }
+
     child_env.borrow_mut().define_variable(
         &fl.iterator.value,
-        UVTypeVariable::new_from(UVType::Number(iter_type), true),
+        UVTypeVariable::new_from(UVType::Number(start), true),
     );
 
     analyze_group(&fl.body, child_env)?;

@@ -1,8 +1,13 @@
 use crate::{
     errors::SpannedError,
+    traits::frontend::ast::GetType,
     types::{
         EnvRef, Environment,
-        frontend::ast::{ASTBlockType, Number, UVValue},
+        frontend::{
+            ast::{ASTBlockType, UVValue},
+            number::Number,
+            types::UVType,
+        },
     },
 };
 use std::{
@@ -102,4 +107,17 @@ pub enum ControlFlow {
 
     Break,
     Continue,
+}
+
+impl GetType for UVRTValue {
+    fn get_type(&self) -> UVType {
+        match self {
+            UVRTValue::Number(number) => number.get_type(),
+            UVRTValue::String(_) => UVType::String,
+            UVRTValue::Boolean(_) => UVType::Boolean,
+            UVRTValue::Null => UVType::Null,
+            UVRTValue::Void => UVType::Void,
+            _ => unimplemented!(),
+        }
+    }
 }

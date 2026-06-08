@@ -1,9 +1,6 @@
 use crate::types::{
     EnvRef,
-    frontend::{
-        typechecker::UVTypeVariable,
-        types::{UVNumberType, UVType},
-    },
+    frontend::{number::UVNumberType, typechecker::UVTypeVariable, types::UVType},
 };
 
 pub fn init_builtin_types_constants(env: EnvRef<UVTypeVariable>) {
@@ -15,11 +12,11 @@ pub fn init_builtin_types_constants(env: EnvRef<UVTypeVariable>) {
 
     borrowed_env.define_variable(
         "math.pi",
-        UVTypeVariable::new_from(UVType::Number(UVNumberType::Float), true),
+        UVTypeVariable::new_from(UVType::Number(UVNumberType::F64), true),
     );
     borrowed_env.define_variable(
         "math.exp",
-        UVTypeVariable::new_from(UVType::Number(UVNumberType::Float), true),
+        UVTypeVariable::new_from(UVType::Number(UVNumberType::F64), true),
     );
 
     borrowed_env.define_variable("os.name", UVTypeVariable::new_from(UVType::String, true));

@@ -1,24 +1,25 @@
+use crate::ast::GeneratorOutputType;
+use anyhow::Result;
 use std::ops::Deref;
-
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::token_parser::UnwrapOptionError,
+    number_variants,
+    traits::frontend::{ast::StringToUVNumberType, token_parser::UnwrapOptionError},
     types::frontend::{
         Spanned,
-        ast::{ASTBlockType, Number, UVValue},
+        ast::{ASTBlockType, UVValue},
+        number::Number,
         tokens::UVParseNode,
     },
 };
-
-use crate::ast::GeneratorOutputType;
 
 /// Parse UVValues.
 /// Caller must guarantee, that tag name is one of data types!
 pub fn parse_value(node: &UVParseNode) -> GeneratorOutputType {
     Ok(ASTBlockType::Value(Spanned::new(
         match node.name.as_str() {
-            "int" => UVValue::Number(Number::Int(parse_int(node)?)),
-            "float" => UVValue::Number(Number::Float(parse_float(node)?)),
+            s if s.to_uv_number_type().is_some() => UVValue::Number(parse_number(node)?),
+
             "str" => UVValue::String(parse_str(node)),
             "bool" => UVValue::Boolean(parse_boolean(node)?),
             "null" => {
@@ -51,29 +52,35 @@ fn validate_inner(node: &UVParseNode) -> Result<(), SpannedError> {
     Ok(())
 }
 
-fn parse_int(node: &UVParseNode) -> Result<i64, SpannedError> {
-    validate_inner(node)?;
-    let inner_contents = node.get_inner_literal().unwrap_or_spanned(node.span)?;
+// Generate number parsing function for all number types
+macro_rules! gen_parse_number_fn {
+    ($($variant:ident($ty:ty)),* $(,)?) => {
+        fn parse_number(node: &UVParseNode) -> Result<Number, SpannedError> {
+            validate_inner(node)?;
+            let inner_contents = node.get_inner_literal().unwrap_or_spanned(node.span)?;
 
-    inner_contents.parse::<i64>().map_err(|_| {
-        SpannedError::new(
-            format!("Cannot parse `{}` to an integer", inner_contents.deref()),
-            inner_contents.span,
-        )
-    })
+            let parse = || -> Result<Number> {
+                match node.name.as_str() {
+                    $(stringify!($ty) => Ok(Number::$variant(inner_contents.parse::<$ty>()?)),)*
+                    _ => Err(anyhow::anyhow!("Unknown number type"))
+                }
+            };
+
+            parse().map_err(|_| {
+                SpannedError::new(
+                    format!(
+                        "Cannot parse `{}` to an `{}`",
+                        inner_contents.deref(),
+                        node.name
+                    ),
+                    inner_contents.span,
+                )
+            })
+        }
+    };
 }
 
-fn parse_float(node: &UVParseNode) -> Result<f64, SpannedError> {
-    validate_inner(node)?;
-    let inner_contents = node.get_inner_literal().unwrap_or_spanned(node.span)?;
-
-    inner_contents.parse::<f64>().map_err(|_| {
-        SpannedError::new(
-            format!("Cannot parse `{}` to a float", inner_contents.deref()),
-            inner_contents.span,
-        )
-    })
-}
+number_variants!(gen_parse_number_fn);
 
 fn parse_str(node: &UVParseNode) -> String {
     if let Some(lit) = node.get_inner_literal() {

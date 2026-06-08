@@ -1,5 +1,25 @@
 <main>
-    <import>
-        <name>math</name>
-    </import>
+    <for>
+        <iter>x</iter>
+        <start>
+            <f64>0</f64>
+        </start>
+
+        <end>
+            <f64>50</f64>
+        </end>
+
+        <step>
+            <f64>0.1</f64>
+        </step>
+
+
+        <body>
+            <call println>
+                <call sin>
+                    <x />
+                </call>
+            </call>
+        </body>
+    </for>
 </main>
