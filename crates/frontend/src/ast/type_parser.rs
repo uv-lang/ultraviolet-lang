@@ -41,7 +41,7 @@ pub fn parse_type_raw(node: &UVParseNode) -> Result<UVType, SpannedError> {
     Ok(match node.name.as_str() {
         "union" => parse_union(node)?,
         "fn" => parse_fn_type(node)?,
-        
+
         // TODO: Make this accessible from user env
         // "optional" => parse_optional(node)?,
         _ => {
