@@ -25,11 +25,11 @@
     <!-- Strings -->
     <str>Hello world!</str>
 
-    <!-- Integer (always int64) -->
-    <int>255</int>
+    <!-- Integer i8, u8, ... i64, u64 -->
+    <i32>255</i32>
 
-    <!-- Fp -->
-    <float>69.67</float>
+    <!-- Floating point f32, f64 -->
+    <f32>69.67</f32>
 
     <!-- Booleans (only 0 and 1 literals allowed) -->
     <bool>0</bool>
@@ -40,7 +40,7 @@
     <!-- Union types -->
     <!-- Arguments with that type can contain multiple primitives types -->
     <union>
-        <int />
+        <i32 />
         <null />
     </union>
 
@@ -49,32 +49,32 @@
 
     <!-- Sum can handle numerous arguments (maybe) -->
     <sum>
-        <int>10</int>
-        <float>1.5</float>
+        <f32>10</f32>
+        <f32>1.5</f32>
     </sum>
 
     <!-- Subtraction perform operation in passed arguments order (5 - 3) -->
     <sub>
-        <int>5</int>
-        <int>3</int>
+        <i8>5</i8>
+        <i8>3</i8>
     </sub>
 
     <!-- Mul, same as sum can handle numerous arguments -->
     <mul>
-        <int>6</int>
-        <int>9</int>
+        <i8>6</i8>
+        <i8>9</i8>
     </mul>
 
     <!-- 6 / 3 -->
     <div>
-        <int>6</int>
-        <int>3</int>
+        <f32>6</f32>
+        <f32>3</f32>
     </div>
 
     <!-- 6 % 3 -->
     <mod>
-        <int>6</int>
-        <int>3</int>
+        <i8>6</i8>
+        <i8>3</i8>
     </mod>
 
     <!-- Math operations also can be nested -->
@@ -84,35 +84,35 @@
     -->
     <mul>
         <sum>
-            <int>1</int>
-            <int>2</int>
+            <i8>1</i8>
+            <i8>2</i8>
         </sum>
-        <int>3</int>
+        <i8>3</i8>
     </mul>
 
     <!-- Logical operations -->
     <!-- Equality -->
     <eq>
-        <int>5</int>
-        <int>5</int>
+        <i8>5</i8>
+        <i8>5</i8>
     </eq>
 
     <!-- Not Equality -->
     <neq>
-        <int>5</int>
-        <int>8</int>
+        <i8>5</i8>
+        <i8>8</i8>
     </neq>
 
     <!-- Greater then (5 > 8) Also can used as `gte` tag -->
     <gt>
-        <int>5</int>
-        <int>8</int>
+        <i8>5</i8>
+        <i8>8</i8>
     </gt>
 
     <!-- Less then (5 < 8) Also can used as `lte` tag -->
     <lt>
-        <int>5</int>
-        <int>8</int>
+        <i8>5</i8>
+        <i8>8</i8>
     </lt>
 
     <!-- Can handle numerous arguments -->
@@ -137,7 +137,7 @@
         <!-- Variable name automatically casts to string -->
         <name>variable_name</name>
         <value>
-            <int>69</int>
+            <i8>69</i8>
         </value>
     </let>
 
@@ -146,7 +146,7 @@
 
     <!-- Variable assignment -->
     <variable_name>
-        <int>88</int>
+        <i8>88</i8>
     </variable_name>
 
 
@@ -155,7 +155,7 @@
         <test>
             <gte>
                 <variable_name />
-                <int>8</int>
+                <i8>8</i8>
             </gte>
         </test>
 
@@ -172,14 +172,14 @@
     <for>
         <iter>iterator_name</iter>
         <start>
-            <int>0</int>
+            <f32>0</f32>
         </start>
         <end>
-            <int>10</int>
+            <f32>10</f32>
         </end>
         <!-- [OPTIONAL] Step -->
         <step>
-            <float>0.5</float>
+            <f32>0.5</f32>
         </step>
 
         <body>
@@ -192,7 +192,7 @@
     <let>
         <name>some_var</name>
         <value>
-            <int>0</int>
+            <i32>0</i32>
         </value>
     </let>
 
@@ -201,15 +201,18 @@
         <test>
             <lt>
                 <some_var />
-                <int>10</int>
+                <i32>10<i32>
             </lt>
         </test>
 
         <body>
             <!-- Loop body -->
-            <inc>
-                <ref>some_var</ref>
-            </inc>
+            <some_var>
+                <sum>
+                    <some_var />
+                    <i32>1</i32>
+                </sum>
+            </some_var>
         </body>
     </while>
 
@@ -226,7 +229,7 @@
 
             <!-- Argument type -->
             <type>
-                <int />
+                <i8 />
             </type>
         </arg>
 
@@ -237,13 +240,13 @@
 
             <!-- Argument type -->
             <type>
-                <int />
+                <i8 />
             </type>
         </arg>
 
         <!-- Return type -->
         <returns>
-            <int />
+            <i8 />
         </returns>
 
         <!-- Function body -->
@@ -262,8 +265,8 @@
     <!-- Function calling -->
     <!-- Function arguments are passed in the order they are defined -->
     <call some_function>
-        <int>8</int>
-        <int>6</int>
+        <i8>8</i8>
+        <i8>6</i8>
     </call>
 
 
@@ -275,8 +278,8 @@
     <!-- Will print `36` -->
     <call println>
         <call some_function>
-            <int>6</int>
-            <int>6</int>
+            <i8>6</i8>
+            <i8>6</i8>
         </call>
     </call>
 </main>
