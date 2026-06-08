@@ -1,6 +1,7 @@
 use std::io::{self, Write};
 use ultraviolet_core::{
     errors::SpannedError,
+    traits::backend::TypeOf,
     types::{
         EnvRef,
         backend::{BuiltInFunction, ControlFlow, RTVariable, UVRTValue},
@@ -38,6 +39,14 @@ pub fn init_builtin_functions(env: EnvRef<RTVariable>) {
         "sin",
         RTVariable::new_from(
             UVRTValue::BuiltInFunction(BuiltInFunction::new_from(sin)),
+            true,
+        ),
+    );
+
+    borrowed_env.define_variable(
+        "typeof",
+        RTVariable::new_from(
+            UVRTValue::BuiltInFunction(BuiltInFunction::new_from(tof)),
             true,
         ),
     );
@@ -130,4 +139,15 @@ fn sin(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, Span
     Ok(ControlFlow::Simple(UVRTValue::Number(Number::F64(
         f64::sin(*n),
     ))))
+}
+
+/// Built-in `typeof`` function
+///
+/// Returns string-representation of provided value
+fn tof(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
+    let Some(v) = args.first() else {
+        unreachable!()
+    };
+
+    Ok(ControlFlow::Simple(UVRTValue::String(v.typeof_str())))
 }

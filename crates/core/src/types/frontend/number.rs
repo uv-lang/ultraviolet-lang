@@ -1,5 +1,8 @@
+use crate::traits::backend::TypeOf;
 use crate::traits::frontend::ast::StringToUVNumberType;
 use crate::{traits::frontend::ast::GetType, types::frontend::types::UVType};
+use anyhow::{Result, anyhow};
+use num_traits::NumCast;
 
 /// Variants of number
 #[macro_export]
@@ -95,6 +98,35 @@ macro_rules! define_number {
                         stringify!($ty) => Some(UVNumberType::$variant),
                     )*
                     _ => None
+                }
+            }
+        }
+
+        impl Number {
+            /// Create number from number type and value
+            pub fn auto<T: NumCast>(v: T, t: UVType) -> Result<Self> {
+                    match t {
+                    UVType::Number(t) => Ok(
+                        match t {
+                            $(
+                                UVNumberType::$variant =>
+                                    Self::$variant(
+                                        NumCast::from(v)
+                                            .ok_or(anyhow!("Cannot create number with non-number type"))?
+                                    ),
+                            )*
+                        }
+                    ),
+                    _ => Err(anyhow!("Cannot create number with non-number type")),
+                }
+
+            }
+        }
+
+        impl TypeOf for Number {
+            fn typeof_str(&self) -> String {
+                match self {
+                    $(Self::$variant(_) => stringify!($ty).to_owned(),)*
                 }
             }
         }

@@ -1,25 +1,15 @@
 <main>
-    <for>
-        <iter>x</iter>
-        <start>
-            <f64>0</f64>
-        </start>
+    <let>
+        <name>aa</name>
+        <value>
+            <i8>5</i8>
+        </value>
+    </let>
 
-        <end>
-            <f64>50</f64>
-        </end>
-
-        <step>
-            <f64>0.1</f64>
-        </step>
-
-
-        <body>
-            <call println>
-                <call sin>
-                    <x />
-                </call>
-            </call>
-        </body>
-    </for>
+    <call println>
+        <str>Type of `aa` variable:</str>
+        <call typeof>
+            <aa />
+        </call>
+    </call>
 </main>

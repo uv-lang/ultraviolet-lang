@@ -1,6 +1,6 @@
 use crate::{
     errors::SpannedError,
-    traits::frontend::ast::GetType,
+    traits::{backend::TypeOf, frontend::ast::GetType},
     types::{
         EnvRef, Environment,
         frontend::{
@@ -118,6 +118,19 @@ impl GetType for UVRTValue {
             UVRTValue::Null => UVType::Null,
             UVRTValue::Void => UVType::Void,
             _ => unimplemented!(),
+        }
+    }
+}
+
+impl TypeOf for UVRTValue {
+    fn typeof_str(&self) -> String {
+        match self {
+            UVRTValue::Number(n) => n.typeof_str(),
+            UVRTValue::String(_) => String::from("string"),
+            UVRTValue::Boolean(_) => String::from("boolean"),
+            UVRTValue::Null => String::from("null"),
+            UVRTValue::Void => String::from("void"),
+            UVRTValue::Function(_) | UVRTValue::BuiltInFunction(_) => String::from("function"),
         }
     }
 }

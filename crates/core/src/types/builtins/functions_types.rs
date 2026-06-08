@@ -56,4 +56,15 @@ pub fn init_builtin_types_functions(env: EnvRef<UVTypeVariable>) {
             true,
         ),
     );
+
+    borrowed_env.define_variable(
+        "typeof",
+        UVTypeVariable::new_from(
+            UVType::BuiltInFunction(Box::new(UVBuiltinFunctionType {
+                args: UVBuiltinFunctionArguments::Args(vec![UVType::Any]),
+                returns: UVType::String,
+            })),
+            true,
+        ),
+    );
 }

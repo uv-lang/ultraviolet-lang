@@ -1,9 +1,5 @@
 use crate::number_variants;
 use crate::types::frontend::number::Number;
-use crate::types::frontend::number::UVNumberType;
-use crate::types::frontend::types::UVType;
-use anyhow::{Result, anyhow};
-use num_traits::NumCast;
 use std::ops::{Add, Div, Mul, Rem, Sub};
 
 macro_rules! impl_number_op {
@@ -59,31 +55,3 @@ number_variants!(impl_number_cmp_op, PartialEq, eq, bool);
 
 type OrdOutType = Option<std::cmp::Ordering>;
 number_variants!(impl_number_cmp_op, PartialOrd, partial_cmp, OrdOutType);
-
-/// Automatic Number generation
-macro_rules! auto_number {
-    ($($variant:ident($ty:ty)),* $(,)?) => {
-        impl Number {
-            /// Create number from number type and value
-            pub fn auto<T: NumCast>(v: T, t: UVType) -> Result<Self> {
-                    match t {
-                    UVType::Number(t) => Ok(
-                        match t {
-                            $(
-                                UVNumberType::$variant =>
-                                    Self::$variant(
-                                        NumCast::from(v)
-                                            .ok_or(anyhow!("Cannot create number with non-number type"))?
-                                    ),
-                            )*
-                        }
-                    ),
-                    _ => Err(anyhow!("Cannot create number with non-number type")),
-                }
-
-            }
-        }
-    };
-}
-
-number_variants!(auto_number);
