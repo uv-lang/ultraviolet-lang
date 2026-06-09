@@ -19,5 +19,5 @@ pub trait ToFFIData {
 
 pub trait FromFFI {
     /// Converts ffi data to a Ultraviolet val
-    fn from_ffi(&self, exp: UVType) -> Result<UVRTValue>;
+    fn to_uv_value(&self, exp: UVType) -> Result<UVRTValue>;
 }

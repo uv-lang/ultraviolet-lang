@@ -90,26 +90,24 @@ pub fn parse_ffi_definition(node: &UVParseNode) -> GeneratorOutputType {
         .map(|arg| {
             if arg.self_closing {
                 return Err(SpannedError::new(
-                    format!("`arg` tag cannot be self-closing"),
+                    "`arg` tag cannot be self-closing",
                     arg.span,
                 ));
             }
 
             if arg.children_len() != 1 || !arg.all_tags() {
                 return Err(SpannedError::new(
-                    format!("`arg` tag must contain only one child"),
+                    "`arg` tag must contain only one child",
                     arg.span,
                 ));
             }
 
             match arg.get_tag_at(0) {
                 Some(ch) => Ok(Spanned::new(parse_type_raw(ch)?, ch.span)),
-                None => {
-                    return Err(SpannedError::new(
-                        "Arg block should contain a type",
-                        arg.span,
-                    ));
-                },
+                None => Err(SpannedError::new(
+                    "Arg block should contain a type",
+                    arg.span,
+                )),
             }
         })
         .collect::<Result<Vec<Spanned<UVType>>, SpannedError>>()?;

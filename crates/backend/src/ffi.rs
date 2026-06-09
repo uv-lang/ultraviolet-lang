@@ -100,7 +100,7 @@ pub fn load_dll(
     .to_ffi_type()
     .unwrap_or_spanned(ffi_def.span)?;
 
-    let cif = Cif::new(arg_types.into_iter(), returns);
+    let cif = Cif::new(arg_types, returns);
 
     dll_symbols()
         .try_write()
@@ -153,12 +153,12 @@ pub fn call_dll(call: &FunctionCall, args: Vec<UVRTValue>) -> Result<ControlFlow
         let ret: u64 = f.cif.call::<u64>(f.func_ptr, &args_data_ffi);
 
         let result = if let Some(rt) = &f.returns {
-            ret.from_ffi(rt.value.clone())
+            ret.to_uv_value(rt.value.clone())
                 .map_err(|e| SpannedError::new(format!("{e}"), rt.span))?
         } else {
             UVRTValue::Void
         };
 
-        return Ok(ControlFlow::Simple(result));
+        Ok(ControlFlow::Simple(result))
     }
 }

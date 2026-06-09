@@ -60,7 +60,7 @@ impl PartialOrd for UVRTValue {
 macro_rules! gen_ffi_to_num {
     ($($variant:ident($ty:ty, $ffi:ident)),* $(,)?) => {
         impl FromFFI for u64 {
-            fn from_ffi(&self, exp: UVType) -> Result<UVRTValue> {
+            fn to_uv_value(&self, exp: UVType) -> Result<UVRTValue> {
                 unsafe {
                     Ok(match exp {
                         UVType::Number(t) => match t {

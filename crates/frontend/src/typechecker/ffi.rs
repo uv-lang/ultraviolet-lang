@@ -68,13 +68,13 @@ pub fn check_ffi_definition(
     }
 
     // ----------------------------- <returns> -------------------------------
-    if let Some(t) = &ffi_d.return_type {
-        if t.to_ffi_type().is_none() {
-            return Err(SpannedError::new(
-                format!("Type {} cannot be used as ffi returns type", t.value),
-                t.span,
-            ));
-        }
+    if let Some(t) = &ffi_d.return_type
+        && t.to_ffi_type().is_none()
+    {
+        return Err(SpannedError::new(
+            format!("Type {} cannot be used as ffi returns type", t.value),
+            t.span,
+        ));
     }
 
     let exp = ffi_d
