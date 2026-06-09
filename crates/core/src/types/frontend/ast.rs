@@ -75,6 +75,8 @@ pub enum ASTBlockType {
     Continue(Spanned<()>),
     Break(Spanned<()>),
 
+    FFIDefinition(Box<FFIDefinition>),
+
     ModuleImport(Spanned<ModuleImport>),
 }
 
@@ -102,6 +104,7 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
             ASTBlockType::ConditionalOp(_) => Cow::Borrowed("if"),
 
             ASTBlockType::ModuleImport(_) => Cow::Borrowed("import"),
+            ASTBlockType::FFIDefinition(_) => Cow::Borrowed("ffi"),
         }
     }
 }
@@ -127,6 +130,7 @@ impl Positional for ASTBlockType {
             ASTBlockType::Continue(c) => c.span,
             ASTBlockType::Break(b) => b.span,
             ASTBlockType::ModuleImport(i) => i.span,
+            ASTBlockType::FFIDefinition(f) => f.span,
         }
     }
 }
@@ -364,6 +368,20 @@ pub struct FunctionCallArg {
 pub struct FunctionCall {
     pub name: String,
     pub args: Vec<FunctionCallArg>,
+
+    pub span: Span,
+}
+
+// ------------------------- FFI Definition ----------------------------------
+
+/// Definition of FFI function
+pub struct FFIDefinition {
+    pub name: Spanned<String>,
+    pub dll: Spanned<ASTBlockType>,
+    pub func: Spanned<ASTBlockType>,
+
+    pub arguments: Vec<Spanned<UVType>>,
+    pub return_type: Option<Spanned<UVType>>,
 
     pub span: Span,
 }

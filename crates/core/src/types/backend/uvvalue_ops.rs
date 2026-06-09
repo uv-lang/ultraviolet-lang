@@ -1,4 +1,11 @@
-use crate::types::backend::UVRTValue;
+use crate::traits::ffi::FromFFI;
+use crate::types::frontend::{
+    number::{Number, UVNumberType},
+    types::UVType,
+};
+use crate::{number_variants, types::backend::UVRTValue};
+use anyhow::{Result, anyhow};
+use std::ffi::CStr;
 use std::ops::{Add, Div, Mul, Rem, Sub};
 
 macro_rules! impl_RTVal_op {
@@ -49,3 +56,44 @@ impl PartialOrd for UVRTValue {
         }
     }
 }
+
+macro_rules! gen_ffi_to_num {
+    ($($variant:ident($ty:ty, $ffi:ident)),* $(,)?) => {
+        impl FromFFI for u64 {
+            fn from_ffi(&self, exp: UVType) -> Result<UVRTValue> {
+                unsafe {
+                    Ok(match exp {
+                        UVType::Number(t) => match t {
+                            $(
+                                UVNumberType::$variant => {
+                                    let val = *( self as *const u64 as *const $ty );
+                                    UVRTValue::Number(Number::$variant(val))
+                            },)*
+                        },
+                        UVType::String => {
+                            let char_ptr = *( self as *const u64 as *const *const i8 );
+                            if char_ptr.is_null() {
+                                return Ok(UVRTValue::Null);
+                            }
+
+                            let c_str = CStr::from_ptr(char_ptr);
+                            let rust_str = c_str.to_string_lossy().into_owned();
+                            UVRTValue::String(rust_str)
+
+                            // FIXME:? Should code free the string memory
+                        },
+                        UVType::Boolean => {
+                            let val = *(self as *const u64 as *const u8);
+                            UVRTValue::Boolean(val != 0)
+                        },
+                        UVType::Null => UVRTValue::Null,
+                        UVType::Void => UVRTValue::Void,
+                        _ => return Err(anyhow!("Cannot convert this type")),
+                    })
+                }
+            }
+        }
+    };
+}
+
+number_variants!(gen_ffi_to_num);

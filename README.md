@@ -291,9 +291,9 @@
     <dll>
         <str>user32.dll</str>
     </dll>
-    <function>
+    <func>
         <str>MessageBoxA</str>
-    </function>
+    </func>
 
     <!-- Аргументы должны соответствовать ABI из DLL -->
     <arg>

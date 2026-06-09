@@ -11,6 +11,7 @@ use crate::builtins::DefineBuiltinsRT;
 
 mod builtins;
 mod eval;
+mod ffi;
 
 /** Evaluate code */
 pub fn eval(node: &ASTBlockType) -> Result<ControlFlow, SpannedError> {

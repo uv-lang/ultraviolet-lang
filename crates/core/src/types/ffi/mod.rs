@@ -1,10 +1,12 @@
-use std::ffi::{CString, c_void};
-
 use anyhow::{Result, anyhow};
-use libffi::middle::Type;
+use libffi::middle::{Arg, Type};
+use std::{
+    ffi::{CString, c_void},
+    ptr,
+};
 
 use crate::{
-    traits::ffi::{AsVoidPtr, ToFFIData, ToTypeFFI},
+    traits::ffi::{AsArg, ToFFIData, ToTypeFFI},
     types::{backend::UVRTValue, frontend::types::UVType},
 };
 
@@ -15,36 +17,40 @@ impl ToTypeFFI for UVType {
             UVType::String => Some(Type::pointer()),
             UVType::Boolean => Some(Type::u8()),
             UVType::Void => Some(Type::void()),
+            UVType::Null => Some(Type::pointer()),
             _ => None,
         }
     }
 }
 
-pub enum FFIData {
-    Number(*const c_void),
+pub enum FFIData<'a> {
+    Number(Arg<'a>),
     String(CString),
     Boolean(u8),
+    Null,
 }
 
 impl ToFFIData for UVRTValue {
-    fn to_ffi_data(&self) -> Result<FFIData> {
+    fn to_ffi_data(&'_ self) -> Result<FFIData<'_>> {
         Ok(match self {
-            UVRTValue::Number(n) => FFIData::Number(n.as_void_ptr()?),
+            UVRTValue::Number(n) => FFIData::Number(n.as_arg()),
             UVRTValue::String(s) => FFIData::String(
                 CString::new(s.clone()).map_err(|_| anyhow!("Found zero byte in string"))?,
             ),
             UVRTValue::Boolean(b) => FFIData::Boolean(if *b { 1 } else { 0 }),
+            UVRTValue::Null => FFIData::Null,
             _ => return Err(anyhow!("Cannot create C pointer to this value")),
         })
     }
 }
 
-impl AsVoidPtr for FFIData {
-    fn as_void_ptr(&self) -> Result<*const c_void> {
-        Ok(match self {
-            FFIData::Number(ptr) => *ptr,
-            FFIData::String(c_str) => c_str.as_ptr() as *const c_void,
-            FFIData::Boolean(b) => b as *const u8 as *const c_void,
-        })
+impl<'a> AsArg for FFIData<'a> {
+    fn as_arg(&self) -> Arg<'_> {
+        match self {
+            FFIData::Number(ptr) => ptr.clone(),
+            FFIData::String(c_str) => Arg::new(c_str),
+            FFIData::Boolean(b) => Arg::new(b),
+            FFIData::Null => Arg::new(&(ptr::null::<c_void>())),
+        }
     }
 }

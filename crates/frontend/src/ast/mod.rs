@@ -12,6 +12,7 @@ use ultraviolet_core::{
 use crate::ast::{
     compare_op::parse_compare_op,
     conditional_op::parse_conditional_op,
+    ffi::parse_ffi_definition,
     functions::{parse_function_call, parse_function_definition},
     logical_op::parse_logical_op,
     loops::{parse_for_loop, parse_while_loop},
@@ -24,6 +25,7 @@ use once_cell::sync::Lazy;
 
 mod compare_op;
 mod conditional_op;
+mod ffi;
 mod functions;
 mod logical_op;
 mod loops;
@@ -93,6 +95,9 @@ pub fn generate_ast(node: &UVParseNode) -> GeneratorOutputType {
 
         // Parse modules import
         "import" if !node.self_closing => parse_module_import(node)?,
+
+        // Parse ffi definition
+        "ffi" if !node.self_closing => parse_ffi_definition(node)?,
 
         // Values such as int, float, etc.
         name if name.to_uvtype().is_some() => parse_value(node)?,

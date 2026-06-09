@@ -9,7 +9,10 @@ use ultraviolet_core::{
     },
 };
 
-use crate::eval::{eval, eval_block};
+use crate::{
+    eval::{eval, eval_block},
+    ffi::call_dll,
+};
 
 /// Defines function in provided scope
 pub fn define_function(
@@ -52,6 +55,15 @@ pub fn call_function(
         };
 
         return (f.f)(&evaluated_args, env);
+    }
+
+    if let UVRTValue::FFIFunction = &f.borrow().value {
+        let evaluated_args = match eval_args(&call.args, env.clone())? {
+            EvalArgsResult::Values(v) => v,
+            EvalArgsResult::Flow(cf) => return Ok(cf),
+        };
+
+        return call_dll(call, evaluated_args);
     }
 
     let UVRTValue::Function(f_struct) = &f.borrow().value else {

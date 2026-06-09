@@ -76,7 +76,7 @@ pub fn parse_function_definition(node: &UVParseNode) -> GeneratorOutputType {
 }
 
 /// Parse function definition arguments
-fn parse_arguments_definition(
+pub fn parse_arguments_definition(
     args: Vec<&UVParseNode>,
 ) -> Result<Vec<FunctionDefinitionArg>, SpannedError> {
     args.into_iter()

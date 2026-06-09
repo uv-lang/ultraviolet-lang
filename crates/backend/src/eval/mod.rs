@@ -6,6 +6,7 @@ use crate::{
         loops::{eval_for_loop, eval_while_loop},
         variables::{access_variable, assign_variable, define_variable},
     },
+    ffi::load_dll,
 };
 use ultraviolet_core::{
     errors::SpannedError,
@@ -53,6 +54,8 @@ pub fn eval(node: &ASTBlockType, env: EnvRef<RTVariable>) -> Result<ControlFlow,
 
         ASTBlockType::Break(_) => ControlFlow::Break,
         ASTBlockType::Continue(_) => ControlFlow::Continue,
+
+        ASTBlockType::FFIDefinition(ffi_def) => load_dll(ffi_def, env)?,
 
         _ => todo!(),
     })

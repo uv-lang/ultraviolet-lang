@@ -1,5 +1,6 @@
 use ultraviolet_core::{
     errors::SpannedError,
+    traits::frontend::Positional,
     types::{
         EnvRef, Environment,
         frontend::{
@@ -45,18 +46,42 @@ pub fn check_for_loop(
     let child_env = Environment::new_child(env.clone());
 
     let start = match typecheck(&fl.start, env.clone())? {
-        ControlFlow::Simple(UVType::Number(t)) => t,
+        ControlFlow::Simple(s) => match s {
+            UVType::Number(n) => n,
+            _ => {
+                return Err(SpannedError::new(
+                    "Type mismatch for `for` start. Expected number",
+                    fl.start.get_span(),
+                ));
+            },
+        },
         cf => return Ok(cf),
     };
 
     let end = match typecheck(&fl.end, env.clone())? {
-        ControlFlow::Simple(UVType::Number(t)) => t,
+        ControlFlow::Simple(s) => match s {
+            UVType::Number(n) => n,
+            _ => {
+                return Err(SpannedError::new(
+                    "Type mismatch for `for` end. Expected number",
+                    fl.start.get_span(),
+                ));
+            },
+        },
         cf => return Ok(cf),
     };
 
     let step = if let Some(s) = &fl.step {
         match typecheck(s, env.clone())? {
-            ControlFlow::Simple(UVType::Number(t)) => t,
+            ControlFlow::Simple(s) => match s {
+                UVType::Number(n) => n,
+                _ => {
+                    return Err(SpannedError::new(
+                        "Type mismatch for `for` step. Expected number",
+                        fl.start.get_span(),
+                    ));
+                },
+            },
             cf => return Ok(cf),
         }
     } else {

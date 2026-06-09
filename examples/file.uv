@@ -1,15 +1,34 @@
 <main>
-    <let>
-        <name>aa</name>
-        <value>
-            <i8>5</i8>
-        </value>
-    </let>
+
+    <ffi>
+        <name>calc_power</name>
+        <dll>
+            <str>./examples/dlls/mathdll.dll</str>
+        </dll>
+        <func>
+            <str>power</str>
+        </func>
+
+        <!-- hWnd -->
+        <arg>
+            <f64 />
+        </arg>
+
+        <!-- lpText -->
+        <arg>
+            <i32 />
+        </arg>
+
+        <returns>
+            <f64 />
+        </returns>
+
+    </ffi>
 
     <call println>
-        <str>Type of `aa` variable:</str>
-        <call typeof>
-            <aa />
+        <call calc_power>
+            <f64>5</f64>
+            <i32>3</i32>
         </call>
     </call>
 </main>

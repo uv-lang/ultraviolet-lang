@@ -7,3 +7,6 @@ repository.workspace = true
 
 [dependencies]
 ultraviolet-core = { path = "../core" }
+anyhow.workspace = true
+libloading = "=0.9.0"
+libffi = "5.1.0"

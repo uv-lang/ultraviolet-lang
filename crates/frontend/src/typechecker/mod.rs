@@ -12,12 +12,14 @@ use ultraviolet_core::{
 };
 
 use crate::typechecker::{
+    ffi::check_ffi_definition,
     functions::{check_function_call, check_function_definition},
     loops::{check_for_loop, check_while_loop},
     operators::{check_compare_op, check_conditional_op, check_logical_op, check_math_op},
     variables::{check_variable_access, check_variable_assign, check_variable_definition},
 };
 
+mod ffi;
 mod functions;
 mod loops;
 mod operators;
@@ -49,6 +51,8 @@ pub fn typecheck(
         ASTBlockType::GroupBlock(g) => analyze_group(&g.value, env)?,
         ASTBlockType::Return(r) => analyze_return(&r.value, env)?,
         ASTBlockType::Continue(_) | ASTBlockType::Break(_) => ControlFlow::Simple(UVType::Void),
+
+        ASTBlockType::FFIDefinition(ffi_d) => check_ffi_definition(ffi_d, env)?,
 
         _ => ControlFlow::Simple(UVType::Void),
     })

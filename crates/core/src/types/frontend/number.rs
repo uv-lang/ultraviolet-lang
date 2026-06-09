@@ -1,15 +1,14 @@
 use crate::{
     traits::{
         backend::TypeOf,
-        ffi::{AsVoidPtr, ToTypeFFI},
+        ffi::{AsArg, ToTypeFFI},
         frontend::ast::{GetType, StringToUVNumberType},
     },
     types::frontend::types::UVType,
 };
 use anyhow::{Result, anyhow};
-use libffi::middle::Type;
+use libffi::middle::{Arg, Type};
 use num_traits::NumCast;
-use std::ffi::c_void;
 
 /// Variants of number
 #[macro_export]
@@ -148,16 +147,15 @@ macro_rules! define_number {
              }
         }
 
-        // FIXME:! Number bи данные внутри него могут не дожить до момента использования ссылки
+        // FIXME:! Number и данные внутри него могут не дожить до момента использования ссылки
         // может вызвать ошибку сегментации
-        impl AsVoidPtr for Number {
-            fn as_void_ptr(&self) -> Result<*const c_void> {
-                Ok(match self {
-                    $(Self::$variant(v) => v as *const $ty as *const c_void,)*
-                })
+        impl AsArg for Number {
+            fn as_arg(&'_ self) -> Arg<'_> {
+                match self {
+                    $(Self::$variant(v) => Arg::new(v),)*
+                }
             }
         }
-
     };
 }
 
