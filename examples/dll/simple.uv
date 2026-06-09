@@ -1,0 +1,31 @@
+<main>
+
+    <ffi>
+        <name>calc_power</name>
+        <dll>
+            <str>./examples/dll/dlls/mathdll.dll</str>
+        </dll>
+        <func>
+            <str>power</str>
+        </func>
+
+        <args>
+            <!-- base -->
+            <f64 />
+            <!-- exp -->
+            <i32 />
+        </args>
+
+        <returns>
+            <f64 />
+        </returns>
+
+    </ffi>
+
+    <call println>
+        <call calc_power>
+            <f64>5</f64>
+            <i32>3</i32>
+        </call>
+    </call>
+</main>

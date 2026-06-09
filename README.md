@@ -296,19 +296,10 @@
     </func>
 
     <!-- Аргументы должны соответствовать ABI из DLL -->
-    <arg>
-        <name>title</name>
-        <type>
-            <str />
-        </type>
-    </arg>
-
-    <arg>
-        <name>text</name>
-        <type>
-            <str />
-        </type>
-    </arg>
+    <args>
+        <str />
+        <str />
+    </args>
 
 </ffi>
 
