@@ -3,7 +3,10 @@
     <ffi>
         <name>calc_power</name>
         <dll>
-            <str>./examples/dlls/mathdll.dll</str>
+            <concat$>
+                <str>./examples/dll/dlls/mathdll</str>
+                <dll.suffix />
+            </concat$>
         </dll>
         <func>
             <str>power</str>
@@ -22,10 +25,10 @@
 
     </ffi>
 
-    <call println>
-        <call calc_power>
+    <println$>
+        <calc_power$>
             <f64>5</f64>
             <i32>3</i32>
-        </call>
-    </call>
+        </calc_power$>
+    </println$>
 </main>

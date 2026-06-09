@@ -269,6 +269,12 @@
         <i8>6</i8>
     </call>
 
+    <!-- or -->
+    <some_function$>
+        <i8>8</i8>
+        <i8>6</i8>
+    </some_function$>
+
 
     <!-- Printing to console -->
     <call println>

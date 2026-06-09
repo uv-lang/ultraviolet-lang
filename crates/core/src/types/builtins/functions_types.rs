@@ -1,7 +1,6 @@
 use crate::types::{
     EnvRef,
     frontend::{
-        number::UVNumberType,
         typechecker::UVTypeVariable,
         types::{UVBuiltinFunctionArguments, UVBuiltinFunctionType, UVType},
     },
@@ -47,21 +46,21 @@ pub fn init_builtin_types_functions(env: EnvRef<UVTypeVariable>) {
     );
 
     borrowed_env.define_variable(
-        "sin",
+        "typeof",
         UVTypeVariable::new_from(
             UVType::BuiltInFunction(Box::new(UVBuiltinFunctionType {
-                args: UVBuiltinFunctionArguments::Args(vec![UVType::Number(UVNumberType::F64)]),
-                returns: UVType::Number(UVNumberType::F64),
+                args: UVBuiltinFunctionArguments::Args(vec![UVType::Any]),
+                returns: UVType::String,
             })),
             true,
         ),
     );
 
     borrowed_env.define_variable(
-        "typeof",
+        "concat",
         UVTypeVariable::new_from(
             UVType::BuiltInFunction(Box::new(UVBuiltinFunctionType {
-                args: UVBuiltinFunctionArguments::Args(vec![UVType::Any]),
+                args: UVBuiltinFunctionArguments::AllOf(UVType::String),
                 returns: UVType::String,
             })),
             true,

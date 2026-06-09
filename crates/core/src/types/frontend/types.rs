@@ -16,6 +16,7 @@ pub struct UVFunctionType {
 pub enum UVBuiltinFunctionArguments {
     Any,
     Args(Vec<UVType>),
+    AllOf(UVType),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]

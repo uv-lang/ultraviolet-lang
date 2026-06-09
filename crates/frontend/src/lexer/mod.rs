@@ -289,7 +289,7 @@ impl Lexer {
     }
 
     fn is_valid_literal(c: char) -> bool {
-        c.is_alphanumeric() || matches!(c, '.' | ',' | '_')
+        c.is_alphanumeric() || matches!(c, '.' | ',' | '_' | '$')
     }
 }
 

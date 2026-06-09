@@ -5,7 +5,6 @@ use ultraviolet_core::{
     types::{
         EnvRef,
         backend::{BuiltInFunction, ControlFlow, RTVariable, UVRTValue},
-        frontend::number::Number,
     },
 };
 
@@ -36,17 +35,17 @@ pub fn init_builtin_functions(env: EnvRef<RTVariable>) {
     );
 
     borrowed_env.define_variable(
-        "sin",
+        "typeof",
         RTVariable::new_from(
-            UVRTValue::BuiltInFunction(BuiltInFunction::new_from(sin)),
+            UVRTValue::BuiltInFunction(BuiltInFunction::new_from(tof)),
             true,
         ),
     );
 
     borrowed_env.define_variable(
-        "typeof",
+        "concat",
         RTVariable::new_from(
-            UVRTValue::BuiltInFunction(BuiltInFunction::new_from(tof)),
+            UVRTValue::BuiltInFunction(BuiltInFunction::new_from(concat)),
             true,
         ),
     );
@@ -130,17 +129,6 @@ fn read(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, Spa
     }
 }
 
-/// Wrapper over standard sine function
-fn sin(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
-    let Some(UVRTValue::Number(Number::F64(n))) = args.first() else {
-        unreachable!()
-    };
-
-    Ok(ControlFlow::Simple(UVRTValue::Number(Number::F64(
-        f64::sin(*n),
-    ))))
-}
-
 /// Built-in `typeof`` function
 ///
 /// Returns string-representation of provided value
@@ -150,4 +138,19 @@ fn tof(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, Span
     };
 
     Ok(ControlFlow::Simple(UVRTValue::String(v.typeof_str())))
+}
+
+/// Built-in string `concat` function
+///
+/// Returns concatenated strings
+fn concat(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
+    let str = args.iter().fold(String::default(), |mut acc, arg| {
+        let UVRTValue::String(s) = arg else {
+            unreachable!()
+        };
+        acc.push_str(s);
+        acc
+    });
+
+    Ok(ControlFlow::Simple(UVRTValue::String(str)))
 }

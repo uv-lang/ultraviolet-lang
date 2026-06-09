@@ -101,8 +101,17 @@ pub fn check_function_call(
 
     match value {
         UVType::BuiltInFunction(f) => {
-            if let UVBuiltinFunctionArguments::Args(expected) = &f.args {
-                validate_args(expected, &args_types, &fc.name, fc.span)?;
+            match &f.args {
+                UVBuiltinFunctionArguments::Args(expected) => {
+                    validate_args(expected, &args_types, &fc.name, fc.span)?
+                },
+                UVBuiltinFunctionArguments::AllOf(all_t) => validate_args(
+                    &vec![all_t.clone(); args_types.len()],
+                    &args_types,
+                    &fc.name,
+                    fc.span,
+                )?,
+                _ => {},
             }
 
             Ok(ControlFlow::Simple(f.returns.clone()))
