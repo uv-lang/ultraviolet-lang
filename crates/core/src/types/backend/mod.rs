@@ -3,6 +3,7 @@ use crate::{
     traits::{backend::TypeOf, frontend::ast::GetType},
     types::{
         EnvRef, Environment,
+        backend::ffi::FFIFunction,
         frontend::{
             ast::{ASTBlockType, UVValue},
             number::Number,
@@ -56,7 +57,7 @@ pub enum UVRTValue {
 
     Function(RTFunction),
     BuiltInFunction(BuiltInFunction),
-    FFIFunction,
+    FFIFunction(FFIFunction),
 }
 
 impl std::fmt::Display for UVRTValue {
@@ -69,7 +70,7 @@ impl std::fmt::Display for UVRTValue {
             UVRTValue::Void => write!(f, "void"),
             UVRTValue::Function(_) => write!(f, "<function>"),
             UVRTValue::BuiltInFunction(_) => write!(f, "<built-in function>"),
-            UVRTValue::FFIFunction => write!(f, "<ffi function>"),
+            UVRTValue::FFIFunction(_) => write!(f, "<ffi function>"),
         }
     }
 }
@@ -136,7 +137,7 @@ impl TypeOf for UVRTValue {
             UVRTValue::Boolean(_) => String::from("boolean"),
             UVRTValue::Null => String::from("null"),
             UVRTValue::Void => String::from("void"),
-            UVRTValue::Function(_) | UVRTValue::BuiltInFunction(_) | UVRTValue::FFIFunction => {
+            UVRTValue::Function(_) | UVRTValue::BuiltInFunction(_) | UVRTValue::FFIFunction(_) => {
                 String::from("function")
             },
         }

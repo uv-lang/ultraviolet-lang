@@ -54,13 +54,13 @@ pub fn call_function(
         return (f.f)(&evaluated_args, env);
     }
 
-    if let UVRTValue::FFIFunction = &f.borrow().value {
+    if let UVRTValue::FFIFunction(f) = &f.borrow().value {
         let evaluated_args = match eval_args(&call.args, env.clone())? {
             EvalArgsResult::Values(v) => v,
             EvalArgsResult::Flow(cf) => return Ok(cf),
         };
 
-        return call_dll(call, evaluated_args);
+        return call_dll(call, evaluated_args, f);
     }
 
     let UVRTValue::Function(f_struct) = &f.borrow().value else {

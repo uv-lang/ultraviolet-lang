@@ -30,16 +30,10 @@ use ultraviolet_core::{
 use crate::eval::eval;
 
 static DLLS: OnceLock<RwLock<HashMap<String, Arc<Library>>>> = OnceLock::new();
-static DLL_SYMBOLS: OnceLock<RwLock<HashMap<String, Arc<FFIFunction>>>> = OnceLock::new();
 
 /// All loaded dlls
 pub fn libraries() -> &'static RwLock<HashMap<String, Arc<Library>>> {
     DLLS.get_or_init(|| RwLock::new(HashMap::new()))
-}
-
-/// All loaded dll symbols
-pub fn dll_symbols() -> &'static RwLock<HashMap<String, Arc<FFIFunction>>> {
-    DLL_SYMBOLS.get_or_init(|| RwLock::new(HashMap::new()))
 }
 
 /// Load DLL into memory
@@ -115,41 +109,29 @@ pub fn load_dll(
 
     let cif = Cif::new(arg_types, returns);
 
-    dll_symbols()
-        .try_write()
-        .map_err(|e| {
-            SpannedError::new(format!("Cannot acquire internal writer: {e}"), ffi_def.span)
-        })?
-        .insert(
-            ffi_def.name.deref().clone(),
-            Arc::new(FFIFunction {
+    env.borrow_mut().define_variable(
+        ffi_def.name.deref(),
+        RTVariable::new_from(
+            UVRTValue::FFIFunction(FFIFunction {
                 _lib: lib.clone(),
                 func_symbol,
                 func_ptr,
                 cif,
                 returns: ffi_def.return_type.clone(),
             }),
-        );
-
-    env.borrow_mut().define_variable(
-        ffi_def.name.deref(),
-        RTVariable::new_from(UVRTValue::FFIFunction, true),
+            true,
+        ),
     );
 
     Ok(ControlFlow::Simple(UVRTValue::Void))
 }
 
 /// Call already loaded DLL function
-pub fn call_dll(call: &FunctionCall, args: Vec<UVRTValue>) -> Result<ControlFlow, SpannedError> {
-    let binding = dll_symbols()
-        .try_read()
-        .map_err(|e| SpannedError::new(format!("Cannot lock dll symbols store: {e}"), call.span))?;
-
-    let f = binding.get(&call.name).ok_or(SpannedError::new(
-        format!("{} not loaded", call.name),
-        call.span,
-    ))?;
-
+pub fn call_dll(
+    call: &FunctionCall,
+    args: Vec<UVRTValue>,
+    f: &FFIFunction,
+) -> Result<ControlFlow, SpannedError> {
     let args_data = args
         .iter()
         .map(|a| a.to_ffi_data())

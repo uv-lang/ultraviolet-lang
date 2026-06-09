@@ -3,6 +3,7 @@ use libffi::{low::CodePtr, middle::Cif};
 use libloading::{Library, Symbol};
 use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct FFIFunction {
     pub _lib: Arc<Library>,
 
@@ -12,7 +13,3 @@ pub struct FFIFunction {
 
     pub returns: Option<Spanned<UVType>>,
 }
-
-// FIXME:? Is this correct?
-unsafe impl Send for FFIFunction {}
-unsafe impl Sync for FFIFunction {}
