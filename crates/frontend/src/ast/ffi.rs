@@ -17,7 +17,7 @@ use ultraviolet_core::{
 
 /// Parse <ffi> structure
 pub fn parse_ffi_definition(node: &UVParseNode) -> GeneratorOutputType {
-    let extra = node.search_extra_children(vec!["name", "dll", "func", "arg", "returns"]);
+    let extra = node.search_extra_children(vec!["name", "dll", "func", "args", "returns"]);
 
     if !extra.is_empty() {
         let first_extra = extra.first().unwrap_or_spanned(node.span)?;
@@ -84,33 +84,21 @@ pub fn parse_ffi_definition(node: &UVParseNode) -> GeneratorOutputType {
     }?;
 
     // ------------------------- args -------------------------
-    let args = node
-        .get_many_tags_by_name("arg")
-        .into_iter()
-        .map(|arg| {
-            if arg.self_closing {
-                return Err(SpannedError::new(
-                    "`arg` tag cannot be self-closing",
-                    arg.span,
-                ));
-            }
+    let mut args: Vec<Spanned<UVType>> = Vec::new();
+    if let Some(arg) = node.get_one_tag_by_name("args") {
+        if !arg.all_tags() {
+            return Err(SpannedError::new(
+                "All children inside `args` must be tags",
+                arg.span,
+            ));
+        }
 
-            if arg.children_len() != 1 || !arg.all_tags() {
-                return Err(SpannedError::new(
-                    "`arg` tag must contain only one child",
-                    arg.span,
-                ));
-            }
-
-            match arg.get_tag_at(0) {
-                Some(ch) => Ok(Spanned::new(parse_type_raw(ch)?, ch.span)),
-                None => Err(SpannedError::new(
-                    "Arg block should contain a type",
-                    arg.span,
-                )),
-            }
-        })
-        .collect::<Result<Vec<Spanned<UVType>>, SpannedError>>()?;
+        args = arg
+            .get_all_tags()
+            .iter()
+            .map(|a| Ok(Spanned::new(parse_type_raw(a)?, a.span)))
+            .collect::<Result<Vec<Spanned<UVType>>, SpannedError>>()?;
+    }
 
     Ok(ASTBlockType::FFIDefinition(Box::new(FFIDefinition {
         name,

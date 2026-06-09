@@ -9,10 +9,7 @@ use ultraviolet_core::{
     },
 };
 
-use crate::{
-    eval::{eval, eval_block},
-    ffi::call_dll,
-};
+use crate::eval::{eval, eval_block, ffi::call_dll};
 
 /// Defines function in provided scope
 pub fn define_function(

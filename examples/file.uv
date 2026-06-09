@@ -9,15 +9,12 @@
             <str>power</str>
         </func>
 
-        <!-- hWnd -->
-        <arg>
+        <args>
+            <!-- base -->
             <f64 />
-        </arg>
-
-        <!-- lpText -->
-        <arg>
+            <!-- exp -->
             <i32 />
-        </arg>
+        </args>
 
         <returns>
             <f64 />

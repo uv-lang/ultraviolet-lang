@@ -2,11 +2,11 @@ use crate::{
     EvalOps,
     eval::{
         conditional_op::eval_conditional_op,
+        ffi::load_dll,
         functions::{call_function, define_function},
         loops::{eval_for_loop, eval_while_loop},
         variables::{access_variable, assign_variable, define_variable},
     },
-    ffi::load_dll,
 };
 use ultraviolet_core::{
     errors::SpannedError,
@@ -18,6 +18,7 @@ use ultraviolet_core::{
 };
 mod compare;
 mod conditional_op;
+mod ffi;
 mod functions;
 mod logical;
 mod loops;

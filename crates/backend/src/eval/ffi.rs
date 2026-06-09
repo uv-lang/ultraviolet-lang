@@ -53,21 +53,34 @@ pub fn load_dll(
         cf => return Ok(cf),
     };
 
-    let lib = unsafe {
-        Arc::new(Library::new(&lib_path).map_err(|e| {
-            SpannedError::new(format!("Cannot load DLL {}: {}", lib_path, e), ffi_def.span)
-        })?)
-    };
+    let lib = libraries()
+        .try_read()
+        .map_err(|e| SpannedError::new(format!("Cannot lock dll store: {e}"), ffi_def.span))?
+        .get(&lib_path)
+        .cloned();
 
-    libraries()
-        .try_write()
-        .map_err(|e| {
-            SpannedError::new(
-                format!("Cannot save DLL reference for {}: {}", lib_path, e),
-                ffi_def.span,
-            )
-        })?
-        .insert(lib_path, lib.clone());
+    let lib = match lib {
+        Some(lib) => lib,
+        None => {
+            let lib = unsafe {
+                Arc::new(Library::new(&lib_path).map_err(|e| {
+                    SpannedError::new(format!("Cannot load DLL {}: {}", lib_path, e), ffi_def.span)
+                })?)
+            };
+
+            libraries()
+                .try_write()
+                .map_err(|e| {
+                    SpannedError::new(
+                        format!("Cannot save DLL reference for {}: {}", lib_path, e),
+                        ffi_def.span,
+                    )
+                })?
+                .insert(lib_path, lib.clone());
+
+            lib
+        },
+    };
 
     let func_name = match eval(ffi_def.func.deref(), env.clone())? {
         // Other types in this hand is unreachable due typecheck
