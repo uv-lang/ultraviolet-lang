@@ -54,7 +54,7 @@ fn validate_inner(node: &UVParseNode) -> Result<(), SpannedError> {
 
 // Generate number parsing function for all number types
 macro_rules! gen_parse_number_fn {
-    ($($variant:ident($ty:ty)),* $(,)?) => {
+    ($($variant:ident($ty:ty,$a:ident)),* $(,)?) => {
         fn parse_number(node: &UVParseNode) -> Result<Number, SpannedError> {
             validate_inner(node)?;
             let inner_contents = node.get_inner_literal().unwrap_or_spanned(node.span)?;

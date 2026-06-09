@@ -25,6 +25,7 @@ pub struct RTFunction {
     pub lexical_env: Weak<RefCell<Environment<RTVariable>>>,
 }
 
+/// Call signature for built-in function
 pub type BuiltinFunctionSignature =
     fn(args: &[UVRTValue], env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError>;
 
@@ -37,12 +38,14 @@ pub struct BuiltInFunction {
 }
 
 impl BuiltInFunction {
+    /// Create new built-in function from existing function
     pub fn new_from(f: BuiltinFunctionSignature) -> Self {
         Self { f }
     }
 }
 
 #[derive(Clone)]
+/// Runtime value enum
 pub enum UVRTValue {
     Number(Number),
     String(String),

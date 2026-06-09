@@ -1,24 +1,31 @@
-use crate::traits::backend::TypeOf;
-use crate::traits::frontend::ast::StringToUVNumberType;
-use crate::{traits::frontend::ast::GetType, types::frontend::types::UVType};
+use crate::{
+    traits::{
+        backend::TypeOf,
+        ffi::{AsVoidPtr, ToTypeFFI},
+        frontend::ast::{GetType, StringToUVNumberType},
+    },
+    types::frontend::types::UVType,
+};
 use anyhow::{Result, anyhow};
+use libffi::middle::Type;
 use num_traits::NumCast;
+use std::ffi::c_void;
 
 /// Variants of number
 #[macro_export]
 macro_rules! number_variants {
     ($m:ident) => {
         $m!(
-            I8(i8),
-            I16(i16),
-            I32(i32),
-            I64(i64),
-            U8(u8),
-            U16(u16),
-            U32(u32),
-            U64(u64),
-            F32(f32),
-            F64(f64),
+            I8(i8, i8),
+            I16(i16, i16),
+            I32(i32, i32),
+            I64(i64, i64),
+            U8(u8, u8),
+            U16(u16, u16),
+            U32(u32, u32),
+            U64(u64, u64),
+            F32(f32, f32),
+            F64(f64, f64),
         );
     };
 
@@ -28,22 +35,22 @@ macro_rules! number_variants {
     ) => {
         $m!(
             $($args),*,
-            I8(i8),
-            I16(i16),
-            I32(i32),
-            I64(i64),
-            U8(u8),
-            U16(u16),
-            U32(u32),
-            U64(u64),
-            F32(f32),
-            F64(f64),
+            I8(i8, i8),
+            I16(i16, i16),
+            I32(i32, i32),
+            I64(i64, i64),
+            U8(u8, u8),
+            U16(u16, u16),
+            U32(u32, u32),
+            U64(u64, u64),
+            F32(f32, f32),
+            F64(f64, f64),
         );
     };
 }
 
 macro_rules! define_number {
-    ($($variant:ident($ty:ty)),* $(,)?) => {
+    ($($variant:ident($ty:ty, $ffi:ident)),* $(,)?) => {
         /// Number-like value
         #[derive(Debug, Clone)]
         pub enum Number {
@@ -128,6 +135,26 @@ macro_rules! define_number {
                 match self {
                     $(Self::$variant(_) => stringify!($ty).to_owned(),)*
                 }
+            }
+        }
+
+        impl ToTypeFFI for UVNumberType {
+            fn to_ffi_type(&self) -> Option<Type> {
+                Some(
+                    match self {
+                        $(Self::$variant => Type::$ffi(),)*
+                    }
+                )
+             }
+        }
+
+        // FIXME:! Number bи данные внутри него могут не дожить до момента использования ссылки
+        // может вызвать ошибку сегментации
+        impl AsVoidPtr for Number {
+            fn as_void_ptr(&self) -> Result<*const c_void> {
+                Ok(match self {
+                    $(Self::$variant(v) => v as *const $ty as *const c_void,)*
+                })
             }
         }
 

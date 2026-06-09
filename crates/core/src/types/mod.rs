@@ -4,6 +4,7 @@ use crate::types::frontend::{SourceFile, ast::ASTBlockType};
 
 pub mod backend;
 pub mod builtins;
+pub mod ffi;
 pub mod frontend;
 
 pub type EnvRef<T> = Rc<RefCell<Environment<T>>>;

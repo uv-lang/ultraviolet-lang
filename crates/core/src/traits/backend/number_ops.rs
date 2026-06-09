@@ -6,7 +6,7 @@ macro_rules! impl_number_op {
     (
         $trait_name:ident,
         $method:ident,
-        $($variant:ident($ty:ty)),* $(,)?
+        $($variant:ident($ty:ty,$a:ident)),* $(,)?
     ) => {
         impl<'a> $trait_name<&'a Number> for &'a Number {
             type Output = Number;
@@ -36,7 +36,7 @@ macro_rules! impl_number_cmp_op {
         $trait_name:ident,
         $method:ident,
         $out_t:ident,
-        $($variant:ident($ty:ty)),* $(,)?
+        $($variant:ident($ty:ty,$a:ident)),* $(,)?
     ) => {
         impl $trait_name for Number {
             fn $method(&self, rhs: &Number) -> $out_t {

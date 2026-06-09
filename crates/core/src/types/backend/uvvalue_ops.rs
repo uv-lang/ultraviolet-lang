@@ -1,6 +1,5 @@
-use std::ops::{Add, Div, Mul, Rem, Sub};
-
 use crate::types::backend::UVRTValue;
+use std::ops::{Add, Div, Mul, Rem, Sub};
 
 macro_rules! impl_RTVal_op {
     (
