@@ -4,8 +4,8 @@ use ultraviolet_core::{
     types::{
         EnvRef, Environment,
         frontend::{
-            Span,
-            ast::{FunctionCall, FunctionCallArg, FunctionDefinition},
+            Span, Spanned,
+            ast::{ASTBlockType, FunctionCall, FunctionDefinition},
             typechecker::{ControlFlow, UVTypeVariable},
             types::{UVBuiltinFunctionArguments, UVFunctionType, UVType},
         },
@@ -16,7 +16,7 @@ use crate::typechecker::{analyze_group, typecheck};
 
 /// Typecheck function definition
 pub fn check_function_definition(
-    fd: &FunctionDefinition,
+    fd: &Spanned<FunctionDefinition>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let inner_env = Environment::new_child(env.clone());
@@ -82,7 +82,7 @@ pub fn check_function_definition(
 
 /// Typecheck function call
 pub fn check_function_call(
-    fc: &FunctionCall,
+    fc: &Spanned<FunctionCall>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let Some(var) = env.borrow().find_var(fc.name.clone()) else {
@@ -136,7 +136,7 @@ enum TypecheckArgsResult {
 
 /// Get all types of args
 fn check_args(
-    args: &Vec<FunctionCallArg>,
+    args: &Vec<Spanned<ASTBlockType>>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<TypecheckArgsResult, SpannedError> {
     let mut args_types = Vec::new();

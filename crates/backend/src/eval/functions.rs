@@ -5,7 +5,10 @@ use ultraviolet_core::{
     types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTFunction, RTVariable, UVRTValue},
-        frontend::ast::{FunctionCall, FunctionCallArg, FunctionDefinition},
+        frontend::{
+            Spanned,
+            ast::{ASTBlockType, FunctionCall, FunctionDefinition},
+        },
     },
 };
 
@@ -13,14 +16,14 @@ use crate::eval::{eval, eval_block, ffi::call_dll};
 
 /// Defines function in provided scope
 pub fn define_function(
-    def: &FunctionDefinition,
+    def: &Spanned<FunctionDefinition>,
     env: EnvRef<RTVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let args: Vec<String> = def.arguments.iter().map(|e| e.name.value.clone()).collect();
 
     let f = UVRTValue::Function(RTFunction {
         args_names_order: args,
-        body: def.body.clone(),
+        body: def.value.body.clone(),
         lexical_env: Rc::downgrade(&env),
     });
 
@@ -35,7 +38,7 @@ pub fn define_function(
 
 /// Call function
 pub fn call_function(
-    call: &FunctionCall,
+    call: &Spanned<FunctionCall>,
     env: EnvRef<RTVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let Some(f) = env.borrow().find_var(call.name.clone()) else {
@@ -70,21 +73,6 @@ pub fn call_function(
         ));
     };
 
-    // This check is performed by typechecker
-    /*
-    if f_struct.args_names_order.len() != call.args.len() {
-        return Err(SpannedError::new(
-            format!(
-                "Function `{}` accepts {} arguments, but {} are passed",
-                call.name,
-                f_struct.args_names_order.len(),
-                call.args.len()
-            ),
-            call.span,
-        ));
-    }
-    */
-
     let evaluated_args = match eval_args(&call.args, env.clone())? {
         EvalArgsResult::Values(v) => v,
         EvalArgsResult::Flow(cf) => return Ok(cf),
@@ -115,14 +103,14 @@ pub fn call_function(
 /// Possible return types for calculating arguments
 ///
 /// The value inside Flow is propagated upstream
-enum EvalArgsResult {
+pub enum EvalArgsResult {
     Values(Vec<UVRTValue>),
     Flow(ControlFlow),
 }
 
 /// Evaluate function args
-fn eval_args(
-    args: &Vec<FunctionCallArg>,
+pub fn eval_args(
+    args: &Vec<Spanned<ASTBlockType>>,
     env: EnvRef<RTVariable>,
 ) -> Result<EvalArgsResult, SpannedError> {
     let mut evaluated_args: Vec<UVRTValue> = Vec::new();
@@ -130,7 +118,7 @@ fn eval_args(
         let v = eval(&arg.value, env.clone())?;
         evaluated_args.push(match v {
             ControlFlow::Simple(v) => v,
-            fc => return Ok(EvalArgsResult::Flow(fc)),
+            cf => return Ok(EvalArgsResult::Flow(cf)),
         });
     }
 

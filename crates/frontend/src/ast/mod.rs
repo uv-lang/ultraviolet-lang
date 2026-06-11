@@ -31,6 +31,7 @@ mod logical_op;
 mod loops;
 mod math_op;
 mod modules;
+mod ops;
 mod type_parser;
 mod values;
 mod variables;
@@ -134,7 +135,7 @@ pub fn generate_ast(node: &UVParseNode) -> GeneratorOutputType {
 }
 
 /// Parse node children to ast
-pub fn parse_children_vec(n: &UVParseNode) -> Result<Vec<ASTBlockType>, SpannedError> {
+pub fn parse_children_vec(n: &UVParseNode) -> Result<Vec<Spanned<ASTBlockType>>, SpannedError> {
     if !n.all_tags() {
         let literal = n.get_inner_literal().unwrap_or_spanned(n.span)?;
         return Err(SpannedError::new("Unexpected literal", literal.span));
@@ -142,8 +143,8 @@ pub fn parse_children_vec(n: &UVParseNode) -> Result<Vec<ASTBlockType>, SpannedE
 
     n.get_all_tags()
         .iter()
-        .map(|n| generate_ast(n))
-        .collect::<Result<Vec<ASTBlockType>, SpannedError>>()
+        .map(|n| generate_ast(n).map(|ast| Spanned::new(ast, n.span)))
+        .collect::<Result<Vec<Spanned<ASTBlockType>>, SpannedError>>()
 }
 
 /// Parse return block

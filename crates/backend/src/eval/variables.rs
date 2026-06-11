@@ -4,13 +4,16 @@ use ultraviolet_core::{
     types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTVariable, UVRTValue},
-        frontend::ast::{VariableAccess, VariableAssign, VariableDefinition},
+        frontend::{
+            Spanned,
+            ast::{VariableAccess, VariableAssign, VariableDefinition},
+        },
     },
 };
 
 /// Define variable
 pub fn define_variable(
-    var_def: &VariableDefinition,
+    var_def: &Spanned<VariableDefinition>,
     env: EnvRef<RTVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     if env.borrow().find_var(var_def.name.value.clone()).is_some() {
@@ -34,7 +37,7 @@ pub fn define_variable(
 
 /// Access variable by value
 pub fn access_variable(
-    var_acc: &VariableAccess,
+    var_acc: &Spanned<VariableAccess>,
     env: EnvRef<RTVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     match env.borrow().find_var(var_acc.name.clone()) {
@@ -48,7 +51,7 @@ pub fn access_variable(
 
 /// Assign to a variable
 pub fn assign_variable(
-    assign_var: &VariableAssign,
+    assign_var: &Spanned<VariableAssign>,
     env: EnvRef<RTVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let sym = env
@@ -69,7 +72,7 @@ pub fn assign_variable(
     }
 
     let new_env = Environment::new_child(env);
-    let result = eval(&assign_var.value, new_env)?;
+    let result = eval(&assign_var.value.value, new_env)?;
 
     if let ControlFlow::Simple(uvvalue) = result {
         (*sym.borrow_mut()).value = uvvalue;

@@ -4,6 +4,7 @@ use ultraviolet_core::{
     types::{
         EnvRef,
         frontend::{
+            Spanned,
             ast::{VariableAccess, VariableAssign, VariableDefinition},
             typechecker::{ControlFlow, UVTypeVariable},
             types::UVType,
@@ -15,7 +16,7 @@ use crate::typechecker::typecheck;
 
 /// Definition and checking of variable types
 pub fn check_variable_definition(
-    vd: &VariableDefinition,
+    vd: &Spanned<VariableDefinition>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let mut val = match typecheck(&vd.value.value, env.clone())? {
@@ -30,7 +31,7 @@ pub fn check_variable_definition(
                     "Expected type `{}`, got `{}` for variable `{}`",
                     expected.value, val, vd.name.value
                 ),
-                vd.value.span,
+                vd.span,
             ));
         }
 
@@ -52,7 +53,7 @@ pub fn check_variable_definition(
 
 /// Check variable assignment
 pub fn check_variable_assign(
-    va: &VariableAssign,
+    va: &Spanned<VariableAssign>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let Some(var_rc) = env.borrow().find_var(&va.name) else {
@@ -81,7 +82,7 @@ pub fn check_variable_assign(
                 "Expected type `{}`, got `{}` for variable `{}`",
                 var.value, t, va.name
             ),
-            va.value.span,
+            va.span,
         ));
     }
 
@@ -90,7 +91,7 @@ pub fn check_variable_assign(
 
 /// Check variable is defined and get its type
 pub fn check_variable_access(
-    va: &VariableAccess,
+    va: &Spanned<VariableAccess>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let Some(var_rc) = env.borrow().find_var(&va.name) else {

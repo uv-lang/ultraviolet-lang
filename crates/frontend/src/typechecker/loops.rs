@@ -4,6 +4,7 @@ use ultraviolet_core::{
     types::{
         EnvRef, Environment,
         frontend::{
+            Spanned,
             ast::{ForLoop, WhileLoop},
             number::UVNumberType,
             typechecker::{ControlFlow, UVTypeVariable},
@@ -16,7 +17,7 @@ use crate::typechecker::{analyze_group, typecheck};
 
 /// Typecheck while loop
 pub fn check_while_loop(
-    wl: &WhileLoop,
+    wl: &Spanned<Box<WhileLoop>>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let test = match typecheck(&wl.test, env.clone())? {
@@ -40,7 +41,7 @@ pub fn check_while_loop(
 
 /// Typecheck for loop
 pub fn check_for_loop(
-    fl: &ForLoop,
+    fl: &Spanned<ForLoop>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let child_env = Environment::new_child(env.clone());

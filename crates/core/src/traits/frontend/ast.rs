@@ -3,7 +3,8 @@ use std::borrow::Cow;
 use crate::types::{
     EnvRef,
     frontend::{
-        ast::{CompareOpType, LogicalOpType, MathOpType},
+        Spanned,
+        ast::{ASTBlockType, CompareOpType, LogicalOpType, MathOpType},
         number::UVNumberType,
         typechecker::UVTypeVariable,
         types::UVType,
@@ -85,4 +86,9 @@ pub trait ArgumentsCount {
 pub trait GetBlockName<'a> {
     /// Get name of block
     fn get_block_name(&'a self) -> Cow<'a, str>;
+}
+
+pub trait GetOperands {
+    /// Return operands for operator
+    fn get_operands(&self) -> &Vec<Spanned<ASTBlockType>>;
 }

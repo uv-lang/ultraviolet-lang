@@ -4,9 +4,8 @@ use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::{Positional, token_parser::UnwrapOptionError},
     types::frontend::{
-        ast::{
-            ASTBlockType, FunctionCall, FunctionCallArg, FunctionDefinition, FunctionDefinitionArg,
-        },
+        Spanned,
+        ast::{ASTBlockType, FunctionCall, FunctionDefinition, FunctionDefinitionArg},
         tokens::UVParseNode,
     },
 };
@@ -64,15 +63,15 @@ pub fn parse_function_definition(node: &UVParseNode) -> GeneratorOutputType {
         },
     };
 
-    Ok(ASTBlockType::FunctionDefinition(Box::new(
+    Ok(ASTBlockType::FunctionDefinition(Box::new(Spanned::new(
         FunctionDefinition {
             name: name.cloned(),
             arguments,
             return_type: validate_and_parse_inner_type_block(node, "returns")?,
             body: Rc::new(parse_children_vec(body)?),
-            span: node.span,
         },
-    )))
+        node.span,
+    ))))
 }
 
 /// Parse function definition arguments
@@ -130,22 +129,19 @@ pub fn parse_function_call(node: &UVParseNode) -> GeneratorOutputType {
         ));
     }
 
-    Ok(ASTBlockType::FunctionCall(FunctionCall {
-        name: node.extra_param.clone(),
-        args: parse_function_call_arguments(node.get_all_tags())?,
-        span: node.span,
-    }))
+    Ok(ASTBlockType::FunctionCall(Box::new(Spanned::new(
+        FunctionCall {
+            name: node.extra_param.clone(),
+            args: parse_function_call_arguments(node.get_all_tags())?,
+        },
+        node.span,
+    ))))
 }
 
 pub fn parse_function_call_arguments(
     args: Vec<&UVParseNode>,
-) -> Result<Vec<FunctionCallArg>, SpannedError> {
+) -> Result<Vec<Spanned<ASTBlockType>>, SpannedError> {
     args.into_iter()
-        .map(|arg| {
-            Ok(FunctionCallArg {
-                value: generate_ast(arg)?,
-                span: arg.span,
-            })
-        })
+        .map(|arg| generate_ast(arg).map(|ast| Spanned::new(ast, arg.span)))
         .collect()
 }

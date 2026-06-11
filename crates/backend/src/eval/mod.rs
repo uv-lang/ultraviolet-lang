@@ -1,12 +1,10 @@
-use crate::{
-    EvalOps,
-    eval::{
-        conditional_op::eval_conditional_op,
-        ffi::load_dll,
-        functions::{call_function, define_function},
-        loops::{eval_for_loop, eval_while_loop},
-        variables::{access_variable, assign_variable, define_variable},
-    },
+use crate::eval::{
+    conditional_op::eval_conditional_op,
+    ffi::load_dll,
+    functions::{call_function, define_function},
+    loops::{eval_for_loop, eval_while_loop},
+    ops::EvalOps,
+    variables::{access_variable, assign_variable, define_variable},
 };
 use ultraviolet_core::{
     errors::SpannedError,
@@ -23,6 +21,7 @@ mod functions;
 mod logical;
 mod loops;
 mod math;
+mod ops;
 mod variables;
 
 pub fn eval(node: &ASTBlockType, env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
@@ -64,14 +63,14 @@ pub fn eval(node: &ASTBlockType, env: EnvRef<RTVariable>) -> Result<ControlFlow,
 
 /// Eval every block in node vector
 fn eval_block(
-    nodes: &Vec<ASTBlockType>,
+    nodes: &Vec<Spanned<ASTBlockType>>,
     env: EnvRef<RTVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let new_env = Environment::new_child(env);
 
     let mut last_eval_simple_val = UVRTValue::Void;
     for node in nodes {
-        match eval(node, new_env.clone())? {
+        match eval(&node.value, new_env.clone())? {
             ControlFlow::Simple(val) => last_eval_simple_val = val,
             cf => return Ok(cf),
         }

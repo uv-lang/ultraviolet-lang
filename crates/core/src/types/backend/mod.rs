@@ -5,6 +5,7 @@ use crate::{
         EnvRef, Environment,
         backend::ffi::FFIFunction,
         frontend::{
+            Spanned,
             ast::{ASTBlockType, UVValue},
             number::Number,
             types::UVType,
@@ -21,7 +22,7 @@ pub mod uvvalue_ops;
 #[derive(Clone)]
 pub struct RTFunction {
     pub args_names_order: Vec<String>,
-    pub body: Rc<Vec<ASTBlockType>>,
+    pub body: Rc<Vec<Spanned<ASTBlockType>>>,
 
     // FIXME:! The function should take a snapshot of the environment, not a link to it
     pub lexical_env: Weak<RefCell<Environment<RTVariable>>>,

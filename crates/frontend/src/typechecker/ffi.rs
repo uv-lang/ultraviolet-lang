@@ -6,6 +6,7 @@ use ultraviolet_core::{
     types::{
         EnvRef,
         frontend::{
+            Spanned,
             ast::FFIDefinition,
             typechecker::{ControlFlow, UVTypeVariable},
             types::{UVFunctionType, UVType},
@@ -14,7 +15,7 @@ use ultraviolet_core::{
 };
 
 pub fn check_ffi_definition(
-    ffi_d: &FFIDefinition,
+    ffi_d: &Spanned<Box<FFIDefinition>>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     if env.borrow().find_var(ffi_d.name.deref()).is_some() {
@@ -25,7 +26,7 @@ pub fn check_ffi_definition(
     }
 
     // ------------------------------ <dll> ------------------------------
-    let dll_type = match typecheck(&ffi_d.dll.value, env.clone())? {
+    let dll_type = match typecheck(&ffi_d.dll, env.clone())? {
         ControlFlow::Simple(t) => t,
         cf => return Ok(cf),
     };
@@ -42,7 +43,7 @@ pub fn check_ffi_definition(
 
     // ------------------------------ <func> -----------------------------
 
-    let func_type = match typecheck(&ffi_d.func.value, env.clone())? {
+    let func_type = match typecheck(&ffi_d.func, env.clone())? {
         ControlFlow::Simple(t) => t,
         cf => return Ok(cf),
     };
@@ -61,7 +62,7 @@ pub fn check_ffi_definition(
     for arg in &ffi_d.arguments {
         if arg.to_ffi_type().is_none() {
             return Err(SpannedError::new(
-                format!("Type {} cannot be used as ffi argument", arg.value),
+                format!("Type {} cannot be used as ffi argument", arg.deref()),
                 arg.span,
             ));
         }
@@ -72,7 +73,7 @@ pub fn check_ffi_definition(
         && t.to_ffi_type().is_none()
     {
         return Err(SpannedError::new(
-            format!("Type {} cannot be used as ffi returns type", t.value),
+            format!("Type {} cannot be used as ffi returns type", t.deref()),
             t.span,
         ));
     }

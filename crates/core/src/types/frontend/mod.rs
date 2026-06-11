@@ -116,6 +116,20 @@ impl<T> Spanned<T> {
     pub fn new(value: T, span: Span) -> Self {
         Self { value, span }
     }
+
+    /// Map contained value
+    pub fn map<R, X: FnOnce(T) -> R>(self, f: X) -> Spanned<R> {
+        Spanned::new(f(self.value), self.span)
+    }
+}
+
+impl<'a, T> Spanned<Box<T>> {
+    pub fn unbox_as_ref(&'a self) -> Spanned<&'a T> {
+        Spanned {
+            value: &*self.value,
+            span: self.span,
+        }
+    }
 }
 
 impl<T> Positional for Spanned<T> {

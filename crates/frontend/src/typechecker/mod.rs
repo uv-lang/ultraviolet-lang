@@ -4,6 +4,7 @@ use ultraviolet_core::{
     types::{
         EnvRef, Environment,
         frontend::{
+            Spanned,
             ast::ASTBlockType,
             typechecker::{ControlFlow, UVTypeVariable},
             types::UVType,
@@ -63,7 +64,7 @@ pub fn typecheck(
 /// Handle return and passes upstream
 /// Returns latest block type as group type
 fn analyze_group(
-    blocks: &Vec<ASTBlockType>,
+    blocks: &Vec<Spanned<ASTBlockType>>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let new_env = Environment::new_child(env);

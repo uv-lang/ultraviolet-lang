@@ -21,6 +21,7 @@ use ultraviolet_core::{
         backend::{ControlFlow, RTVariable, UVRTValue, ffi::FFIFunction},
         ffi::FFIData,
         frontend::{
+            Spanned,
             ast::{FFIDefinition, FunctionCall},
             types::UVType,
         },
@@ -38,7 +39,7 @@ pub fn libraries() -> &'static RwLock<HashMap<String, Arc<Library>>> {
 
 /// Load DLL into memory
 pub fn load_dll(
-    ffi_def: &FFIDefinition,
+    ffi_def: &Spanned<Box<FFIDefinition>>,
     env: EnvRef<RTVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let lib_path = match eval(ffi_def.dll.deref(), env.clone())? {
@@ -128,7 +129,7 @@ pub fn load_dll(
 
 /// Call already loaded DLL function
 pub fn call_dll(
-    call: &FunctionCall,
+    call: &Spanned<FunctionCall>,
     args: Vec<UVRTValue>,
     f: &FFIFunction,
 ) -> Result<ControlFlow, SpannedError> {

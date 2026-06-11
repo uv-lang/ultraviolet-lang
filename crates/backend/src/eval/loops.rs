@@ -5,6 +5,7 @@ use ultraviolet_core::{
         EnvRef, Environment,
         backend::{ControlFlow, RTVariable, UVRTValue},
         frontend::{
+            Spanned,
             ast::{ForLoop, WhileLoop},
             number::Number,
         },
@@ -15,7 +16,7 @@ use crate::eval::{eval, eval_block};
 
 /// Evaluate for loop
 pub fn eval_for_loop(
-    for_node: &ForLoop,
+    for_node: &Spanned<ForLoop>,
     env: EnvRef<RTVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let start_flow = eval(&for_node.start, env.clone())?;

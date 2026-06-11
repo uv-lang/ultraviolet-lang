@@ -4,13 +4,13 @@ use ultraviolet_core::{
     types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTVariable, UVRTValue},
-        frontend::ast::ConditionalOperator,
+        frontend::{Spanned, ast::ConditionalOperator},
     },
 };
 
 /// Evaluate conditional operator
 pub fn eval_conditional_op(
-    co: &ConditionalOperator,
+    co: &Spanned<ConditionalOperator>,
     env: EnvRef<RTVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let cf = eval(&co.test, env.clone())?;
@@ -36,7 +36,7 @@ pub fn eval_conditional_op(
 
     if let Some(body) = branch {
         let new_env = Environment::new_child(env.clone());
-        return eval_block(&body.value, new_env);
+        return eval_block(body, new_env);
     }
 
     Ok(ControlFlow::Simple(UVRTValue::Void))

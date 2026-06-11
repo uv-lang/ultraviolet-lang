@@ -3,7 +3,7 @@ use std::{ops::Deref, slice};
 use ultraviolet_core::{
     errors::{ErrorType, SpannedError},
     traits::frontend::{Positional, ast::GetBlockName},
-    types::frontend::ast::ASTBlockType,
+    types::frontend::{Spanned, ast::ASTBlockType},
 };
 
 #[derive(Debug, Clone)]
@@ -79,7 +79,7 @@ pub fn analyze_dead_code_program(ast: &ASTBlockType) -> Vec<SpannedError> {
 
 /// Analyze code for unreachable elements
 pub fn analyze_dead_code<'a>(
-    blocks: impl IntoIterator<Item = &'a ASTBlockType>,
+    blocks: impl IntoIterator<Item = &'a Spanned<ASTBlockType>>,
     force_terminate: bool,
 ) -> CheckFlow {
     let mut flow = CheckFlow::new();
@@ -99,7 +99,7 @@ pub fn analyze_dead_code<'a>(
             continue;
         }
 
-        match block {
+        match &**block {
             ASTBlockType::Return(_) => flow.set_terminal(DeadCodeAnalysisFlow::Return),
             ASTBlockType::Break(_) | ASTBlockType::Continue(_) => {
                 flow.set_terminal(DeadCodeAnalysisFlow::LoopDiverges)
@@ -158,20 +158,17 @@ pub fn analyze_dead_code<'a>(
                 flow.apply_flow(analyze_dead_code(&*f.body, false), block)
             },
 
-            ASTBlockType::FunctionCall(fc) => {
-                analyze_operands(fc.args.iter().map(|a| &a.value), &mut flow, block);
-            },
-
+            ASTBlockType::FunctionCall(fc) => analyze_operands(&fc.args, &mut flow, block),
             ASTBlockType::CompareOp(cmp) => analyze_operands(&cmp.operands, &mut flow, block),
             ASTBlockType::MathOp(cmp) => analyze_operands(&cmp.operands, &mut flow, block),
             ASTBlockType::LogicalOp(cmp) => analyze_operands(&cmp.operands, &mut flow, block),
 
             ASTBlockType::VariableAssignment(assign) => {
-                flow.apply_flow(analyze_one(assign.value.deref().deref(), false), block);
+                flow.apply_flow(analyze_one(&assign.value.value, false), block);
             },
 
             ASTBlockType::VariableDefinition(assign) => {
-                flow.apply_flow(analyze_one(assign.value.deref(), false), block);
+                flow.apply_flow(analyze_one(&assign.value.value, false), block);
             },
 
             _ => {},
@@ -182,7 +179,7 @@ pub fn analyze_dead_code<'a>(
 }
 
 fn analyze_operands<'a>(
-    operands: impl IntoIterator<Item = &'a ASTBlockType>,
+    operands: impl IntoIterator<Item = &'a Spanned<ASTBlockType>>,
     flow: &mut CheckFlow,
     block: &ASTBlockType,
 ) {
@@ -197,6 +194,6 @@ fn analyze_operands<'a>(
     }
 }
 
-fn analyze_one(node: &ASTBlockType, force: bool) -> CheckFlow {
+fn analyze_one(node: &Spanned<ASTBlockType>, force: bool) -> CheckFlow {
     analyze_dead_code(slice::from_ref(node), force)
 }

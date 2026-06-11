@@ -46,7 +46,10 @@ pub fn parse_for_loop(node: &UVParseNode) -> GeneratorOutputType {
 
     // Step
     let step = match node.get_one_tag_by_name("step") {
-        Some(_) => Some(generate_ast(get_and_validate_inner_tag(node, "step")?)?),
+        Some(n) => Some(Spanned::new(
+            generate_ast(get_and_validate_inner_tag(node, "step")?)?,
+            n.span,
+        )),
         None => None,
     };
 
@@ -58,14 +61,19 @@ pub fn parse_for_loop(node: &UVParseNode) -> GeneratorOutputType {
         },
     };
 
-    Ok(ASTBlockType::ForLoop(Box::new(ForLoop {
-        iterator: iterator.clone(),
-        start: generate_ast(get_and_validate_inner_tag(node, "start")?)?,
-        end: generate_ast(get_and_validate_inner_tag(node, "end")?)?,
-        step,
-        body: Spanned::new(parse_children_vec(body)?, body.span),
-        span: node.span,
-    })))
+    let start = get_and_validate_inner_tag(node, "start")?;
+    let end = get_and_validate_inner_tag(node, "end")?;
+
+    Ok(ASTBlockType::ForLoop(Box::new(Spanned::new(
+        ForLoop {
+            iterator: iterator.clone(),
+            start: Spanned::new(generate_ast(start)?, start.span),
+            end: Spanned::new(generate_ast(end)?, end.span),
+            step,
+            body: Spanned::new(parse_children_vec(body)?, body.span),
+        },
+        node.span,
+    ))))
 }
 
 /// Parse while loop to ast
@@ -92,12 +100,15 @@ pub fn parse_while_loop(node: &UVParseNode) -> GeneratorOutputType {
         },
     };
 
-    Ok(ASTBlockType::WhileLoop(Box::new(WhileLoop {
-        test: generate_ast(get_and_validate_inner_tag(node, "test")?)?,
-        body: Spanned::new(parse_children_vec(body)?, body.span),
+    let test = get_and_validate_inner_tag(node, "test")?;
 
-        span: node.span,
-    })))
+    Ok(ASTBlockType::WhileLoop(Spanned::new(
+        Box::new(WhileLoop {
+            test: Spanned::new(generate_ast(test)?, test.span),
+            body: Spanned::new(parse_children_vec(body)?, body.span),
+        }),
+        node.span,
+    )))
 }
 
 /// Get inner tag by nme and validate its children

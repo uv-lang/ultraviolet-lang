@@ -3,7 +3,7 @@ use ultraviolet_core::{
     traits::frontend::{Positional, token_parser::UnwrapOptionError},
     types::frontend::{
         Spanned,
-        ast::{ASTBlockType, ConditionalOperator},
+        ast::{ASTBlockType, ASTSpannedBody, ConditionalOperator},
         tokens::UVParseNode,
     },
 };
@@ -42,19 +42,22 @@ pub fn parse_conditional_op(node: &UVParseNode) -> GeneratorOutputType {
         )),
     }?;
 
-    Ok(ASTBlockType::ConditionalOp(Box::new(ConditionalOperator {
-        test,
-        then_body: parse_outcomes(node, "then")?,
-        else_body: parse_outcomes(node, "else")?,
-        span: node.span,
-    })))
+    let span = test.get_span();
+    Ok(ASTBlockType::ConditionalOp(Box::new(Spanned::new(
+        ConditionalOperator {
+            test: Spanned::new(test, span),
+            then_body: parse_outcomes(node, "then")?,
+            else_body: parse_outcomes(node, "else")?,
+        },
+        node.span,
+    ))))
 }
 
 /// Parse conditional operator outcomes
 fn parse_outcomes(
     node: &UVParseNode,
     tag_name: impl Into<String>,
-) -> Result<Option<Spanned<Vec<ASTBlockType>>>, SpannedError> {
+) -> Result<Option<ASTSpannedBody>, SpannedError> {
     let binding = tag_name.into();
     let n = binding.as_str();
 

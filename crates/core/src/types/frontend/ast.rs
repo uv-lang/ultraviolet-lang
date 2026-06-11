@@ -5,12 +5,14 @@ use crate::{
     traits::frontend::{
         Positional,
         ast::{
-            ArgumentsCount, GetBlockName, GetType, StringToUVCompareOp, StringToUVLogicalOp,
-            StringToUVMathOp,
+            ArgumentsCount, GetBlockName, GetOperands, GetType, StringToUVCompareOp,
+            StringToUVLogicalOp, StringToUVMathOp,
         },
     },
     types::frontend::{ModuleImport, Span, Spanned, number::Number, types::UVType},
 };
+
+pub type ASTSpannedBody = Spanned<Vec<Spanned<ASTBlockType>>>;
 
 /// Typed value container
 #[derive(Debug, Clone)]
@@ -49,33 +51,33 @@ impl std::fmt::Display for UVValue {
 
 // --------------------------- AST-TYPES ---------------------------
 pub enum ASTBlockType {
-    CodeBlock(Spanned<Vec<ASTBlockType>>),
+    CodeBlock(ASTSpannedBody),
 
-    VariableDefinition(Box<VariableDefinition>),
-    FunctionDefinition(Box<FunctionDefinition>),
+    VariableDefinition(Box<Spanned<VariableDefinition>>),
+    FunctionDefinition(Box<Spanned<FunctionDefinition>>),
 
-    FunctionCall(FunctionCall),
-    VariableAssignment(VariableAssign),
-    VariableAccess(VariableAccess),
+    FunctionCall(Box<Spanned<FunctionCall>>),
+    VariableAssignment(Box<Spanned<VariableAssign>>),
+    VariableAccess(Spanned<VariableAccess>),
 
-    ConditionalOp(Box<ConditionalOperator>),
+    ConditionalOp(Box<Spanned<ConditionalOperator>>),
 
-    MathOp(MathOp),
-    LogicalOp(LogicalOp),
-    CompareOp(CompareOp),
+    MathOp(Spanned<BuiltInOperation<MathOpType>>),
+    LogicalOp(Spanned<BuiltInOperation<LogicalOpType>>),
+    CompareOp(Spanned<BuiltInOperation<CompareOpType>>),
 
-    ForLoop(Box<ForLoop>),
-    WhileLoop(Box<WhileLoop>),
+    ForLoop(Box<Spanned<ForLoop>>),
+    WhileLoop(Spanned<Box<WhileLoop>>),
 
     Value(Spanned<UVValue>),
 
-    GroupBlock(Spanned<Vec<ASTBlockType>>),
+    GroupBlock(ASTSpannedBody),
 
     Return(Spanned<Option<Box<ASTBlockType>>>),
     Continue(Spanned<()>),
     Break(Spanned<()>),
 
-    FFIDefinition(Box<FFIDefinition>),
+    FFIDefinition(Spanned<Box<FFIDefinition>>),
 
     ModuleImport(Spanned<ModuleImport>),
 }
@@ -142,32 +144,36 @@ pub struct VariableDefinition {
     pub value: Spanned<ASTBlockType>,
     pub expected_type: Option<Spanned<UVType>>,
     pub is_const: bool,
-
-    pub span: Span,
 }
 
 // ------------------------- Variable Assign ---------------------------------
 
 pub struct VariableAssign {
     pub name: String,
-    pub value: Spanned<Box<ASTBlockType>>,
-
-    pub span: Span,
+    pub value: Spanned<ASTBlockType>,
 }
 
 // ------------------------ Variable Access ----------------------------------
 
+// FIXME: HA-HA Is this really a structure with one field?
 pub struct VariableAccess {
     pub name: String,
-    pub span: Span,
+}
+
+// ------------------ Generic Operations structure ---------------------------
+
+pub struct BuiltInOperation<T> {
+    pub op_type: T,
+    pub operands: Vec<Spanned<ASTBlockType>>,
+}
+
+impl<T> GetOperands for Spanned<BuiltInOperation<T>> {
+    fn get_operands(&self) -> &Vec<Spanned<ASTBlockType>> {
+        &self.operands
+    }
 }
 
 // ------------------------ Math Operations ----------------------------------
-pub struct MathOp {
-    pub op_type: MathOpType,
-    pub operands: Vec<ASTBlockType>,
-    pub span: Span,
-}
 
 #[derive(Debug)]
 pub enum MathOpType {
@@ -228,12 +234,6 @@ impl fmt::Display for CompareOpType {
     }
 }
 
-pub struct CompareOp {
-    pub op_type: CompareOpType,
-    pub operands: Vec<ASTBlockType>,
-    pub span: Span,
-}
-
 impl ArgumentsCount for CompareOpType {
     fn min_arguments_count(&self) -> usize {
         2
@@ -276,12 +276,6 @@ impl fmt::Display for LogicalOpType {
     }
 }
 
-pub struct LogicalOp {
-    pub op_type: LogicalOpType,
-    pub operands: Vec<ASTBlockType>,
-    pub span: Span,
-}
-
 impl ArgumentsCount for LogicalOpType {
     fn min_arguments_count(&self) -> usize {
         match self {
@@ -312,31 +306,25 @@ impl StringToUVLogicalOp for str {
 // --------------------------- For loop --------------------------------------
 pub struct ForLoop {
     pub iterator: Spanned<String>,
-    pub start: ASTBlockType,
-    pub end: ASTBlockType,
-    pub step: Option<ASTBlockType>,
-    pub body: Spanned<Vec<ASTBlockType>>,
-
-    pub span: Span,
+    pub start: Spanned<ASTBlockType>,
+    pub end: Spanned<ASTBlockType>,
+    pub step: Option<Spanned<ASTBlockType>>,
+    pub body: ASTSpannedBody,
 }
 
 // ---------------------------- While loop -----------------------------------
 
 pub struct WhileLoop {
-    pub test: ASTBlockType,
-    pub body: Spanned<Vec<ASTBlockType>>,
-
-    pub span: Span,
+    pub test: Spanned<ASTBlockType>,
+    pub body: ASTSpannedBody,
 }
 
 // ---------------------- Conditional Operator -------------------------------
 
 pub struct ConditionalOperator {
-    pub test: ASTBlockType,
-    pub then_body: Option<Spanned<Vec<ASTBlockType>>>,
-    pub else_body: Option<Spanned<Vec<ASTBlockType>>>,
-
-    pub span: Span,
+    pub test: Spanned<ASTBlockType>,
+    pub then_body: Option<ASTSpannedBody>,
+    pub else_body: Option<ASTSpannedBody>,
 }
 
 // ----------------------- Function Definition --------------------------------
@@ -353,23 +341,14 @@ pub struct FunctionDefinition {
     pub arguments: Vec<FunctionDefinitionArg>,
     pub return_type: Option<Spanned<UVType>>,
 
-    pub body: Rc<Vec<ASTBlockType>>,
-
-    pub span: Span,
+    pub body: Rc<Vec<Spanned<ASTBlockType>>>,
 }
 
 // ------------------------- Function Call -----------------------------------
-pub struct FunctionCallArg {
-    pub value: ASTBlockType,
-
-    pub span: Span,
-}
 
 pub struct FunctionCall {
     pub name: String,
-    pub args: Vec<FunctionCallArg>,
-
-    pub span: Span,
+    pub args: Vec<Spanned<ASTBlockType>>,
 }
 
 // ------------------------- FFI Definition ----------------------------------
@@ -382,8 +361,6 @@ pub struct FFIDefinition {
 
     pub arguments: Vec<Spanned<UVType>>,
     pub return_type: Option<Spanned<UVType>>,
-
-    pub span: Span,
 }
 // ---------------------------- TESTS ----------------------------------------
 

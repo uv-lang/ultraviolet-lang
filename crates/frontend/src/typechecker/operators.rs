@@ -4,7 +4,10 @@ use ultraviolet_core::{
     types::{
         EnvRef, Environment,
         frontend::{
-            ast::{CompareOp, CompareOpType, ConditionalOperator, LogicalOp, MathOp},
+            Spanned,
+            ast::{
+                BuiltInOperation, CompareOpType, ConditionalOperator, LogicalOpType, MathOpType,
+            },
             typechecker::{ControlFlow, UVTypeVariable},
             types::UVType,
         },
@@ -15,7 +18,7 @@ use crate::typechecker::{analyze_group, typecheck};
 
 /// Typecheck math operator
 pub fn check_math_op(
-    op: &MathOp,
+    op: &Spanned<BuiltInOperation<MathOpType>>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let op_type = match typecheck(op.operands.first().unwrap_or_spanned(op.span)?, env.clone())? {
@@ -45,7 +48,7 @@ pub fn check_math_op(
 
 /// Typecheck conditional operator
 pub fn check_conditional_op(
-    op: &ConditionalOperator,
+    op: &Spanned<ConditionalOperator>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let test = match typecheck(&op.test, env.clone())? {
@@ -92,7 +95,7 @@ pub fn check_conditional_op(
 
 /// Typecheck logical operator
 pub fn check_logical_op(
-    op: &LogicalOp,
+    op: &Spanned<BuiltInOperation<LogicalOpType>>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     for operand in &op.operands {
@@ -138,7 +141,7 @@ fn is_number_like(t: &UVType) -> bool {
 
 /// Typecheck comparison operator
 pub fn check_compare_op(
-    op: &CompareOp,
+    op: &Spanned<BuiltInOperation<CompareOpType>>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
     let mut types = Vec::new();

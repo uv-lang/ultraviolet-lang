@@ -100,12 +100,14 @@ pub fn parse_ffi_definition(node: &UVParseNode) -> GeneratorOutputType {
             .collect::<Result<Vec<Spanned<UVType>>, SpannedError>>()?;
     }
 
-    Ok(ASTBlockType::FFIDefinition(Box::new(FFIDefinition {
-        name,
-        dll,
-        func,
-        arguments: args,
-        return_type: validate_and_parse_inner_type_block(node, "returns")?,
-        span: node.span,
-    })))
+    Ok(ASTBlockType::FFIDefinition(Spanned::new(
+        Box::new(FFIDefinition {
+            name,
+            dll,
+            func,
+            arguments: args,
+            return_type: validate_and_parse_inner_type_block(node, "returns")?,
+        }),
+        node.span,
+    )))
 }

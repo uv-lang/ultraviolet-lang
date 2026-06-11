@@ -1,19 +1,16 @@
+use crate::eval::ops::EvalOps;
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
-        EnvRef,
-        backend::{ControlFlow, RTVariable, UVRTValue},
-        frontend::ast::{MathOp, MathOpType},
+        backend::UVRTValue,
+        frontend::{
+            Spanned,
+            ast::{BuiltInOperation, MathOpType},
+        },
     },
 };
 
-use crate::EvalOps;
-
-impl EvalOps for MathOp {
-    fn eval(&self, env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
-        self._eval_with_operands(&self.operands, env)
-    }
-
+impl EvalOps for Spanned<BuiltInOperation<MathOpType>> {
     fn eval_expr(&self, values: &[UVRTValue]) -> Result<UVRTValue, SpannedError> {
         let mut iter = values.iter();
 
