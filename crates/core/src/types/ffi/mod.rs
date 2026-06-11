@@ -50,6 +50,10 @@ impl<'a> AsArg for FFIData<'a> {
             FFIData::Number(ptr) => ptr.clone(),
             FFIData::String(c_str) => Arg::new(c_str),
             FFIData::Boolean(b) => Arg::new(b),
+
+            // TODO: A null pointer must not be passed as a value
+            // In most FFIs, a null pointer is used to pass a value back
+            // to the calling code. However, at the time of implementation of FFI in Ultraviolet there are no pointers
             FFIData::Null => Arg::new(&(ptr::null::<c_void>())),
         }
     }

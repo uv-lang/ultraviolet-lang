@@ -7,15 +7,21 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+/// User environment function type
 pub struct UVFunctionType {
     pub args: Vec<UVType>,
     pub returns: UVType,
 }
 
+// ---------------------- Builtin functions -------------------------------
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum UVBuiltinFunctionArguments {
+    /// Arguments of any type and quantity
     Any,
+    /// Fixed number and type of arguments
     Args(Vec<UVType>),
+    /// ALL arguments of the given type and number
     AllOf(UVType),
 }
 
@@ -38,6 +44,7 @@ pub enum UVType {
     Function(Box<UVFunctionType>),
     BuiltInFunction(Box<UVBuiltinFunctionType>),
 
+    /// Unreachable from user env
     Any,
 
     Union(Vec<UVType>),

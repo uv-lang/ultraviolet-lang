@@ -29,7 +29,9 @@ impl Display for UVLexerTokens {
             UVLexerTokens::SelfClosingAngleBracket => write!(f, "/>"),
             UVLexerTokens::OpeningAngleBracketSlash => write!(f, "</"),
             UVLexerTokens::Literal(str) => write!(f, "[Literal \"{str}\"]"),
-            UVLexerTokens::RawString(str) => write!(f, "[Raw string \"{str}\"]"),
+            UVLexerTokens::RawString(str) => {
+                write!(f, "[Raw string \"{str}\"]")
+            },
             UVLexerTokens::Unknown(ch) => write!(f, "{ch}"),
         }
     }

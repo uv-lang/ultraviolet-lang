@@ -53,7 +53,9 @@ pub fn parse_for_loop(node: &UVParseNode) -> GeneratorOutputType {
     // Body
     let body = match node.get_one_tag_by_name("body") {
         Some(x) => x,
-        None => return Err(SpannedError::new("`for` loop must have a body", node.span)),
+        None => {
+            return Err(SpannedError::new("`for` loop must have a body", node.span));
+        },
     };
 
     Ok(ASTBlockType::ForLoop(Box::new(ForLoop {

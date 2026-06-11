@@ -96,7 +96,6 @@ pub fn generate_ast(node: &UVParseNode) -> GeneratorOutputType {
         // Parse function call with trailing `$` symbol
         c if c.ends_with("$") => {
             let mut new_node = node.clone();
-            new_node.name = String::from("call");
             new_node.extra_param = node.name.trim_end_matches("$").to_owned();
             parse_function_call(&new_node)?
         },
