@@ -87,12 +87,11 @@ pub fn load_dll(
         .map_err(|e| SpannedError::new(format!("Invalid function name: {}", e), ffi_def.span))?;
 
     let func_symbol: Symbol<unsafe extern "C" fn()> = unsafe {
-        let sym: Symbol<unsafe extern "C" fn()> =
-            lib.get(cname.as_bytes_with_nul()).map_err(|e| {
-                SpannedError::new(format!("Can't get symbol from dll: {}", e), ffi_def.span)
-            })?;
-        std::mem::transmute(sym)
+        lib.get(cname.as_bytes_with_nul()).map_err(|e| {
+            SpannedError::new(format!("Can't get symbol from dll: {}", e), ffi_def.span)
+        })?
     };
+
     let func_ptr = CodePtr::from_ptr(*func_symbol as *const c_void);
 
     let arg_types = ffi_def
@@ -115,7 +114,6 @@ pub fn load_dll(
         RTVariable::new_from(
             UVRTValue::FFIFunction(FFIFunction {
                 _lib: lib.clone(),
-                func_symbol,
                 func_ptr,
                 cif,
                 returns: ffi_def.return_type.clone(),

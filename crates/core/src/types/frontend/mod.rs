@@ -121,6 +121,11 @@ impl<T> Spanned<T> {
     pub fn map<R, X: FnOnce(T) -> R>(self, f: X) -> Spanned<R> {
         Spanned::new(f(self.value), self.span)
     }
+
+    /// Unwraps the inner value
+    pub fn unwrap(self) -> T {
+        self.value
+    }
 }
 
 impl<'a, T> Spanned<Box<T>> {
