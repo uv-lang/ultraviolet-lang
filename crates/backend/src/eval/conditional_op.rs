@@ -1,10 +1,12 @@
 use crate::eval::{eval, eval_block};
 use ultraviolet_core::{
-    errors::SpannedError, traits::frontend::Positional, types::{
+    errors::SpannedError,
+    traits::frontend::Positional,
+    types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTVariable, UVRTValue},
         frontend::{Spanned, ast::ConditionalOperator},
-    }
+    },
 };
 
 /// Evaluate conditional operator

@@ -1,14 +1,16 @@
 use std::rc::Rc;
 
 use ultraviolet_core::{
-    errors::SpannedError, traits::frontend::Positional, types::{
+    errors::SpannedError,
+    traits::frontend::Positional,
+    types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTFunction, RTVariable, UVRTValue},
         frontend::{
             Spanned,
             ast::{ASTBlockType, FunctionCall, FunctionDefinition},
         },
-    }
+    },
 };
 
 use crate::eval::{eval, eval_block, ffi::call_dll};

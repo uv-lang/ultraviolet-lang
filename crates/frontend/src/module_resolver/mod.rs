@@ -1,4 +1,10 @@
-use std::{env::current_dir, io, ops::Deref, path::PathBuf, rc::Rc};
+use std::{
+    env::current_dir,
+    io,
+    ops::Deref,
+    path::{Path, PathBuf},
+    rc::Rc,
+};
 
 use ultraviolet_core::{
     errors::SpannedError,
@@ -25,7 +31,7 @@ fn get_modules_path(path: &mut PathBuf) -> Result<PathBuf, io::Error> {
 }
 
 /// Check if path is file and file exists
-fn exists_file(path: &PathBuf) -> bool {
+fn exists_file(path: &Path) -> bool {
     path.is_file() && path.exists()
 }
 
@@ -69,10 +75,10 @@ fn resolve_by_path(module: &Spanned<ModuleImport>) -> Result<SourceFileParsed, S
 }
 
 pub fn resolve_modules(
-    modules: &Vec<Spanned<ModuleImport>>,
+    modules: &[Spanned<ModuleImport>],
 ) -> Result<Vec<SourceFileParsed>, SpannedError> {
     modules
         .iter()
-        .map(|m| resolve_by_path(m))
+        .map(resolve_by_path)
         .collect::<Result<Vec<SourceFileParsed>, SpannedError>>()
 }

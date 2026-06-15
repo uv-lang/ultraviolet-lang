@@ -1,12 +1,14 @@
 use crate::eval::ops::EvalOps;
 use ultraviolet_core::{
-    errors::SpannedError, traits::frontend::Positional, types::{
+    errors::SpannedError,
+    traits::frontend::Positional,
+    types::{
         backend::UVRTValue,
         frontend::{
             Spanned,
             ast::{BuiltInOperation, LogicalOpType},
         },
-    }
+    },
 };
 
 impl EvalOps for Spanned<BuiltInOperation<LogicalOpType>> {
