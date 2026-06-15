@@ -1,0 +1,12 @@
+<mod>
+    <let>
+        <name>some</name>
+        <value>
+            <i8>5</i8>
+        </value>
+    </let>
+
+    <export>
+        <some />
+    </export>
+</mod>

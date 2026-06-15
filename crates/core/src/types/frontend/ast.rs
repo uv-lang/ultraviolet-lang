@@ -52,6 +52,7 @@ impl std::fmt::Display for UVValue {
 // --------------------------- AST-TYPES ---------------------------
 pub enum ASTBlockType {
     CodeBlock(ASTSpannedBody),
+    ModuleBlock(ASTSpannedBody),
 
     VariableDefinition(Box<Spanned<VariableDefinition>>),
     FunctionDefinition(Box<Spanned<FunctionDefinition>>),
@@ -86,6 +87,7 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
     fn get_block_name(&'a self) -> Cow<'a, str> {
         match self {
             ASTBlockType::CodeBlock(_) => Cow::Borrowed("code"),
+            ASTBlockType::ModuleBlock(_) => Cow::Borrowed("mod"),
             ASTBlockType::VariableDefinition(_) => Cow::Borrowed("let"),
             ASTBlockType::VariableAssignment(a) => Cow::Borrowed(&a.name),
             ASTBlockType::VariableAccess(a) => Cow::Borrowed(&a.name),
@@ -114,6 +116,7 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
 impl Positional for ASTBlockType {
     fn get_span(&self) -> Span {
         match self {
+            ASTBlockType::ModuleBlock(b) => b.get_span(),
             ASTBlockType::CodeBlock(p) => p.get_span(),
             ASTBlockType::VariableDefinition(v) => v.get_span(),
             ASTBlockType::FunctionDefinition(f) => f.get_span(),

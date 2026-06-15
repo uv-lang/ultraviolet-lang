@@ -1,10 +1,12 @@
-use std::{env::current_dir, io, ops::Deref, path::PathBuf};
+use std::{env::current_dir, io, ops::Deref, path::PathBuf, rc::Rc};
 
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::Positional,
-    types::frontend::{SourceFileParsed, Spanned, ast::ModuleImport},
+    types::frontend::{SourceFile, SourceFileParsed, Spanned, ast::ModuleImport},
 };
+
+use crate::process_file;
 
 /// Get path relative to current
 fn get_relative_path(path: &PathBuf) -> Result<PathBuf, io::Error> {
@@ -34,7 +36,7 @@ fn get_global_modules_path(_path: PathBuf) -> Result<PathBuf, io::Error> {
 }
 
 /// Resolving a relative path along a chain of paths
-fn resolve_by_path(module: &Spanned<ModuleImport>) -> Result<(), SpannedError> {
+fn resolve_by_path(module: &Spanned<ModuleImport>) -> Result<SourceFileParsed, SpannedError> {
     let mut path = PathBuf::from(module.name.as_str());
 
     if let Ok(p) = get_relative_path(&path)
@@ -52,9 +54,18 @@ fn resolve_by_path(module: &Spanned<ModuleImport>) -> Result<(), SpannedError> {
         ));
     }
 
-    println!("{:?}", path);
+    let source = SourceFile::load(&path).map_err(|e| {
+        SpannedError::new(
+            format!("Could not load module file: {e}"),
+            module.get_span(),
+        )
+    })?;
 
-    todo!()
+    process_file(
+        Rc::new(source),
+        module.alias.as_deref().unwrap_or(&String::new()),
+        true,
+    )
 }
 
 pub fn resolve_modules(
@@ -63,7 +74,5 @@ pub fn resolve_modules(
     modules
         .iter()
         .map(|m| resolve_by_path(m))
-        .collect::<Result<(), SpannedError>>()?;
-
-    Ok(Vec::new())
+        .collect::<Result<Vec<SourceFileParsed>, SpannedError>>()
 }

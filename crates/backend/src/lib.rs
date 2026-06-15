@@ -1,6 +1,6 @@
 use ultraviolet_core::{
     errors::SpannedError,
-    types::{Environment, backend::ControlFlow, frontend::ast::ASTBlockType},
+    types::{Environment, backend::ControlFlow, frontend::SourceFileParsed},
 };
 
 use crate::builtins::DefineBuiltinsRT;
@@ -9,9 +9,9 @@ mod builtins;
 mod eval;
 
 /** Evaluate code */
-pub fn eval(node: &ASTBlockType) -> Result<ControlFlow, SpannedError> {
+pub fn eval(source: &SourceFileParsed) -> Result<ControlFlow, SpannedError> {
     let env = Environment::new();
     env.define_builtins();
 
-    eval::eval(node, env)
+    eval::eval(&source.ast, env)
 }

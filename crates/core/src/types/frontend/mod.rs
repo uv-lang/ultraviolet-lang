@@ -150,7 +150,7 @@ impl<T> Deref for Spanned<T> {
 }
 
 pub struct SourceFileParsed {
-    pub source_file: SourceFile,
+    pub source_file: Rc<SourceFile>,
     pub ast: ASTBlockType,
 
     pub modules: Vec<SourceFileParsed>,

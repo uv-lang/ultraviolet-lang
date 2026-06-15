@@ -5,7 +5,7 @@ use ultraviolet_core::{
     types::{
         Environment,
         builtins::DefineBuiltinsType,
-        frontend::{SourceFile, ast::ASTBlockType, typechecker::UVTypeVariable},
+        frontend::{SourceFile, SourceFileParsed, typechecker::UVTypeVariable},
     },
 };
 
@@ -22,17 +22,27 @@ mod module_resolver;
 mod tokens_parser;
 mod typechecker;
 
-pub fn process(source: Rc<SourceFile>) -> Result<ASTBlockType, SpannedError> {
+/// Process a source file
+pub fn process_file(
+    source: Rc<SourceFile>,
+    alias: impl Into<String>,
+    is_mod: bool,
+) -> Result<SourceFileParsed, SpannedError> {
     let mut lexer = Lexer::new(source.clone());
     let tokens = lexer.parse();
 
-    let mut token_parser = TokenParser::new(tokens, source);
+    let mut token_parser = TokenParser::new(tokens, source.clone());
     let parse_tree = token_parser.parse()?;
 
     let ast_parser = ASTParser::new(parse_tree);
-    let (ast, modules) = ast_parser.gen_main_ast()?;
 
-    resolve_modules(&modules)?;
+    let (ast, modules) = if is_mod {
+        ast_parser.gen_module_ast()?
+    } else {
+        ast_parser.gen_main_ast()?
+    };
+
+    let modules = resolve_modules(&modules)?;
 
     let dead_code = analyze_dead_code_program(&ast);
 
@@ -44,5 +54,10 @@ pub fn process(source: Rc<SourceFile>) -> Result<ASTBlockType, SpannedError> {
     env.define_builtins();
     typecheck(&ast, env)?;
 
-    Ok(ast)
+    Ok(SourceFileParsed {
+        source_file: source,
+        ast,
+        modules,
+        alias: alias.into(),
+    })
 }

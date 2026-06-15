@@ -40,6 +40,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn run(source: Rc<SourceFile>) -> Result<ControlFlow, SpannedError> {
-    let ast = frontend::process(source)?;
+    let ast = frontend::process_file(source, "", false)?;
     backend::eval(&ast)
 }

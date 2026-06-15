@@ -52,7 +52,7 @@ impl ASTParser {
             nodes: node,
         }
     }
-    /// Parse `program` content
+    /// Parse `main` content
     pub fn gen_main_ast(self) -> Result<(ASTBlockType, Vec<Spanned<ModuleImport>>), SpannedError> {
         if self.nodes.name.ne("main") {
             return Err(SpannedError::new(
@@ -63,6 +63,26 @@ impl ASTParser {
 
         Ok((
             ASTBlockType::CodeBlock(Spanned::new(
+                self.parse_children_vec(&self.nodes)?,
+                self.nodes.get_span(),
+            )),
+            self.modules.into_inner(),
+        ))
+    }
+
+    /// Parse `mod` content
+    pub fn gen_module_ast(
+        self,
+    ) -> Result<(ASTBlockType, Vec<Spanned<ModuleImport>>), SpannedError> {
+        if self.nodes.name.ne("mod") {
+            return Err(SpannedError::new(
+                "The module must begin with the <module> tag",
+                self.nodes.get_span(),
+            ));
+        }
+
+        Ok((
+            ASTBlockType::ModuleBlock(Spanned::new(
                 self.parse_children_vec(&self.nodes)?,
                 self.nodes.get_span(),
             )),
