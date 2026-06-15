@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use std::{cell::RefCell, collections::HashMap};
 
 use ultraviolet_core::{
     errors::SpannedError,
@@ -32,10 +33,18 @@ impl Evaluator {
     ) -> Result<ControlFlow, SpannedError> {
         let args: Vec<String> = def.arguments.iter().map(|e| e.name.value.clone()).collect();
 
+        let mut moved_symbols: HashMap<String, Rc<RefCell<RTVariable>>> = HashMap::new();
+        for name in def.value.moved_symbols.borrow().iter() {
+            if let Some(symbol) = env.borrow().find_var(name) {
+                moved_symbols.insert(name.clone(), symbol);
+            }
+        }
+
         let f = UVRTValue::Function(RTFunction {
             args_names_order: args,
             body: def.value.body.clone(),
-            lexical_env: Rc::downgrade(&env),
+            definition_name: def.name.as_ref().map(|name| name.value.clone()),
+            moved_symbols,
         });
 
         if let Some(name) = &def.name {
@@ -90,9 +99,18 @@ impl Evaluator {
             EvalArgsResult::Flow(cf) => return Ok(cf),
         };
 
-        let call_env = Environment::new_child(f_struct.lexical_env.upgrade().ok_or_else(|| {
-            SpannedError::new("Lexical environment no longer exists", call.get_span())
-        })?);
+        let call_env = Rc::new(RefCell::new(Environment {
+            symbols: f_struct.moved_symbols.clone(),
+            parent: None,
+        }));
+
+        if let Some(name) = &f_struct.definition_name {
+            call_env.borrow_mut().define_variable(
+                name.clone(),
+                RTVariable::new_from(UVRTValue::Function(f_struct.clone()), true),
+            );
+        }
+
         for (name, value) in f_struct.args_names_order.iter().zip(evaluated_args) {
             call_env
                 .borrow_mut()

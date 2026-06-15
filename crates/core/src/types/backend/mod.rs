@@ -2,7 +2,7 @@ use crate::{
     errors::SpannedError,
     traits::{backend::TypeOf, frontend::ast::GetType},
     types::{
-        EnvRef, Environment,
+        EnvRef,
         backend::ffi::FFIFunction,
         frontend::{
             Spanned,
@@ -14,7 +14,8 @@ use crate::{
 };
 use std::{
     cell::RefCell,
-    rc::{Rc, Weak},
+    collections::HashMap,
+    rc::Rc,
 };
 pub mod ffi;
 pub mod uvvalue_ops;
@@ -23,9 +24,8 @@ pub mod uvvalue_ops;
 pub struct RTFunction {
     pub args_names_order: Vec<String>,
     pub body: Rc<Vec<Spanned<ASTBlockType>>>,
-
-    // FIXME:! The function should take a snapshot of the environment, not a link to it
-    pub lexical_env: Weak<RefCell<Environment<RTVariable>>>,
+    pub definition_name: Option<String>,
+    pub moved_symbols: HashMap<String, Rc<RefCell<RTVariable>>>,
 }
 
 /// Call signature for built-in function

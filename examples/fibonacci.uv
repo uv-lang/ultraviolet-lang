@@ -17,9 +17,9 @@
         </arg>
 
         <body>
-            <call println>
+            <println$>
                 <a />
-            </call>
+            </println$>
 
             <!-- If first argument greater than 1000 – interrupt recursion to avoid stack overflow -->
             <if>
@@ -41,7 +41,7 @@
                     <a />
                     <b />
                 </sum>
-            </call>
+            </rec$>
         </body>
     </fn>
 

@@ -1,4 +1,4 @@
-use std::{ops::Deref, rc::Rc};
+use std::{cell::RefCell, ops::Deref, rc::Rc};
 
 use ultraviolet_core::{
     errors::SpannedError,
@@ -76,6 +76,7 @@ impl ASTParser {
                 arguments,
                 return_type: validate_and_parse_inner_type_block(node, "returns")?,
                 body: Rc::new(self.parse_children_vec(body)?),
+                moved_symbols: RefCell::new(Vec::new()),
             },
             node.get_span(),
         ))))

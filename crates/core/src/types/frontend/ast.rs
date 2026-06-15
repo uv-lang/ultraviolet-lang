@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{borrow::Cow, rc::Rc};
+use std::{borrow::Cow, cell::RefCell, rc::Rc};
 
 use crate::{
     traits::frontend::{
@@ -347,6 +347,7 @@ pub struct FunctionDefinition {
     pub return_type: Option<Spanned<UVType>>,
 
     pub body: Rc<Vec<Spanned<ASTBlockType>>>,
+    pub moved_symbols: RefCell<Vec<String>>,
 }
 
 // ------------------------- Function Call -----------------------------------

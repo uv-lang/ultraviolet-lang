@@ -14,6 +14,96 @@ use ultraviolet_core::{
 
 use crate::typechecker::Typechecker;
 
+/// Collect all symbol names, captured by function
+fn collect_captured_names(nodes: &[Spanned<ASTBlockType>]) -> std::collections::HashSet<String> {
+    let mut names = std::collections::HashSet::new();
+
+    for node in nodes {
+        collect_names_from_node(&node.value, &mut names);
+    }
+
+    names
+}
+
+fn collect_names_from_node(node: &ASTBlockType, names: &mut std::collections::HashSet<String>) {
+    match node {
+        ASTBlockType::CodeBlock(body)
+        | ASTBlockType::ModuleBlock(body)
+        | ASTBlockType::GroupBlock(body) => {
+            names.extend(collect_captured_names(body));
+        },
+        ASTBlockType::VariableDefinition(def) => {
+            collect_names_from_node(&def.value.value, names);
+        },
+        ASTBlockType::FunctionDefinition(_) => {},
+        ASTBlockType::FunctionCall(call) => {
+            names.insert(call.name.clone());
+            for arg in &call.args {
+                collect_names_from_node(&arg.value, names);
+            }
+        },
+        ASTBlockType::VariableAssignment(assign) => {
+            collect_names_from_node(&assign.value.value, names);
+        },
+        ASTBlockType::VariableAccess(access) => {
+            names.insert(access.name.clone());
+        },
+        ASTBlockType::ConditionalOp(cond) => {
+            collect_names_from_node(&cond.test.value, names);
+            if let Some(then_body) = &cond.then_body {
+                names.extend(collect_captured_names(then_body));
+            }
+            if let Some(else_body) = &cond.else_body {
+                names.extend(collect_captured_names(else_body));
+            }
+        },
+        ASTBlockType::MathOp(op) => {
+            for operand in &op.operands {
+                collect_names_from_node(&operand.value, names);
+            }
+        },
+        ASTBlockType::LogicalOp(op) => {
+            for operand in &op.operands {
+                collect_names_from_node(&operand.value, names);
+            }
+        },
+        ASTBlockType::CompareOp(op) => {
+            for operand in &op.operands {
+                collect_names_from_node(&operand.value, names);
+            }
+        },
+        ASTBlockType::ForLoop(for_loop) => {
+            collect_names_from_node(&for_loop.start.value, names);
+            collect_names_from_node(&for_loop.end.value, names);
+            if let Some(step) = &for_loop.step {
+                collect_names_from_node(&step.value, names);
+            }
+            names.extend(collect_captured_names(&for_loop.body));
+        },
+        ASTBlockType::WhileLoop(while_loop) => {
+            collect_names_from_node(&while_loop.test.value, names);
+            names.extend(collect_captured_names(&while_loop.body));
+        },
+        ASTBlockType::Return(ret) => {
+            if let Some(body) = &ret.value {
+                collect_names_from_node(body, names);
+            }
+        },
+        ASTBlockType::Break(_) | ASTBlockType::Continue(_) => {},
+        ASTBlockType::FFIDefinition(def) => {
+            collect_names_from_node(&def.dll.value, names);
+            collect_names_from_node(&def.func.value, names);
+        },
+        ASTBlockType::ModuleImport(_) => {},
+        ASTBlockType::ModuleExport(export) => {
+            for access in &export.value {
+                names.insert(access.name.clone());
+            }
+        },
+        ASTBlockType::Value(_) => {},
+    }
+}
+
 enum TypecheckArgsResult {
     Types(Vec<UVType>),
     Flow(ControlFlow),
@@ -55,6 +145,10 @@ impl Typechecker {
             .clone()
             .map(|t| t.value)
             .unwrap_or(UVType::Void);
+
+        fd.value
+            .moved_symbols
+            .replace(collect_captured_names(&fd.value.body).into_iter().collect());
 
         let mut returns = UVType::Void;
         let f = UVType::Function(Box::new(UVFunctionType {

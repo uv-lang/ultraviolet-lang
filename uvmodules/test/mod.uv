@@ -1,10 +1,20 @@
 <mod>
+    <let>
+        <name>name</name>
+        <value>
+            <str>math</str>
+        </value>
+    </let>
+
     <fn>
         <name>abc</name>
 
         <body>
             <println$>
-                <str>Hello math</str>
+                <concat$>
+                    <str>Hello </str>
+                    <name />
+                </concat$>
             </println$>
         </body>
     </fn>
