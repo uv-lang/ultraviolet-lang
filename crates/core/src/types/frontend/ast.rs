@@ -9,7 +9,7 @@ use crate::{
             StringToUVLogicalOp, StringToUVMathOp,
         },
     },
-    types::frontend::{ModuleImport, Span, Spanned, number::Number, types::UVType},
+    types::frontend::{Span, Spanned, number::Number, types::UVType},
 };
 
 pub type ASTSpannedBody = Spanned<Vec<Spanned<ASTBlockType>>>;
@@ -114,25 +114,25 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
 impl Positional for ASTBlockType {
     fn get_span(&self) -> Span {
         match self {
-            ASTBlockType::CodeBlock(p) => p.span,
-            ASTBlockType::VariableDefinition(v) => v.span,
-            ASTBlockType::FunctionDefinition(f) => f.span,
-            ASTBlockType::FunctionCall(f) => f.span,
-            ASTBlockType::VariableAssignment(v) => v.span,
-            ASTBlockType::VariableAccess(v) => v.span,
-            ASTBlockType::ConditionalOp(c) => c.span,
-            ASTBlockType::MathOp(m) => m.span,
-            ASTBlockType::LogicalOp(l) => l.span,
-            ASTBlockType::CompareOp(c) => c.span,
-            ASTBlockType::ForLoop(f) => f.span,
-            ASTBlockType::WhileLoop(w) => w.span,
-            ASTBlockType::Value(s) => s.span,
-            ASTBlockType::GroupBlock(a) => a.span,
-            ASTBlockType::Return(a) => a.span,
-            ASTBlockType::Continue(c) => c.span,
-            ASTBlockType::Break(b) => b.span,
-            ASTBlockType::ModuleImport(i) => i.span,
-            ASTBlockType::FFIDefinition(f) => f.span,
+            ASTBlockType::CodeBlock(p) => p.get_span(),
+            ASTBlockType::VariableDefinition(v) => v.get_span(),
+            ASTBlockType::FunctionDefinition(f) => f.get_span(),
+            ASTBlockType::FunctionCall(f) => f.get_span(),
+            ASTBlockType::VariableAssignment(v) => v.get_span(),
+            ASTBlockType::VariableAccess(v) => v.get_span(),
+            ASTBlockType::ConditionalOp(c) => c.get_span(),
+            ASTBlockType::MathOp(m) => m.get_span(),
+            ASTBlockType::LogicalOp(l) => l.get_span(),
+            ASTBlockType::CompareOp(c) => c.get_span(),
+            ASTBlockType::ForLoop(f) => f.get_span(),
+            ASTBlockType::WhileLoop(w) => w.get_span(),
+            ASTBlockType::Value(s) => s.get_span(),
+            ASTBlockType::GroupBlock(a) => a.get_span(),
+            ASTBlockType::Return(a) => a.get_span(),
+            ASTBlockType::Continue(c) => c.get_span(),
+            ASTBlockType::Break(b) => b.get_span(),
+            ASTBlockType::ModuleImport(i) => i.get_span(),
+            ASTBlockType::FFIDefinition(f) => f.get_span(),
         }
     }
 }
@@ -332,13 +332,11 @@ pub struct ConditionalOperator {
 pub struct FunctionDefinitionArg {
     pub name: Spanned<String>,
     pub arg_type: Spanned<UVType>,
-
-    pub span: Span,
 }
 
 pub struct FunctionDefinition {
     pub name: Option<Spanned<String>>,
-    pub arguments: Vec<FunctionDefinitionArg>,
+    pub arguments: Vec<Spanned<FunctionDefinitionArg>>,
     pub return_type: Option<Spanned<UVType>>,
 
     pub body: Rc<Vec<Spanned<ASTBlockType>>>,
@@ -361,6 +359,15 @@ pub struct FFIDefinition {
 
     pub arguments: Vec<Spanned<UVType>>,
     pub return_type: Option<Spanned<UVType>>,
+}
+
+// ---------------------------- Modules ----------------------------------------
+
+/// Represents a module, that should be imported
+#[derive(Clone, Debug)]
+pub struct ModuleImport {
+    pub name: Spanned<String>,
+    pub alias: Option<Spanned<String>>,
 }
 // ---------------------------- TESTS ----------------------------------------
 

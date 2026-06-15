@@ -4,7 +4,7 @@ use std::ops::Deref;
 use ultraviolet_core::{
     errors::SpannedError,
     number_variants,
-    traits::frontend::{ast::StringToUVNumberType, token_parser::UnwrapOptionError},
+    traits::frontend::{Positional, ast::StringToUVNumberType, token_parser::UnwrapOptionError},
     types::frontend::{
         Spanned,
         ast::{ASTBlockType, UVValue},
@@ -34,11 +34,11 @@ impl ASTParser {
                 _ => {
                     return Err(SpannedError::new(
                         format!("Unknown value type `{}`", node.name),
-                        node.span,
+                        node.get_span(),
                     ));
                 },
             },
-            node.span,
+            node.get_span(),
         )))
     }
 }
@@ -48,7 +48,7 @@ fn validate_inner(node: &UVParseNode) -> Result<(), SpannedError> {
     if node.children_len() != 1 || !node.all_literals() {
         return Err(SpannedError::new(
             format!("Invalid value for `{}` type", node.name),
-            node.span,
+            node.get_span(),
         ));
     }
     Ok(())
@@ -59,7 +59,7 @@ macro_rules! gen_parse_number_fn {
     ($($variant:ident($ty:ty,$a:ident)),* $(,)?) => {
         fn parse_number(node: &UVParseNode) -> Result<Number, SpannedError> {
             validate_inner(node)?;
-            let inner_contents = node.get_inner_literal().unwrap_or_spanned(node.span)?;
+            let inner_contents = node.get_inner_literal().unwrap_or_spanned(node.get_span())?;
 
             let parse = || -> Result<Number> {
                 match node.name.as_str() {
@@ -75,7 +75,7 @@ macro_rules! gen_parse_number_fn {
                         inner_contents.deref(),
                         node.name
                     ),
-                    inner_contents.span,
+                    inner_contents.get_span(),
                 )
             })
         }
@@ -94,14 +94,16 @@ fn parse_str(node: &UVParseNode) -> String {
 
 fn parse_boolean(node: &UVParseNode) -> Result<bool, SpannedError> {
     validate_inner(node)?;
-    let inner_contents = node.get_inner_literal().unwrap_or_spanned(node.span)?;
+    let inner_contents = node
+        .get_inner_literal()
+        .unwrap_or_spanned(node.get_span())?;
 
     match inner_contents.as_str() {
         "1" | "true" => Ok(true),
         "0" | "false" => Ok(false),
         _ => Err(SpannedError::new(
             format!("Cannot parse `{}` to a boolean", inner_contents.deref()),
-            inner_contents.span,
+            inner_contents.get_span(),
         )),
     }
 }
@@ -110,7 +112,7 @@ fn validate_null(node: &UVParseNode) -> Result<(), SpannedError> {
     if !node.self_closing {
         return Err(SpannedError::new(
             "That tag must be self-closing",
-            node.span,
+            node.get_span(),
         ));
     }
 

@@ -31,7 +31,7 @@ pub fn check_while_loop(
                 "While loop allows only `bool` for test block, but `{}` provided",
                 test
             ),
-            wl.span,
+            wl.get_span(),
         ));
     }
 
@@ -92,7 +92,7 @@ pub fn check_for_loop(
     if !UVNumberType::all_eq(&[&start, &end, &step]) {
         return Err(SpannedError::new(
             "All loop parameters should be same type",
-            fl.span,
+            fl.get_span(),
         ));
     }
 

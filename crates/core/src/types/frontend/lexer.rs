@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::types::frontend::Span;
+use crate::{traits::frontend::Positional, types::frontend::Span};
 
 /// Tokens produced by the UV template lexer.
 #[derive(Debug, Clone, PartialEq)]
@@ -41,6 +41,12 @@ impl Display for UVLexerTokens {
 pub struct UVToken {
     pub token: UVLexerTokens,
     pub span: Span,
+}
+
+impl Positional for UVToken {
+    fn get_span(&self) -> Span {
+        self.span.clone()
+    }
 }
 
 #[derive(PartialEq)]

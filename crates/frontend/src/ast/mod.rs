@@ -5,10 +5,15 @@ use regex::Regex;
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::{
+        Positional,
         ast::{StringToUVCompareOp, StringToUVLogicalOp, StringToUVMathOp, StringToUVType},
         token_parser::UnwrapOptionError,
     },
-    types::frontend::{ModuleImport, Spanned, ast::ASTBlockType, tokens::UVParseNode},
+    types::frontend::{
+        Spanned,
+        ast::{ASTBlockType, ModuleImport},
+        tokens::UVParseNode,
+    },
 };
 
 use once_cell::sync::Lazy;
@@ -36,7 +41,7 @@ fn is_valid_identifier(s: &str) -> bool {
 }
 
 pub struct ASTParser {
-    pub modules: RefCell<Vec<ModuleImport>>,
+    pub modules: RefCell<Vec<Spanned<ModuleImport>>>,
     pub nodes: UVParseNode,
 }
 
@@ -48,18 +53,18 @@ impl ASTParser {
         }
     }
     /// Parse `program` content
-    pub fn gen_main_ast(self) -> Result<(ASTBlockType, Vec<ModuleImport>), SpannedError> {
+    pub fn gen_main_ast(self) -> Result<(ASTBlockType, Vec<Spanned<ModuleImport>>), SpannedError> {
         if self.nodes.name.ne("main") {
             return Err(SpannedError::new(
                 "The program must begin with the <main> tag",
-                self.nodes.span,
+                self.nodes.get_span(),
             ));
         }
 
         Ok((
             ASTBlockType::CodeBlock(Spanned::new(
                 self.parse_children_vec(&self.nodes)?,
-                self.nodes.span,
+                self.nodes.get_span(),
             )),
             self.modules.into_inner(),
         ))
@@ -81,18 +86,21 @@ impl ASTParser {
             "if" if !node.self_closing => self.parse_conditional_op(node)?,
 
             // Parse group block
-            "g" if !node.self_closing => {
-                ASTBlockType::GroupBlock(Spanned::new(self.parse_children_vec(node)?, node.span))
-            },
+            "g" if !node.self_closing => ASTBlockType::GroupBlock(Spanned::new(
+                self.parse_children_vec(node)?,
+                node.get_span(),
+            )),
 
             // Parse return block
             "return" => self.parse_return(node)?,
 
             // Parse break
-            "break" if node.self_closing => ASTBlockType::Break(Spanned::new((), node.span)),
+            "break" if node.self_closing => ASTBlockType::Break(Spanned::new((), node.get_span())),
 
             // Parse continue
-            "continue" if node.self_closing => ASTBlockType::Continue(Spanned::new((), node.span)),
+            "continue" if node.self_closing => {
+                ASTBlockType::Continue(Spanned::new((), node.get_span()))
+            },
 
             // Parse function definition
             "fn" if !node.self_closing => self.parse_function_definition(node)?,
@@ -138,7 +146,7 @@ impl ASTParser {
             name => {
                 return Err(SpannedError::new(
                     format!("Unexpected `{name}` tag"),
-                    node.span,
+                    node.get_span(),
                 ));
             },
         })
@@ -150,13 +158,16 @@ impl ASTParser {
         n: &UVParseNode,
     ) -> Result<Vec<Spanned<ASTBlockType>>, SpannedError> {
         if !n.all_tags() {
-            let literal = n.get_inner_literal().unwrap_or_spanned(n.span)?;
-            return Err(SpannedError::new("Unexpected literal", literal.span));
+            let literal = n.get_inner_literal().unwrap_or_spanned(n.get_span())?;
+            return Err(SpannedError::new("Unexpected literal", literal.get_span()));
         }
 
         n.get_all_tags()
             .iter()
-            .map(|n| self.generate_ast(n).map(|ast| Spanned::new(ast, n.span)))
+            .map(|n| {
+                self.generate_ast(n)
+                    .map(|ast| Spanned::new(ast, n.get_span()))
+            })
             .collect::<Result<Vec<Spanned<ASTBlockType>>, SpannedError>>()
     }
 
@@ -167,6 +178,6 @@ impl ASTParser {
             None => None,
         };
 
-        Ok(ASTBlockType::Return(Spanned::new(ch, node.span)))
+        Ok(ASTBlockType::Return(Spanned::new(ch, node.get_span())))
     }
 }

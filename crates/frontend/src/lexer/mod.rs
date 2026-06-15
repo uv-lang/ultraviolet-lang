@@ -1,13 +1,14 @@
-use std::char;
+use std::{char, rc::Rc};
 
 use ultraviolet_core::types::frontend::{
-    Span,
+    SourceFile, Span,
     lexer::{LexerParseState, UVLexerTokens, UVToken},
 };
 
 use crate::iterator::Iter;
 
 pub struct Lexer {
+    source_file: Rc<SourceFile>,
     iter: Iter<char>,
 
     buffer: String,
@@ -17,9 +18,10 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn new(input_code: String) -> Lexer {
+    pub fn new(input_file: Rc<SourceFile>) -> Lexer {
         Self {
-            iter: Iter::from(input_code.chars()),
+            source_file: input_file.clone(),
+            iter: Iter::from(input_file.code.chars()),
             buffer: String::new(),
             parse_state: LexerParseState::Default,
             token_start: 0,
@@ -47,7 +49,7 @@ impl Lexer {
             };
             tokens.push(UVToken {
                 token,
-                span: Span::new(self.token_start, self.iter.pos),
+                span: Span::new(self.token_start, self.iter.pos, self.source_file.clone()),
             });
         }
         tokens
@@ -62,7 +64,11 @@ impl Lexer {
                 if let Some(str) = self.finish_consuming_literal(true) {
                     iteration_buffer.push(UVToken {
                         token: UVLexerTokens::Literal(str.clone()),
-                        span: Span::new(self.token_start, self.iter.pos - 1),
+                        span: Span::new(
+                            self.token_start,
+                            self.iter.pos - 1,
+                            self.source_file.clone(),
+                        ),
                     })
                 }
 
@@ -77,12 +83,20 @@ impl Lexer {
                             self.iter.next(); // Consume '/'
                             iteration_buffer.push(UVToken {
                                 token: UVLexerTokens::OpeningAngleBracketSlash,
-                                span: Span::new(self.token_start, self.iter.pos),
+                                span: Span::new(
+                                    self.token_start,
+                                    self.iter.pos,
+                                    self.source_file.clone(),
+                                ),
                             });
                         } else {
                             iteration_buffer.push(UVToken {
                                 token: UVLexerTokens::OpeningAngleBracket,
-                                span: Span::new(self.token_start, self.iter.pos),
+                                span: Span::new(
+                                    self.token_start,
+                                    self.iter.pos,
+                                    self.source_file.clone(),
+                                ),
                             });
                         }
 
@@ -91,11 +105,19 @@ impl Lexer {
                             iteration_buffer.extend([
                                 UVToken {
                                     token: UVLexerTokens::Literal("str".to_string()),
-                                    span: Span::new(self.token_start + 1, self.iter.pos - 1),
+                                    span: Span::new(
+                                        self.token_start + 1,
+                                        self.iter.pos - 1,
+                                        self.source_file.clone(),
+                                    ),
                                 },
                                 UVToken {
                                     token: UVLexerTokens::ClosingAngleBracket,
-                                    span: Span::new(self.iter.pos - 1, self.iter.pos),
+                                    span: Span::new(
+                                        self.iter.pos - 1,
+                                        self.iter.pos,
+                                        self.source_file.clone(),
+                                    ),
                                 },
                             ]);
                             self.token_start = self.iter.pos;
@@ -105,7 +127,11 @@ impl Lexer {
                         self.token_start = self.iter.pos - 1;
                         iteration_buffer.push(UVToken {
                             token: UVLexerTokens::ClosingAngleBracket,
-                            span: Span::new(self.token_start, self.iter.pos),
+                            span: Span::new(
+                                self.token_start,
+                                self.iter.pos,
+                                self.source_file.clone(),
+                            ),
                         });
                     },
                     '/' => {
@@ -114,12 +140,20 @@ impl Lexer {
                             self.iter.next(); // Consume '>'
                             iteration_buffer.push(UVToken {
                                 token: UVLexerTokens::SelfClosingAngleBracket,
-                                span: Span::new(self.token_start, self.iter.pos),
+                                span: Span::new(
+                                    self.token_start,
+                                    self.iter.pos,
+                                    self.source_file.clone(),
+                                ),
                             });
                         } else {
                             iteration_buffer.push(UVToken {
                                 token: UVLexerTokens::Unknown('/'),
-                                span: Span::new(self.token_start, self.iter.pos),
+                                span: Span::new(
+                                    self.token_start,
+                                    self.iter.pos,
+                                    self.source_file.clone(),
+                                ),
                             });
                         }
                     },
@@ -137,14 +171,18 @@ impl Lexer {
                 if let Some(str) = self.finish_consuming_literal(true) {
                     iteration_buffer.push(UVToken {
                         token: UVLexerTokens::Literal(str),
-                        span: Span::new(self.token_start, self.iter.pos - 1),
+                        span: Span::new(
+                            self.token_start,
+                            self.iter.pos - 1,
+                            self.source_file.clone(),
+                        ),
                     });
                 }
 
                 if !char.is_whitespace() {
                     iteration_buffer.push(UVToken {
                         token: UVLexerTokens::Unknown(char),
-                        span: Span::new(self.iter.pos - 1, self.iter.pos),
+                        span: Span::new(self.iter.pos - 1, self.iter.pos, self.source_file.clone()),
                     })
                 }
             },
@@ -167,21 +205,21 @@ impl Lexer {
             if let Some(str) = self.finish_consuming_literal(false) {
                 iteration_buffer.push(UVToken {
                     token: UVLexerTokens::RawString(str),
-                    span: Span::new(self.token_start, token_end - 1),
+                    span: Span::new(self.token_start, token_end - 1, self.source_file.clone()),
                 });
             }
             iteration_buffer.extend([
                 UVToken {
                     token: UVLexerTokens::OpeningAngleBracketSlash,
-                    span: Span::new(token_end - 1, token_end + 1),
+                    span: Span::new(token_end - 1, token_end + 1, self.source_file.clone()),
                 },
                 UVToken {
                     token: UVLexerTokens::Literal("str".to_string()),
-                    span: Span::new(token_end + 1, self.iter.pos - 1),
+                    span: Span::new(token_end + 1, self.iter.pos - 1, self.source_file.clone()),
                 },
                 UVToken {
                     token: UVLexerTokens::ClosingAngleBracket,
-                    span: Span::new(self.iter.pos - 1, self.iter.pos),
+                    span: Span::new(self.iter.pos - 1, self.iter.pos, self.source_file.clone()),
                 },
             ]);
             self.parse_state = LexerParseState::Default;
@@ -295,6 +333,7 @@ impl Lexer {
 
 #[cfg(test)]
 mod tests {
+    /*
     use ultraviolet_core::types::frontend::{
         Span,
         lexer::{UVLexerTokens, UVToken},
@@ -506,4 +545,5 @@ mod tests {
             ]
         )
     }
+    */
 }

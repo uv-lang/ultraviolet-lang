@@ -1,11 +1,10 @@
 use crate::eval::{eval, eval_block};
 use ultraviolet_core::{
-    errors::SpannedError,
-    types::{
+    errors::SpannedError, traits::frontend::Positional, types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTVariable, UVRTValue},
         frontend::{Spanned, ast::ConditionalOperator},
-    },
+    }
 };
 
 /// Evaluate conditional operator
@@ -23,7 +22,7 @@ pub fn eval_conditional_op(
         _ => {
             return Err(SpannedError::new(
                 "Unexpected type for `test` expression. Expected `bool`",
-                co.span,
+                co.get_span(),
             ));
         },
     };

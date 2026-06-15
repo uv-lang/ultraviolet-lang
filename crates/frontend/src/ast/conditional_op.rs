@@ -15,7 +15,7 @@ impl ASTParser {
         let extra = node.search_extra_children(vec!["test", "then", "else"]);
 
         if !extra.is_empty() {
-            let first_extra = extra.first().unwrap_or_spanned(node.span)?;
+            let first_extra = extra.first().unwrap_or_spanned(node.get_span())?;
 
             return Err(SpannedError::new(
                 "Found extra children inside conditional operator",
@@ -26,19 +26,19 @@ impl ASTParser {
         let test = match node.get_one_tag_by_name("test") {
             Some(t) if t.self_closing => Err(SpannedError::new(
                 "`test` tag could not be self-closing",
-                t.span,
+                t.get_span(),
             )),
             Some(t) if t.children_len() != 1 || !t.all_tags() => Err(SpannedError::new_tipped(
                 "`test` should have only one nested tag",
                 "If you want to place multiple tags inside, use the <g> grouping block.",
-                t.span,
+                t.get_span(),
             )),
 
-            Some(t) => self.generate_ast(t.get_tag_at(0).unwrap_or_spanned(node.span)?),
+            Some(t) => self.generate_ast(t.get_tag_at(0).unwrap_or_spanned(node.get_span())?),
 
             None => Err(SpannedError::new(
                 "Conditional operator must have an `test` block inside",
-                node.span,
+                node.get_span(),
             )),
         }?;
 
@@ -49,7 +49,7 @@ impl ASTParser {
                 then_body: self.parse_outcomes(node, "then")?,
                 else_body: self.parse_outcomes(node, "else")?,
             },
-            node.span,
+            node.get_span(),
         ))))
     }
 
@@ -65,17 +65,20 @@ impl ASTParser {
         match node.get_one_tag_by_name(n) {
             Some(t) if t.self_closing => Err(SpannedError::new(
                 format!("`{n}` tag could not be self-closing"),
-                t.span,
+                t.get_span(),
             )),
             Some(t) if !t.all_tags() => {
-                let extra_lit = t.get_inner_literal().unwrap_or_spanned(t.span)?;
+                let extra_lit = t.get_inner_literal().unwrap_or_spanned(t.get_span())?;
 
                 Err(SpannedError::new(
                     "Found unexpected literal",
-                    extra_lit.span,
+                    extra_lit.get_span(),
                 ))
             },
-            Some(t) => Ok(Some(Spanned::new(self.parse_children_vec(t)?, t.span))),
+            Some(t) => Ok(Some(Spanned::new(
+                self.parse_children_vec(t)?,
+                t.get_span(),
+            ))),
             None => Ok(None),
         }
     }

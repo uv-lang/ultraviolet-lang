@@ -1,6 +1,7 @@
 use crate::eval::ops::EvalOps;
 use ultraviolet_core::{
     errors::SpannedError,
+    traits::frontend::Positional,
     types::{
         backend::UVRTValue,
         frontend::{
@@ -16,7 +17,7 @@ impl EvalOps for Spanned<BuiltInOperation<MathOpType>> {
 
         let first = iter
             .next()
-            .ok_or_else(|| SpannedError::new("empty operands", self.span))?
+            .ok_or_else(|| SpannedError::new("empty operands", self.get_span()))?
             .clone();
 
         let result = match self.op_type {

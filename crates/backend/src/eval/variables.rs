@@ -1,6 +1,7 @@
 use crate::eval::eval;
 use ultraviolet_core::{
     errors::SpannedError,
+    traits::frontend::Positional,
     types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTVariable, UVRTValue},
@@ -19,7 +20,7 @@ pub fn define_variable(
     if env.borrow().find_var(var_def.name.value.clone()).is_some() {
         return Err(SpannedError::new(
             format!("Variable `{}` already defined", var_def.name.value),
-            var_def.span,
+            var_def.get_span(),
         ));
     }
 
@@ -44,7 +45,7 @@ pub fn access_variable(
         Some(sym) => Ok(ControlFlow::Simple(sym.borrow().clone().value)),
         None => Err(SpannedError::new(
             format!("Name `{}` not defined", var_acc.name),
-            var_acc.span,
+            var_acc.get_span(),
         )),
     }
 }
@@ -60,14 +61,14 @@ pub fn assign_variable(
         .ok_or_else(|| {
             SpannedError::new(
                 format!("Variable `{}` not defined", assign_var.name),
-                assign_var.span,
+                assign_var.get_span(),
             )
         })?;
 
     if sym.borrow().constant {
         return Err(SpannedError::new(
             "Cannot assign to a constant variable",
-            assign_var.span,
+            assign_var.get_span(),
         ));
     }
 

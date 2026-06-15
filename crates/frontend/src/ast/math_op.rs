@@ -1,7 +1,7 @@
 use crate::ast::{ASTParser, GeneratorOutputType};
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::ast::StringToUVMathOp,
+    traits::frontend::{Positional, ast::StringToUVMathOp},
     types::frontend::{
         Spanned,
         ast::{ASTBlockType, BuiltInOperation},
@@ -14,7 +14,7 @@ impl ASTParser {
         let op_type = node
             .name
             .to_uvmath()
-            .ok_or(SpannedError::new("Unknown math operation", node.span))?;
+            .ok_or(SpannedError::new("Unknown math operation", node.get_span()))?;
 
         let children = self.parse_arguments_for_operator(node, &op_type)?;
 
@@ -23,7 +23,7 @@ impl ASTParser {
                 op_type,
                 operands: children,
             },
-            node.span,
+            node.get_span(),
         )))
     }
 }

@@ -21,7 +21,7 @@ impl ASTParser {
         let extra = node.search_extra_children(vec!["name", "dll", "func", "args", "returns"]);
 
         if !extra.is_empty() {
-            let first_extra = extra.first().unwrap_or_spanned(node.span)?;
+            let first_extra = extra.first().unwrap_or_spanned(node.get_span())?;
 
             return Err(SpannedError::new(
                 "Found extra children inside FFI definition",
@@ -33,14 +33,14 @@ impl ASTParser {
 
         let name = match node.get_one_tag_by_name("name") {
             Some(i) if i.children_len() != 1 || !i.all_literals() => {
-                Err(SpannedError::new("Invalid FFI name", i.span))
+                Err(SpannedError::new("Invalid FFI name", i.get_span()))
             },
             Some(i) => {
-                let n = i.get_inner_literal().unwrap_or_spanned(i.span)?;
+                let n = i.get_inner_literal().unwrap_or_spanned(i.get_span())?;
                 if !is_valid_identifier(n) {
                     return Err(SpannedError::new(
                         format!("`{}` is not a valid name for FFI", n.deref()),
-                        n.span,
+                        n.get_span(),
                     ));
                 }
 
@@ -48,7 +48,7 @@ impl ASTParser {
             },
             None => Err(SpannedError::new(
                 "FFI definition should have an inner <name> tag",
-                node.span,
+                node.get_span(),
             )),
         }?;
 
@@ -56,15 +56,15 @@ impl ASTParser {
         let dll = match node.get_one_tag_by_name("dll") {
             Some(i) if i.children_len() != 1 || !i.all_tags() => Err(SpannedError::new(
                 "`dll` block should have only one inner tag",
-                i.span,
+                i.get_span(),
             )),
             Some(i) => Ok(Spanned::new(
-                self.generate_ast(i.get_tag_at(0).unwrap_or_spanned(i.span)?)?,
-                i.span,
+                self.generate_ast(i.get_tag_at(0).unwrap_or_spanned(i.get_span())?)?,
+                i.get_span(),
             )),
             None => Err(SpannedError::new(
                 "FFI definition should have an inner <dll> tag",
-                node.span,
+                node.get_span(),
             )),
         }?;
 
@@ -72,15 +72,15 @@ impl ASTParser {
         let func = match node.get_one_tag_by_name("func") {
             Some(i) if i.children_len() != 1 || !i.all_tags() => Err(SpannedError::new(
                 "`func` block should have only one inner tag",
-                i.span,
+                i.get_span(),
             )),
             Some(i) => Ok(Spanned::new(
-                self.generate_ast(i.get_tag_at(0).unwrap_or_spanned(i.span)?)?,
-                i.span,
+                self.generate_ast(i.get_tag_at(0).unwrap_or_spanned(i.get_span())?)?,
+                i.get_span(),
             )),
             None => Err(SpannedError::new(
                 "FFI definition should have an inner <func> tag",
-                node.span,
+                node.get_span(),
             )),
         }?;
 
@@ -90,14 +90,14 @@ impl ASTParser {
             if !arg.all_tags() {
                 return Err(SpannedError::new(
                     "All children inside `args` must be tags",
-                    arg.span,
+                    arg.get_span(),
                 ));
             }
 
             args = arg
                 .get_all_tags()
                 .iter()
-                .map(|a| Ok(Spanned::new(parse_type_raw(a)?, a.span)))
+                .map(|a| Ok(Spanned::new(parse_type_raw(a)?, a.get_span())))
                 .collect::<Result<Vec<Spanned<UVType>>, SpannedError>>()?;
         }
 
@@ -109,7 +109,7 @@ impl ASTParser {
                 arguments: args,
                 return_type: validate_and_parse_inner_type_block(node, "returns")?,
             }),
-            node.span,
+            node.get_span(),
         )))
     }
 }

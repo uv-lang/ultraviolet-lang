@@ -1,6 +1,6 @@
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::ast::IsAssignable,
+    traits::frontend::{Positional, ast::IsAssignable},
     types::{
         EnvRef,
         frontend::{
@@ -31,7 +31,7 @@ pub fn check_variable_definition(
                     "Expected type `{}`, got `{}` for variable `{}`",
                     expected.value, val, vd.name.value
                 ),
-                vd.span,
+                vd.get_span(),
             ));
         }
 
@@ -41,7 +41,7 @@ pub fn check_variable_definition(
     if env.borrow().find_var(&vd.name.value).is_some() {
         return Err(SpannedError::new(
             format!("Variable with name {} already defined", vd.name.value),
-            vd.span,
+            vd.get_span(),
         ));
     }
 
@@ -59,7 +59,7 @@ pub fn check_variable_assign(
     let Some(var_rc) = env.borrow().find_var(&va.name) else {
         return Err(SpannedError::new(
             format!("Variable `{}` not defined", va.name),
-            va.span,
+            va.get_span(),
         ));
     };
 
@@ -67,7 +67,7 @@ pub fn check_variable_assign(
     if var.constant {
         return Err(SpannedError::new(
             format!("Cannot assign to a constant `{}` variable", va.name),
-            va.span,
+            va.get_span(),
         ));
     }
 
@@ -82,7 +82,7 @@ pub fn check_variable_assign(
                 "Expected type `{}`, got `{}` for variable `{}`",
                 var.value, t, va.name
             ),
-            va.span,
+            va.get_span(),
         ));
     }
 
@@ -97,7 +97,7 @@ pub fn check_variable_access(
     let Some(var_rc) = env.borrow().find_var(&va.name) else {
         return Err(SpannedError::new(
             format!("Variable `{}` not defined", va.name),
-            va.span,
+            va.get_span(),
         ));
     };
 

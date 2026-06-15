@@ -2,7 +2,7 @@ use crate::typechecker::typecheck;
 use std::ops::Deref;
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::ffi::ToTypeFFI,
+    traits::{ffi::ToTypeFFI, frontend::Positional},
     types::{
         EnvRef,
         frontend::{
@@ -21,7 +21,7 @@ pub fn check_ffi_definition(
     if env.borrow().find_var(ffi_d.name.deref()).is_some() {
         return Err(SpannedError::new(
             format!("`{}` already defined", *ffi_d.name),
-            ffi_d.span,
+            ffi_d.get_span(),
         ));
     }
 
@@ -37,7 +37,7 @@ pub fn check_ffi_definition(
                 "Type for <dll> mismatch. Expected <str />, found {}",
                 dll_type
             ),
-            ffi_d.dll.span,
+            ffi_d.dll.get_span(),
         ));
     }
 
@@ -54,7 +54,7 @@ pub fn check_ffi_definition(
                 "Type for <func> mismatch. Expected <str />, found {}",
                 func_type
             ),
-            ffi_d.func.span,
+            ffi_d.func.get_span(),
         ));
     }
 
@@ -63,7 +63,7 @@ pub fn check_ffi_definition(
         if arg.to_ffi_type().is_none() {
             return Err(SpannedError::new(
                 format!("Type {} cannot be used as ffi argument", arg.deref()),
-                arg.span,
+                arg.get_span(),
             ));
         }
     }
@@ -74,7 +74,7 @@ pub fn check_ffi_definition(
     {
         return Err(SpannedError::new(
             format!("Type {} cannot be used as ffi returns type", t.deref()),
-            t.span,
+            t.get_span(),
         ));
     }
 

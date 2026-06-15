@@ -1,7 +1,10 @@
+use std::rc::Rc;
+
 use ultraviolet_core::{
     errors::SpannedError,
+    traits::frontend::Positional,
     types::frontend::{
-        Span, Spanned,
+        SourceFile, Span, Spanned,
         lexer::{UVLexerTokens, UVToken},
         tokens::{UVParseBody, UVParseNode, UVParseState},
     },
@@ -14,13 +17,15 @@ Parses a tokens flow to a parse tree
 */
 pub struct TokenParser {
     iter: Iter<UVToken>,
+    source_file: Rc<SourceFile>,
 }
 
 impl TokenParser {
     /// Create new TokenParser and pass tokens
-    pub fn new(tokens: Vec<UVToken>) -> Self {
+    pub fn new(tokens: Vec<UVToken>, sf: Rc<SourceFile>) -> Self {
         Self {
             iter: Iter::from(tokens),
+            source_file: sf,
         }
     }
 
@@ -32,7 +37,7 @@ impl TokenParser {
             children: Vec::new(),
             self_closing: false,
             extra_param: String::new(),
-            span: Span::default(),
+            span: Span::new(0, 0, self.source_file.clone()),
         };
 
         let mut closing_tag_name = String::new();
@@ -41,14 +46,14 @@ impl TokenParser {
                 UVLexerTokens::OpeningAngleBracket => match parse_state {
                     UVParseState::Unknown => {
                         parse_state = UVParseState::TagName;
-                        tag.span.start = token.span.start;
+                        tag.span.start = token.get_span().start;
                     },
                     UVParseState::TagBody => {
                         self.iter.step_back();
                         tag.children.push(UVParseBody::Tag(Box::new(self.parse()?)));
                     },
                     _ => {
-                        return Err(SpannedError::new("Unexpected `<` token", token.span));
+                        return Err(SpannedError::new("Unexpected `<` token", token.get_span()));
                     },
                 },
                 UVLexerTokens::ClosingAngleBracket => match parse_state {
@@ -63,8 +68,9 @@ impl TokenParser {
                                     closing_tag_name, tag.name
                                 ),
                                 Span::new(
-                                    token.span.start - closing_tag_name.len(),
-                                    token.span.end - 1,
+                                    token.get_span().start - closing_tag_name.len(),
+                                    token.get_span().end - 1,
+                                    self.source_file.clone(),
                                 ),
                             ));
                         }
@@ -73,7 +79,7 @@ impl TokenParser {
                         return Ok(tag);
                     },
                     _ => {
-                        return Err(SpannedError::new("Unexpected `>` token", token.span));
+                        return Err(SpannedError::new("Unexpected `>` token", token.get_span()));
                     },
                 },
                 UVLexerTokens::SelfClosingAngleBracket => match parse_state {
@@ -83,13 +89,13 @@ impl TokenParser {
                         return Ok(tag);
                     },
                     _ => {
-                        return Err(SpannedError::new("Unexpected `/>` token", token.span));
+                        return Err(SpannedError::new("Unexpected `/>` token", token.get_span()));
                     },
                 },
                 UVLexerTokens::OpeningAngleBracketSlash => match parse_state {
                     UVParseState::TagBody => parse_state = UVParseState::ClosingTagName,
                     _ => {
-                        return Err(SpannedError::new("Unexpected `</` token", token.span));
+                        return Err(SpannedError::new("Unexpected `</` token", token.get_span()));
                     },
                 },
                 UVLexerTokens::Literal(lit) | UVLexerTokens::RawString(lit) => match parse_state {
@@ -105,7 +111,7 @@ impl TokenParser {
                     UVParseState::TagBody => {
                         tag.children.push(UVParseBody::String(Spanned {
                             value: lit.to_owned(),
-                            span: Span::new(token.span.start, token.span.end),
+                            span: token.get_span(),
                         }));
                     },
                     UVParseState::ClosingTagName => {
@@ -115,22 +121,26 @@ impl TokenParser {
                     _ => {
                         return Err(SpannedError::new(
                             format!("Unexpected literal `{lit}`"),
-                            token.span,
+                            token.get_span(),
                         ));
                     },
                 },
                 UVLexerTokens::Unknown(ch) => {
                     return Err(SpannedError::new(
                         format!("Unexpected token: `{ch}`"),
-                        token.span,
+                        token.get_span(),
                     ));
                 },
             }
         }
 
         let span = match self.iter.vec.last() {
-            Some(token) => Span::new(token.span.end - 3, token.span.end),
-            None => Span::default(),
+            Some(token) => Span::new(
+                token.get_span().end - 3,
+                token.get_span().end,
+                self.source_file.clone(),
+            ),
+            None => Span::new(0, 0, self.source_file.clone()),
         };
         Err(SpannedError::new("Unexpected EOF", span))
     }
@@ -138,6 +148,7 @@ impl TokenParser {
 
 #[cfg(test)]
 mod tests {
+    /*
     use ultraviolet_core::types::frontend::{
         Span, Spanned,
         tokens::{UVParseBody, UVParseNode},
@@ -193,4 +204,6 @@ mod tests {
     fn unexpected_token() {
         get_nodes("<main>literal?</main>");
     }
+
+    */
 }

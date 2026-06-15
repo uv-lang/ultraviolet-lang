@@ -1,4 +1,6 @@
-use crate::{traits::frontend::Positional, types::frontend::Span};
+use crate::{
+    errors::error_renderer::ErrorRenderer, traits::frontend::Positional, types::frontend::Span,
+};
 use std::fmt;
 pub mod error_renderer;
 
@@ -46,7 +48,7 @@ impl SpannedError {
 
 impl Positional for SpannedError {
     fn get_span(&self) -> Span {
-        self.span
+        self.span.clone()
     }
 }
 
@@ -61,10 +63,7 @@ impl fmt::Debug for SpannedError {
 
 impl fmt::Display for SpannedError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("SpannedError")
-            .field("message", &self.message)
-            .field("span", &self.span)
-            .finish()
+        self.display(f)
     }
 }
 

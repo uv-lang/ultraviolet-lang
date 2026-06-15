@@ -1,6 +1,6 @@
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::ast::ArgumentsCount,
+    traits::frontend::{Positional, ast::ArgumentsCount},
     types::frontend::{Spanned, ast::ASTBlockType, tokens::UVParseNode},
 };
 
@@ -16,7 +16,7 @@ impl ASTParser {
         if !node.all_tags() {
             return Err(SpannedError::new(
                 "Unexpected literals inside this operation",
-                node.span,
+                node.get_span(),
             ));
         }
 
@@ -26,7 +26,7 @@ impl ASTParser {
                     "This operator cannot have less than {} operands",
                     op_type.min_arguments_count()
                 ),
-                node.span,
+                node.get_span(),
             ));
         }
 
@@ -35,7 +35,7 @@ impl ASTParser {
         {
             return Err(SpannedError::new(
                 format!("Too many arguments for `{}` operation", node.name),
-                node.span,
+                node.get_span(),
             ));
         }
 

@@ -1,5 +1,7 @@
+use std::rc::Rc;
+
 use ultraviolet_core::{
-    errors::{SpannedError, error_renderer::ErrorRenderer},
+    errors::SpannedError,
     types::{
         Environment,
         builtins::DefineBuiltinsType,
@@ -8,8 +10,8 @@ use ultraviolet_core::{
 };
 
 use crate::{
-    ast::ASTParser, dead_code::analyze_dead_code_program, lexer::Lexer, tokens_parser::TokenParser,
-    typechecker::typecheck,
+    ast::ASTParser, dead_code::analyze_dead_code_program, lexer::Lexer,
+    module_resolver::resolve_modules, tokens_parser::TokenParser, typechecker::typecheck,
 };
 
 pub mod ast;
@@ -20,23 +22,22 @@ mod module_resolver;
 mod tokens_parser;
 mod typechecker;
 
-pub fn process(source: &SourceFile) -> Result<ASTBlockType, SpannedError> {
-    let mut lexer = Lexer::new(source.code.clone());
+pub fn process(source: Rc<SourceFile>) -> Result<ASTBlockType, SpannedError> {
+    let mut lexer = Lexer::new(source.clone());
     let tokens = lexer.parse();
 
-    let mut token_parser = TokenParser::new(tokens);
+    let mut token_parser = TokenParser::new(tokens, source);
     let parse_tree = token_parser.parse()?;
 
     let ast_parser = ASTParser::new(parse_tree);
     let (ast, modules) = ast_parser.gen_main_ast()?;
-    println!("{:?}", modules);
+
+    resolve_modules(&modules)?;
 
     let dead_code = analyze_dead_code_program(&ast);
 
     if !dead_code.is_empty() {
-        dead_code
-            .into_iter()
-            .for_each(|e| println!("{}", e.display_with_source(source)));
+        dead_code.into_iter().for_each(|e| println!("{e}"));
     }
 
     let env = Environment::<UVTypeVariable>::new();

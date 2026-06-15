@@ -21,14 +21,14 @@ pub fn parse_type_raw(node: &UVParseNode) -> Result<UVType, SpannedError> {
             if node.self_closing {
                 return Err(SpannedError::new(
                     "This type cannot be individual",
-                    node.span,
+                    node.get_span(),
                 ));
             }
         },
         _ if !node.self_closing => {
             return Err(SpannedError::new(
                 "All type tags must be self-closing",
-                node.span,
+                node.get_span(),
             ));
         },
         _ => {},
@@ -47,7 +47,7 @@ pub fn parse_type_raw(node: &UVParseNode) -> Result<UVType, SpannedError> {
         _ => {
             return Err(SpannedError::new(
                 format!("Unknown type `{}`", node.name),
-                node.span,
+                node.get_span(),
             ));
         },
     })
@@ -57,16 +57,19 @@ fn parse_union(node: &UVParseNode) -> Result<UVType, SpannedError> {
     if !node.all_tags() {
         return Err(SpannedError::new(
             "All children inside union tag must be known types",
-            node.span,
+            node.get_span(),
         ));
     }
 
     if node.children_len() == 0 {
-        return Err(SpannedError::new("Union type cannot be empty", node.span));
+        return Err(SpannedError::new(
+            "Union type cannot be empty",
+            node.get_span(),
+        ));
     }
 
     if node.children_len() == 1 {
-        let t = node.get_tag_at(0).unwrap_or_spanned(node.span)?;
+        let t = node.get_tag_at(0).unwrap_or_spanned(node.get_span())?;
         return parse_type_raw(t);
     }
 
@@ -89,15 +92,15 @@ pub fn validate_and_parse_inner_type_block(
     match node.get_one_tag_by_name(name.as_str()) {
         Some(c) if c.self_closing => Err(SpannedError::new(
             format!("`{name}` tag cannot be self-closing"),
-            c.span,
+            c.get_span(),
         )),
         Some(ch) if ch.children_len() != 1 || !ch.all_tags() => Err(SpannedError::new(
             format!("`{name}` tag must contain only one child"),
-            ch.span,
+            ch.get_span(),
         )),
         Some(ch) => Ok(Some(Spanned::new(
-            parse_type_raw(ch.get_tag_at(0).unwrap_or_spanned(ch.span)?)?,
-            ch.span,
+            parse_type_raw(ch.get_tag_at(0).unwrap_or_spanned(ch.get_span())?)?,
+            ch.get_span(),
         ))),
         None => Ok(None),
     }
@@ -108,7 +111,7 @@ pub fn parse_fn_type(node: &UVParseNode) -> Result<UVType, SpannedError> {
     let extra = node.search_extra_children(vec!["arg", "returns"]);
 
     if !extra.is_empty() {
-        let first_extra = extra.first().unwrap_or_spanned(node.span)?;
+        let first_extra = extra.first().unwrap_or_spanned(node.get_span())?;
 
         return Err(SpannedError::new(
             format!(
@@ -125,11 +128,11 @@ pub fn parse_fn_type(node: &UVParseNode) -> Result<UVType, SpannedError> {
         if !arg.all_tags() || arg.children_len() != 1 {
             return Err(SpannedError::new(
                 "Function type argument should have only one nested tag",
-                arg.span,
+                arg.get_span(),
             ));
         }
         args.push(parse_type_raw(
-            arg.get_tag_at(0).unwrap_or_spanned(arg.span)?,
+            arg.get_tag_at(0).unwrap_or_spanned(arg.get_span())?,
         )?);
     }
 
@@ -145,7 +148,7 @@ pub fn parse_fn_type(node: &UVParseNode) -> Result<UVType, SpannedError> {
 fn parse_optional(node: &UVParseNode) -> Result<UVType, SpannedError> {
     let child = node.get_tag_at(0).ok_or(SpannedError::new(
         "Optional value should contain other type",
-        node.span,
+        node.get_span(),
     ))?;
 
     Ok(UVType::Optional(Box::new(

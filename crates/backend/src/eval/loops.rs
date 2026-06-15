@@ -1,6 +1,6 @@
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::{ast::GetType, token_parser::UnwrapOptionError},
+    traits::frontend::{Positional, ast::GetType, token_parser::UnwrapOptionError},
     types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTVariable, UVRTValue},
@@ -40,7 +40,7 @@ pub fn eval_for_loop(
         UVRTValue::Number(Number::auto(1, start.get_type()).map_err(|e| {
             SpannedError::new(
                 format!("Runtime Error: Cannot cast step for `for` loop: {}", e),
-                for_node.span,
+                for_node.get_span(),
             )
         })?)
     };
@@ -58,7 +58,7 @@ pub fn eval_for_loop(
         let current = env
             .borrow()
             .find_var(&for_node.iterator.value)
-            .unwrap_or_spanned(for_node.iterator.span)?;
+            .unwrap_or_spanned(for_node.iterator.get_span())?;
 
         if current.borrow().value > end {
             break;
@@ -77,7 +77,7 @@ pub fn eval_for_loop(
         (*env
             .borrow_mut()
             .find_var(&for_node.iterator.value)
-            .unwrap_or_spanned(for_node.iterator.span)?
+            .unwrap_or_spanned(for_node.iterator.get_span())?
             .borrow_mut())
         .value = new_val;
 

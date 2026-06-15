@@ -1,6 +1,6 @@
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::ast::IsAssignable,
+    traits::frontend::{Positional, ast::IsAssignable},
     types::{
         EnvRef, Environment,
         frontend::{
@@ -30,7 +30,7 @@ pub fn check_function_definition(
             _ if trailing_optional => {
                 return Err(SpannedError::new(
                     "Non-optional argument cannot be trailing",
-                    arg.span,
+                    arg.get_span(),
                 ));
             },
             _ => {},
@@ -73,7 +73,7 @@ pub fn check_function_definition(
                 "Function body should return `{}` type, but `{}` found",
                 exp, body
             ),
-            fd.span,
+            fd.get_span(),
         ));
     }
 
@@ -88,7 +88,7 @@ pub fn check_function_call(
     let Some(var) = env.borrow().find_var(fc.name.clone()) else {
         return Err(SpannedError::new(
             format!("Function `{}` not found", fc.name),
-            fc.span,
+            fc.get_span(),
         ));
     };
 
@@ -103,13 +103,13 @@ pub fn check_function_call(
         UVType::BuiltInFunction(f) => {
             match &f.args {
                 UVBuiltinFunctionArguments::Args(expected) => {
-                    validate_args(expected, &args_types, &fc.name, fc.span)?
+                    validate_args(expected, &args_types, &fc.name, fc.get_span())?
                 },
                 UVBuiltinFunctionArguments::AllOf(all_t) => validate_args(
                     &vec![all_t.clone(); args_types.len()],
                     &args_types,
                     &fc.name,
-                    fc.span,
+                    fc.get_span(),
                 )?,
                 _ => {},
             }
@@ -118,13 +118,13 @@ pub fn check_function_call(
         },
 
         UVType::Function(f) => {
-            validate_args(&f.args, &args_types, &fc.name, fc.span)?;
+            validate_args(&f.args, &args_types, &fc.name, fc.get_span())?;
             Ok(ControlFlow::Simple(f.returns.clone()))
         },
 
         _ => Err(SpannedError::new(
             format!("`{}` is not callable", fc.name),
-            fc.span,
+            fc.get_span(),
         )),
     }
 }

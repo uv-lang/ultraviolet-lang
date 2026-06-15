@@ -1,17 +1,17 @@
 pub mod ast;
 pub mod lexer;
-pub mod modules;
 pub mod number;
 pub mod tokens;
 pub mod typechecker;
 pub mod types;
 
 use anyhow::{Context, Result};
-use std::{fs, ops::Deref, path::Path};
+use std::{fs, ops::Deref, path::Path, rc::Rc};
 
-use crate::traits::frontend::Positional;
+use crate::{traits::frontend::Positional, types::frontend::ast::ASTBlockType};
 
 /// Representation of input file
+#[derive(Debug, Clone, PartialEq)]
 pub struct SourceFile {
     pub path: Box<Path>,
     pub code: String,
@@ -92,17 +92,23 @@ impl SourceFile {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Copy, Default)]
+#[derive(Debug, Clone, PartialEq)]
 /// Span displays the portion of the source code that a token or AST node occupies
 pub struct Span {
     pub start: usize,
     pub end: usize,
+
+    pub source_file: Rc<SourceFile>,
 }
 
 impl Span {
     /// Create new Span with provided start and end indexes
-    pub fn new(s: usize, e: usize) -> Self {
-        Self { start: s, end: e }
+    pub fn new(s: usize, e: usize, sf: Rc<SourceFile>) -> Self {
+        Self {
+            start: s,
+            end: e,
+            source_file: sf,
+        }
     }
 }
 
@@ -129,18 +135,9 @@ impl<T> Spanned<T> {
     }
 }
 
-impl<'a, T> Spanned<Box<T>> {
-    pub fn unbox_as_ref(&'a self) -> Spanned<&'a T> {
-        Spanned {
-            value: &*self.value,
-            span: self.span,
-        }
-    }
-}
-
 impl<T> Positional for Spanned<T> {
     fn get_span(&self) -> Span {
-        self.span
+        self.span.clone()
     }
 }
 
@@ -152,9 +149,12 @@ impl<T> Deref for Spanned<T> {
     }
 }
 
-/// Represents a module, that should be imported
-#[derive(Clone, Debug)]
-pub struct ModuleImport {
-    pub name: Spanned<String>,
-    pub alias: Option<Spanned<String>>,
+pub struct SourceFileParsed {
+    pub source_file: SourceFile,
+    pub ast: ASTBlockType,
+
+    pub modules: Vec<SourceFileParsed>,
+    // TODO:
+    // pub exports: sth
+    pub alias: String,
 }

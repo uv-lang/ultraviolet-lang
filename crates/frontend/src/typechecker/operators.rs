@@ -21,7 +21,10 @@ pub fn check_math_op(
     op: &Spanned<BuiltInOperation<MathOpType>>,
     env: EnvRef<UVTypeVariable>,
 ) -> Result<ControlFlow, SpannedError> {
-    let op_type = match typecheck(op.operands.first().unwrap_or_spanned(op.span)?, env.clone())? {
+    let op_type = match typecheck(
+        op.operands.first().unwrap_or_spanned(op.get_span())?,
+        env.clone(),
+    )? {
         ControlFlow::Simple(t) => t,
         cf => return Ok(cf),
     };
@@ -59,7 +62,7 @@ pub fn check_conditional_op(
     if !matches!(test, UVType::Boolean) {
         return Err(SpannedError::new(
             "Conditional operator expects `bool` type for test expression",
-            op.span,
+            op.get_span(),
         ));
     }
 
@@ -110,7 +113,7 @@ pub fn check_logical_op(
                     "Logical operator allows only boolean type, but {} provided",
                     t
                 ),
-                op.span,
+                op.get_span(),
             ));
         }
     }
@@ -162,7 +165,7 @@ pub fn check_compare_op(
                     if !are_comparable(&types[i], &types[j]) {
                         return Err(SpannedError::new(
                             format!("Cannot compare `{}` with `{}`", types[i], types[j]),
-                            op.span,
+                            op.get_span(),
                         ));
                     }
                 }
@@ -180,7 +183,7 @@ pub fn check_compare_op(
                             "Operator `{}` expects number operands, but `{}` provided",
                             op.op_type, t
                         ),
-                        op.span,
+                        op.get_span(),
                     ));
                 }
             }

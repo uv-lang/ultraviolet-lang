@@ -110,7 +110,7 @@ impl UVParseNode {
 
 impl Positional for UVParseNode {
     fn get_span(&self) -> Span {
-        self.span
+        self.span.clone()
     }
 }
 
@@ -134,8 +134,8 @@ impl<'a> GetBlockName<'a> for UVParseBody {
 impl Positional for UVParseBody {
     fn get_span(&self) -> Span {
         match self {
-            UVParseBody::String(type_with_span) => type_with_span.span,
-            UVParseBody::Tag(parse_node) => parse_node.span,
+            UVParseBody::String(type_with_span) => type_with_span.get_span(),
+            UVParseBody::Tag(parse_node) => parse_node.get_span(),
         }
     }
 }

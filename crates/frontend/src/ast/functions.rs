@@ -20,7 +20,7 @@ impl ASTParser {
         let extra = node.search_extra_children(vec!["name", "arg", "returns", "body"]);
 
         if !extra.is_empty() {
-            let first_extra = extra.first().unwrap_or_spanned(node.span)?;
+            let first_extra = extra.first().unwrap_or_spanned(node.get_span())?;
 
             return Err(SpannedError::new(
                 "Found extra children inside function definition",
@@ -33,17 +33,20 @@ impl ASTParser {
         let name = match node.get_one_tag_by_name("name") {
             Some(name_block) => {
                 if name_block.children_len() != 1 || !name_block.all_literals() {
-                    return Err(SpannedError::new("Invalid function name", name_block.span));
+                    return Err(SpannedError::new(
+                        "Invalid function name",
+                        name_block.get_span(),
+                    ));
                 }
 
                 let name = name_block
                     .get_inner_literal()
-                    .unwrap_or_spanned(node.span)?;
+                    .unwrap_or_spanned(node.get_span())?;
 
                 if !is_valid_identifier(name) {
                     return Err(SpannedError::new(
                         format!("`{}` is not a valid name for function", name.deref()),
-                        name.span,
+                        name.get_span(),
                     ));
                 }
 
@@ -60,7 +63,10 @@ impl ASTParser {
         let body = match node.get_one_tag_by_name("body") {
             Some(x) => x,
             None => {
-                return Err(SpannedError::new("Function must have a body", node.span));
+                return Err(SpannedError::new(
+                    "Function must have a body",
+                    node.get_span(),
+                ));
             },
         };
 
@@ -71,45 +77,52 @@ impl ASTParser {
                 return_type: validate_and_parse_inner_type_block(node, "returns")?,
                 body: Rc::new(self.parse_children_vec(body)?),
             },
-            node.span,
+            node.get_span(),
         ))))
     }
 
     /// Parse function definition arguments
     pub fn parse_arguments_definition(
         args: Vec<&UVParseNode>,
-    ) -> Result<Vec<FunctionDefinitionArg>, SpannedError> {
+    ) -> Result<Vec<Spanned<FunctionDefinitionArg>>, SpannedError> {
         args.into_iter()
             .map(|arg| {
                 // Name
                 let name_block = arg.get_one_tag_by_name("name").ok_or(SpannedError::new(
                     "Argument definition should have an inner <name> tag",
-                    arg.span,
+                    arg.get_span(),
                 ))?;
 
                 if name_block.children_len() != 1 || !name_block.all_literals() {
-                    return Err(SpannedError::new("Invalid argument name", name_block.span));
+                    return Err(SpannedError::new(
+                        "Invalid argument name",
+                        name_block.get_span(),
+                    ));
                 }
 
-                let name = name_block.get_inner_literal().unwrap_or_spanned(arg.span)?;
+                let name = name_block
+                    .get_inner_literal()
+                    .unwrap_or_spanned(arg.get_span())?;
 
                 if !is_valid_identifier(name) {
                     return Err(SpannedError::new(
                         format!("`{}` is not a valid name for argument", name.deref()),
-                        name.span,
+                        name.get_span(),
                     ));
                 }
 
-                Ok(FunctionDefinitionArg {
-                    name: name.clone(),
-                    arg_type: validate_and_parse_inner_type_block(arg, "type")?.ok_or(
-                        SpannedError::new(
-                            "Argument definition should have an `type` tag",
-                            arg.span,
-                        ),
-                    )?,
-                    span: arg.span,
-                })
+                Ok(Spanned::new(
+                    FunctionDefinitionArg {
+                        name: name.clone(),
+                        arg_type: validate_and_parse_inner_type_block(arg, "type")?.ok_or(
+                            SpannedError::new(
+                                "Argument definition should have an `type` tag",
+                                arg.get_span(),
+                            ),
+                        )?,
+                    },
+                    arg.get_span(),
+                ))
             })
             .collect()
     }
@@ -119,7 +132,7 @@ impl ASTParser {
         if node.extra_param.is_empty() {
             return Err(SpannedError::new(
                 "Function call must have an function name",
-                node.span,
+                node.get_span(),
             ));
         }
 
@@ -129,7 +142,7 @@ impl ASTParser {
                     "{} is not a valid identifier for function call",
                     node.extra_param
                 ),
-                node.span,
+                node.get_span(),
             ));
         }
 
@@ -138,7 +151,7 @@ impl ASTParser {
                 name: node.extra_param.clone(),
                 args: self.parse_function_call_arguments(node.get_all_tags())?,
             },
-            node.span,
+            node.get_span(),
         ))))
     }
 
@@ -149,7 +162,7 @@ impl ASTParser {
         args.into_iter()
             .map(|arg| {
                 self.generate_ast(arg)
-                    .map(|ast| Spanned::new(ast, arg.span))
+                    .map(|ast| Spanned::new(ast, arg.get_span()))
             })
             .collect()
     }

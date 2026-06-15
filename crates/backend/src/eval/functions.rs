@@ -1,15 +1,14 @@
 use std::rc::Rc;
 
 use ultraviolet_core::{
-    errors::SpannedError,
-    types::{
+    errors::SpannedError, traits::frontend::Positional, types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTFunction, RTVariable, UVRTValue},
         frontend::{
             Spanned,
             ast::{ASTBlockType, FunctionCall, FunctionDefinition},
         },
-    },
+    }
 };
 
 use crate::eval::{eval, eval_block, ffi::call_dll};
@@ -44,7 +43,7 @@ pub fn call_function(
     let Some(f) = env.borrow().find_var(call.name.clone()) else {
         return Err(SpannedError::new(
             format!("`{}` not found", call.name),
-            call.span,
+            call.get_span(),
         ));
     };
 
@@ -69,7 +68,7 @@ pub fn call_function(
     let UVRTValue::Function(f_struct) = &f.borrow().value else {
         return Err(SpannedError::new(
             format!("`{}` is not callable", call.name),
-            call.span,
+            call.get_span(),
         ));
     };
 
@@ -78,12 +77,9 @@ pub fn call_function(
         EvalArgsResult::Flow(cf) => return Ok(cf),
     };
 
-    let call_env = Environment::new_child(
-        f_struct
-            .lexical_env
-            .upgrade()
-            .ok_or_else(|| SpannedError::new("Lexical environment no longer exists", call.span))?,
-    );
+    let call_env = Environment::new_child(f_struct.lexical_env.upgrade().ok_or_else(|| {
+        SpannedError::new("Lexical environment no longer exists", call.get_span())
+    })?);
     for (name, value) in f_struct.args_names_order.iter().zip(evaluated_args) {
         call_env
             .borrow_mut()

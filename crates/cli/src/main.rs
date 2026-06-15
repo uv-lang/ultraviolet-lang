@@ -1,17 +1,15 @@
-use std::{env::args, path::Path};
+use crate::help::print_help;
+use std::{env::args, path::Path, rc::Rc};
 use ultraviolet_core::{
-    errors::{SpannedError, error_renderer::ErrorRenderer},
+    errors::SpannedError,
     types::{
         backend::{ControlFlow, UVRTValue},
         frontend::{SourceFile, number::Number},
     },
 };
-
-use crate::help::print_help;
-
 mod help;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = args().collect();
 
     let path = match args.get(1) {
@@ -20,15 +18,15 @@ fn main() {
     };
 
     let source = match SourceFile::load(Path::new(path)) {
-        Ok(s) => s,
+        Ok(s) => Rc::new(s),
         Err(err) => {
             eprintln!("Can't open source file: {}", err);
             std::process::exit(-1);
         },
     };
 
-    let ret = run(&source).unwrap_or_else(|err| {
-        eprintln!("{}", err.display_with_source(&source));
+    let ret = run(source).unwrap_or_else(|err| {
+        eprintln!("{err}");
         ControlFlow::Simple(UVRTValue::Number(Number::I8(-1)))
     });
 
@@ -41,7 +39,7 @@ fn main() {
     std::process::exit(return_code.into());
 }
 
-fn run(source: &SourceFile) -> Result<ControlFlow, SpannedError> {
+fn run(source: Rc<SourceFile>) -> Result<ControlFlow, SpannedError> {
     let ast = frontend::process(source)?;
     backend::eval(&ast)
 }
