@@ -1,4 +1,11 @@
 <main>
+    <import>
+        <name>math</name>
+    </import>
+    <import>
+        <name>string</name>
+        <as>str</as>
+    </import>
 
     <ffi>
         <name>calc_power</name>

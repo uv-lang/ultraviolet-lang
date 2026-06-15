@@ -8,19 +8,21 @@ use ultraviolet_core::{
     },
 };
 
-use crate::ast::{GeneratorOutputType, ops::parse_arguments};
+use crate::ast::{ASTParser, GeneratorOutputType};
 
-/// Parse Ultraviolet compare operators
-pub fn parse_compare_op(node: &UVParseNode) -> GeneratorOutputType {
-    let op_type = node
-        .name
-        .to_uvcompare()
-        .ok_or(SpannedError::new("Unknown comparison operation", node.span))?;
+impl ASTParser {
+    /// Parse Ultraviolet compare operators
+    pub fn parse_compare_op(&self, node: &UVParseNode) -> GeneratorOutputType {
+        let op_type = node
+            .name
+            .to_uvcompare()
+            .ok_or(SpannedError::new("Unknown comparison operation", node.span))?;
 
-    let operands = parse_arguments(node, &op_type)?;
+        let operands = self.parse_arguments_for_operator(node, &op_type)?;
 
-    Ok(ASTBlockType::CompareOp(Spanned::new(
-        BuiltInOperation { op_type, operands },
-        node.span,
-    )))
+        Ok(ASTBlockType::CompareOp(Spanned::new(
+            BuiltInOperation { op_type, operands },
+            node.span,
+        )))
+    }
 }

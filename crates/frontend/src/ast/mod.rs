@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use anyhow::Result;
 use regex::Regex;
 use ultraviolet_core::{
@@ -6,21 +8,9 @@ use ultraviolet_core::{
         ast::{StringToUVCompareOp, StringToUVLogicalOp, StringToUVMathOp, StringToUVType},
         token_parser::UnwrapOptionError,
     },
-    types::frontend::{Spanned, ast::ASTBlockType, tokens::UVParseNode},
+    types::frontend::{ModuleImport, Spanned, ast::ASTBlockType, tokens::UVParseNode},
 };
 
-use crate::ast::{
-    compare_op::parse_compare_op,
-    conditional_op::parse_conditional_op,
-    ffi::parse_ffi_definition,
-    functions::{parse_function_call, parse_function_definition},
-    logical_op::parse_logical_op,
-    loops::{parse_for_loop, parse_while_loop},
-    math_op::parse_math_op,
-    modules::parse_module_import,
-    values::parse_value,
-    variables::{parse_var_access, parse_var_assign, parse_var_definition},
-};
 use once_cell::sync::Lazy;
 
 mod compare_op;
@@ -45,114 +35,138 @@ fn is_valid_identifier(s: &str) -> bool {
     IDENT_REGEX.is_match(s)
 }
 
-/// Parse `program` content
-pub fn gen_main_ast(node: &UVParseNode) -> GeneratorOutputType {
-    if node.name.ne("main") {
-        return Err(SpannedError::new(
-            "The program must begin with the <main> tag",
-            node.span,
-        ));
-    }
-    Ok(ASTBlockType::CodeBlock(Spanned::new(
-        parse_children_vec(node)?,
-        node.span,
-    )))
+pub struct ASTParser {
+    pub modules: RefCell<Vec<ModuleImport>>,
+    pub nodes: UVParseNode,
 }
 
-/// Main recursively invoked parsing function
-pub fn generate_ast(node: &UVParseNode) -> GeneratorOutputType {
-    Ok(match node.name.as_str() {
-        // Parse variable declaration
-        "let" if !node.self_closing => parse_var_definition(node)?,
-
-        // Parse for loop declaration
-        "for" if !node.self_closing => parse_for_loop(node)?,
-
-        // Parse while loop declaration
-        "while" if !node.self_closing => parse_while_loop(node)?,
-
-        // Parse conditional operator
-        "if" if !node.self_closing => parse_conditional_op(node)?,
-
-        // Parse group block
-        "g" if !node.self_closing => {
-            ASTBlockType::GroupBlock(Spanned::new(parse_children_vec(node)?, node.span))
-        },
-
-        // Parse return block
-        "return" => parse_return(node)?,
-
-        // Parse break
-        "break" if node.self_closing => ASTBlockType::Break(Spanned::new((), node.span)),
-
-        // Parse continue
-        "continue" if node.self_closing => ASTBlockType::Continue(Spanned::new((), node.span)),
-
-        // Parse function definition
-        "fn" if !node.self_closing => parse_function_definition(node)?,
-
-        // Parse function call
-        "call" => parse_function_call(node)?,
-
-        // Parse function call with trailing `$` symbol
-        c if c.ends_with("$") => {
-            let mut new_node = node.clone();
-            new_node.extra_param = node.name.trim_end_matches("$").to_owned();
-            parse_function_call(&new_node)?
-        },
-
-        // Parse modules import
-        "import" if !node.self_closing => parse_module_import(node)?,
-
-        // Parse ffi definition
-        "ffi" if !node.self_closing => parse_ffi_definition(node)?,
-
-        // Values such as int, float, etc.
-        name if name.to_uvtype().is_some() => parse_value(node)?,
-
-        // Parse math operations, such as sum, div, etc.
-        name if name.to_uvmath().is_some() && !node.self_closing => parse_math_op(node)?,
-
-        // Parse compare operators, such as eq, neq, etc.
-        name if name.to_uvcompare().is_some() && !node.self_closing => parse_compare_op(node)?,
-
-        // Parse logical operators, such as and, or, not
-        name if name.to_uvlogical().is_some() && !node.self_closing => parse_logical_op(node)?,
-
-        // Parse variable assign
-        _ if !node.self_closing => parse_var_assign(node)?,
-
-        // Parse variable access
-        _ if node.self_closing => parse_var_access(node)?,
-
-        name => {
+impl ASTParser {
+    pub fn new(node: UVParseNode) -> Self {
+        Self {
+            modules: Default::default(),
+            nodes: node,
+        }
+    }
+    /// Parse `program` content
+    pub fn gen_main_ast(self) -> Result<(ASTBlockType, Vec<ModuleImport>), SpannedError> {
+        if self.nodes.name.ne("main") {
             return Err(SpannedError::new(
-                format!("Unexpected `{name}` tag"),
-                node.span,
+                "The program must begin with the <main> tag",
+                self.nodes.span,
             ));
-        },
-    })
-}
+        }
 
-/// Parse node children to ast
-pub fn parse_children_vec(n: &UVParseNode) -> Result<Vec<Spanned<ASTBlockType>>, SpannedError> {
-    if !n.all_tags() {
-        let literal = n.get_inner_literal().unwrap_or_spanned(n.span)?;
-        return Err(SpannedError::new("Unexpected literal", literal.span));
+        Ok((
+            ASTBlockType::CodeBlock(Spanned::new(
+                self.parse_children_vec(&self.nodes)?,
+                self.nodes.span,
+            )),
+            self.modules.into_inner(),
+        ))
     }
 
-    n.get_all_tags()
-        .iter()
-        .map(|n| generate_ast(n).map(|ast| Spanned::new(ast, n.span)))
-        .collect::<Result<Vec<Spanned<ASTBlockType>>, SpannedError>>()
-}
+    /// Main recursively invoked parsing function
+    pub fn generate_ast(&self, node: &UVParseNode) -> GeneratorOutputType {
+        Ok(match node.name.as_str() {
+            // Parse variable declaration
+            "let" if !node.self_closing => self.parse_var_definition(node)?,
 
-/// Parse return block
-fn parse_return(node: &UVParseNode) -> Result<ASTBlockType, SpannedError> {
-    let ch = match node.get_tag_at(0) {
-        Some(t) => Some(Box::new(generate_ast(t)?)),
-        None => None,
-    };
+            // Parse for loop declaration
+            "for" if !node.self_closing => self.parse_for_loop(node)?,
 
-    Ok(ASTBlockType::Return(Spanned::new(ch, node.span)))
+            // Parse while loop declaration
+            "while" if !node.self_closing => self.parse_while_loop(node)?,
+
+            // Parse conditional operator
+            "if" if !node.self_closing => self.parse_conditional_op(node)?,
+
+            // Parse group block
+            "g" if !node.self_closing => {
+                ASTBlockType::GroupBlock(Spanned::new(self.parse_children_vec(node)?, node.span))
+            },
+
+            // Parse return block
+            "return" => self.parse_return(node)?,
+
+            // Parse break
+            "break" if node.self_closing => ASTBlockType::Break(Spanned::new((), node.span)),
+
+            // Parse continue
+            "continue" if node.self_closing => ASTBlockType::Continue(Spanned::new((), node.span)),
+
+            // Parse function definition
+            "fn" if !node.self_closing => self.parse_function_definition(node)?,
+
+            // Parse function call
+            "call" => self.parse_function_call(node)?,
+
+            // Parse function call with trailing `$` symbol
+            c if c.ends_with("$") => {
+                let mut new_node = node.clone();
+                new_node.extra_param = node.name.trim_end_matches("$").to_owned();
+                self.parse_function_call(&new_node)?
+            },
+
+            // Parse modules import
+            "import" if !node.self_closing => self.parse_module_import(node)?,
+
+            // Parse ffi definition
+            "ffi" if !node.self_closing => self.parse_ffi_definition(node)?,
+
+            // Values such as int, float, etc.
+            name if name.to_uvtype().is_some() => self.parse_value(node)?,
+
+            // Parse math operations, such as sum, div, etc.
+            name if name.to_uvmath().is_some() && !node.self_closing => self.parse_math_op(node)?,
+
+            // Parse compare operators, such as eq, neq, etc.
+            name if name.to_uvcompare().is_some() && !node.self_closing => {
+                self.parse_compare_op(node)?
+            },
+
+            // Parse logical operators, such as and, or, not
+            name if name.to_uvlogical().is_some() && !node.self_closing => {
+                self.parse_logical_op(node)?
+            },
+
+            // Parse variable assign
+            _ if !node.self_closing => self.parse_var_assign(node)?,
+
+            // Parse variable access
+            _ if node.self_closing => self.parse_var_access(node)?,
+
+            name => {
+                return Err(SpannedError::new(
+                    format!("Unexpected `{name}` tag"),
+                    node.span,
+                ));
+            },
+        })
+    }
+
+    /// Parse node children to ast
+    pub fn parse_children_vec(
+        &self,
+        n: &UVParseNode,
+    ) -> Result<Vec<Spanned<ASTBlockType>>, SpannedError> {
+        if !n.all_tags() {
+            let literal = n.get_inner_literal().unwrap_or_spanned(n.span)?;
+            return Err(SpannedError::new("Unexpected literal", literal.span));
+        }
+
+        n.get_all_tags()
+            .iter()
+            .map(|n| self.generate_ast(n).map(|ast| Spanned::new(ast, n.span)))
+            .collect::<Result<Vec<Spanned<ASTBlockType>>, SpannedError>>()
+    }
+
+    /// Parse return block
+    fn parse_return(&self, node: &UVParseNode) -> Result<ASTBlockType, SpannedError> {
+        let ch = match node.get_tag_at(0) {
+            Some(t) => Some(Box::new(self.generate_ast(t)?)),
+            None => None,
+        };
+
+        Ok(ASTBlockType::Return(Spanned::new(ch, node.span)))
+    }
 }

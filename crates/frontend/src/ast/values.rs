@@ -1,4 +1,4 @@
-use crate::ast::GeneratorOutputType;
+use crate::ast::{ASTParser, GeneratorOutputType};
 use anyhow::Result;
 use std::ops::Deref;
 use ultraviolet_core::{
@@ -13,32 +13,34 @@ use ultraviolet_core::{
     },
 };
 
-/// Parse UVValues.
-/// Caller must guarantee, that tag name is one of data types!
-pub fn parse_value(node: &UVParseNode) -> GeneratorOutputType {
-    Ok(ASTBlockType::Value(Spanned::new(
-        match node.name.as_str() {
-            s if s.to_uv_number_type().is_some() => UVValue::Number(parse_number(node)?),
+impl ASTParser {
+    /// Parse UVValues.
+    /// Caller must guarantee, that tag name is one of data types!
+    pub fn parse_value(&self, node: &UVParseNode) -> GeneratorOutputType {
+        Ok(ASTBlockType::Value(Spanned::new(
+            match node.name.as_str() {
+                s if s.to_uv_number_type().is_some() => UVValue::Number(parse_number(node)?),
 
-            "str" => UVValue::String(parse_str(node)),
-            "bool" => UVValue::Boolean(parse_boolean(node)?),
-            "null" => {
-                validate_null(node)?;
-                UVValue::Null
+                "str" => UVValue::String(parse_str(node)),
+                "bool" => UVValue::Boolean(parse_boolean(node)?),
+                "null" => {
+                    validate_null(node)?;
+                    UVValue::Null
+                },
+                "void" => {
+                    validate_null(node)?;
+                    UVValue::Void
+                },
+                _ => {
+                    return Err(SpannedError::new(
+                        format!("Unknown value type `{}`", node.name),
+                        node.span,
+                    ));
+                },
             },
-            "void" => {
-                validate_null(node)?;
-                UVValue::Void
-            },
-            _ => {
-                return Err(SpannedError::new(
-                    format!("Unknown value type `{}`", node.name),
-                    node.span,
-                ));
-            },
-        },
-        node.span,
-    )))
+            node.span,
+        )))
+    }
 }
 
 /// Guarantee, that node has only one child and this child is literal

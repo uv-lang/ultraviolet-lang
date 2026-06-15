@@ -1,5 +1,6 @@
 pub mod ast;
 pub mod lexer;
+pub mod modules;
 pub mod number;
 pub mod tokens;
 pub mod typechecker;
@@ -152,6 +153,7 @@ impl<T> Deref for Spanned<T> {
 }
 
 /// Represents a module, that should be imported
+#[derive(Clone, Debug)]
 pub struct ModuleImport {
     pub name: Spanned<String>,
     pub alias: Option<Spanned<String>>,

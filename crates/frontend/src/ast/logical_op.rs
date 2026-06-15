@@ -1,4 +1,4 @@
-use crate::ast::{GeneratorOutputType, ops::parse_arguments};
+use crate::ast::{ASTParser, GeneratorOutputType};
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::ast::StringToUVLogicalOp,
@@ -9,20 +9,22 @@ use ultraviolet_core::{
     },
 };
 
-/// Parse Ultraviolet logical operators
-pub fn parse_logical_op(node: &UVParseNode) -> GeneratorOutputType {
-    let op_type = node
-        .name
-        .to_uvlogical()
-        .ok_or(SpannedError::new("Unknown logical operation", node.span))?;
+impl ASTParser {
+    /// Parse Ultraviolet logical operators
+    pub fn parse_logical_op(&self, node: &UVParseNode) -> GeneratorOutputType {
+        let op_type = node
+            .name
+            .to_uvlogical()
+            .ok_or(SpannedError::new("Unknown logical operation", node.span))?;
 
-    let children = parse_arguments(node, &op_type)?;
+        let children = self.parse_arguments_for_operator(node, &op_type)?;
 
-    Ok(ASTBlockType::LogicalOp(Spanned::new(
-        BuiltInOperation {
-            op_type,
-            operands: children,
-        },
-        node.span,
-    )))
+        Ok(ASTBlockType::LogicalOp(Spanned::new(
+            BuiltInOperation {
+                op_type,
+                operands: children,
+            },
+            node.span,
+        )))
+    }
 }

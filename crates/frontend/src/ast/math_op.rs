@@ -1,4 +1,4 @@
-use crate::ast::{GeneratorOutputType, ops::parse_arguments};
+use crate::ast::{ASTParser, GeneratorOutputType};
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::ast::StringToUVMathOp,
@@ -9,19 +9,21 @@ use ultraviolet_core::{
     },
 };
 
-pub fn parse_math_op(node: &UVParseNode) -> GeneratorOutputType {
-    let op_type = node
-        .name
-        .to_uvmath()
-        .ok_or(SpannedError::new("Unknown math operation", node.span))?;
+impl ASTParser {
+    pub fn parse_math_op(&self, node: &UVParseNode) -> GeneratorOutputType {
+        let op_type = node
+            .name
+            .to_uvmath()
+            .ok_or(SpannedError::new("Unknown math operation", node.span))?;
 
-    let children = parse_arguments(node, &op_type)?;
+        let children = self.parse_arguments_for_operator(node, &op_type)?;
 
-    Ok(ASTBlockType::MathOp(Spanned::new(
-        BuiltInOperation {
-            op_type,
-            operands: children,
-        },
-        node.span,
-    )))
+        Ok(ASTBlockType::MathOp(Spanned::new(
+            BuiltInOperation {
+                op_type,
+                operands: children,
+            },
+            node.span,
+        )))
+    }
 }
