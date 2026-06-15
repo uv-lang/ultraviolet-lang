@@ -96,6 +96,12 @@ pub struct RTVariable {
     pub constant: bool,
 }
 
+impl std::fmt::Display for RTVariable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
 impl RTVariable {
     /// Create new variable from value
     pub fn new_from(val: UVRTValue, constant: bool) -> Self {

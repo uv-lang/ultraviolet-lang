@@ -1,0 +1,15 @@
+<mod>
+    <fn>
+        <name>abc</name>
+
+        <body>
+            <println$>
+                <str>Hello math</str>
+            </println$>
+        </body>
+    </fn>
+
+    <export>
+        <abc />
+    </export>
+</mod>

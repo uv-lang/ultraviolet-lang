@@ -2,16 +2,12 @@ use std::rc::Rc;
 
 use ultraviolet_core::{
     errors::SpannedError,
-    types::{
-        Environment,
-        builtins::DefineBuiltinsType,
-        frontend::{SourceFile, SourceFileParsed, typechecker::UVTypeVariable},
-    },
+    types::frontend::{SourceFile, SourceFileParsed},
 };
 
 use crate::{
     ast::ASTParser, dead_code::analyze_dead_code_program, lexer::Lexer,
-    module_resolver::resolve_modules, tokens_parser::TokenParser, typechecker::typecheck,
+    module_resolver::resolve_modules, tokens_parser::TokenParser, typechecker::Typechecker,
 };
 
 pub mod ast;
@@ -25,13 +21,12 @@ mod typechecker;
 /// Process a source file
 pub fn process_file(
     source: Rc<SourceFile>,
-    alias: impl Into<String>,
     is_mod: bool,
-) -> Result<SourceFileParsed, SpannedError> {
+) -> Result<Rc<SourceFileParsed>, SpannedError> {
     let mut lexer = Lexer::new(source.clone());
     let tokens = lexer.parse();
 
-    let mut token_parser = TokenParser::new(tokens, source.clone());
+    let mut token_parser = TokenParser::new(tokens, source);
     let parse_tree = token_parser.parse()?;
 
     let ast_parser = ASTParser::new(parse_tree);
@@ -43,21 +38,18 @@ pub fn process_file(
     };
 
     let modules = resolve_modules(&modules)?;
-
     let dead_code = analyze_dead_code_program(&ast);
 
     if !dead_code.is_empty() {
         dead_code.into_iter().for_each(|e| println!("{e}"));
     }
 
-    let env = Environment::<UVTypeVariable>::new();
-    env.define_builtins();
-    typecheck(&ast, env)?;
+    let source = Rc::new(SourceFileParsed { ast, modules });
 
-    Ok(SourceFileParsed {
-        source_file: source,
-        ast,
-        modules,
-        alias: alias.into(),
-    })
+    if !is_mod {
+        let typechecker = Typechecker::new(source.clone(), "");
+        typechecker.start_typecheck()?;
+    }
+
+    Ok(source)
 }

@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     env::current_dir,
     io,
     ops::Deref,
@@ -42,7 +43,9 @@ fn get_global_modules_path(_path: PathBuf) -> Result<PathBuf, io::Error> {
 }
 
 /// Resolving a relative path along a chain of paths
-fn resolve_by_path(module: &Spanned<ModuleImport>) -> Result<SourceFileParsed, SpannedError> {
+fn resolve_by_path(
+    module: &Spanned<ModuleImport>,
+) -> Result<(String, Rc<SourceFileParsed>), SpannedError> {
     let mut path = PathBuf::from(module.name.as_str());
 
     if let Ok(p) = get_relative_path(&path)
@@ -67,18 +70,23 @@ fn resolve_by_path(module: &Spanned<ModuleImport>) -> Result<SourceFileParsed, S
         )
     })?;
 
-    process_file(
-        Rc::new(source),
-        module.alias.as_deref().unwrap_or(&String::new()),
-        true,
-    )
+    let name = if let Some(al) = &module.alias {
+        al.clone().unwrap()
+    } else {
+        path.file_stem().unwrap().to_string_lossy().to_string()
+    };
+
+    Ok((name, process_file(Rc::new(source), true)?))
 }
 
 pub fn resolve_modules(
     modules: &[Spanned<ModuleImport>],
-) -> Result<Vec<SourceFileParsed>, SpannedError> {
-    modules
-        .iter()
-        .map(resolve_by_path)
-        .collect::<Result<Vec<SourceFileParsed>, SpannedError>>()
+) -> Result<HashMap<String, Rc<SourceFileParsed>>, SpannedError> {
+    let mut hm = HashMap::new();
+    for module in modules.iter() {
+        let (s, f) = resolve_by_path(module)?;
+        hm.insert(s, f);
+    }
+
+    Ok(hm)
 }

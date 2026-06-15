@@ -3,7 +3,7 @@ use ultraviolet_core::{
     traits::frontend::{Positional, token_parser::UnwrapOptionError},
     types::frontend::{
         Spanned,
-        ast::{ASTBlockType, ModuleImport},
+        ast::{ASTBlockType, ModuleImport, VariableAccess},
         tokens::UVParseNode,
     },
 };
@@ -70,5 +70,47 @@ impl ASTParser {
             .push(module.clone());
 
         Ok(ASTBlockType::ModuleImport(module))
+    }
+
+    /// Get module export block
+    pub fn parse_export(&self, node: &UVParseNode) -> GeneratorOutputType {
+        if !node.all_tags() {
+            return Err(SpannedError::new(
+                "All nodes inside `export` must be tags",
+                node.get_span(),
+            ));
+        }
+
+        let exports = node
+            .get_all_tags()
+            .iter()
+            .map(|t| {
+                if !t.self_closing {
+                    return Err(SpannedError::new(
+                        "Variable access block should be self-closing",
+                        t.get_span(),
+                    ));
+                }
+
+                Ok(Spanned::new(
+                    VariableAccess {
+                        name: t.name.clone(),
+                    },
+                    t.get_span(),
+                ))
+            })
+            .collect::<Result<Vec<Spanned<VariableAccess>>, SpannedError>>()?;
+
+        if exports.is_empty() {
+            return Err(SpannedError::new(
+                "Module cannot export empty space",
+                node.get_span(),
+            ));
+        }
+
+        Ok(ASTBlockType::ModuleExport(Spanned::new(
+            exports,
+            node.get_span(),
+        )))
     }
 }

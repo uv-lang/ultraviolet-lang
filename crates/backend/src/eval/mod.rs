@@ -1,11 +1,4 @@
-use crate::eval::{
-    conditional_op::eval_conditional_op,
-    ffi::load_dll,
-    functions::{call_function, define_function},
-    loops::{eval_for_loop, eval_while_loop},
-    ops::EvalOps,
-    variables::{access_variable, assign_variable, define_variable},
-};
+use crate::{Evaluator, eval::ops::EvalOps};
 use ultraviolet_core::{
     errors::SpannedError,
     types::{
@@ -21,75 +14,91 @@ mod functions;
 mod logical;
 mod loops;
 mod math;
+mod modules;
 mod ops;
 mod variables;
 
-pub fn eval(node: &ASTBlockType, env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
-    Ok(match node {
-        // Main program and others service blocks
-        ASTBlockType::CodeBlock(code) => eval_block(code, env)?,
+impl Evaluator {
+    pub fn eval_single(
+        &self,
+        node: &ASTBlockType,
+        env: EnvRef<RTVariable>,
+    ) -> Result<ControlFlow, SpannedError> {
+        Ok(match node {
+            // Main program and others service blocks
+            ASTBlockType::CodeBlock(code) | ASTBlockType::ModuleBlock(code) => {
+                self.eval_block(code, env)?
+            },
 
-        // Variables things
-        ASTBlockType::VariableDefinition(def) => define_variable(def, env)?,
-        ASTBlockType::VariableAssignment(var_assign) => assign_variable(var_assign, env)?,
-        ASTBlockType::VariableAccess(var_acc) => access_variable(var_acc, env)?,
+            // Variables things
+            ASTBlockType::VariableDefinition(def) => self.define_variable(def, env)?,
+            ASTBlockType::VariableAssignment(var_assign) => {
+                self.assign_variable(var_assign, env)?
+            },
+            ASTBlockType::VariableAccess(var_acc) => self.access_variable(var_acc, env)?,
 
-        // Functions things
-        ASTBlockType::FunctionDefinition(function_definition) => {
-            define_function(function_definition, env)?
-        },
-        ASTBlockType::FunctionCall(function_call) => call_function(function_call, env)?,
+            // Functions things
+            ASTBlockType::FunctionDefinition(function_definition) => {
+                self.define_function(function_definition, env)?
+            },
+            ASTBlockType::FunctionCall(function_call) => self.call_function(function_call, env)?,
 
-        ASTBlockType::ConditionalOp(co) => eval_conditional_op(co, env)?,
-        ASTBlockType::MathOp(math_op) => math_op.eval(env)?,
-        ASTBlockType::LogicalOp(logical_op) => logical_op.eval(env)?,
+            ASTBlockType::ConditionalOp(co) => self.eval_conditional_op(co, env)?,
+            ASTBlockType::MathOp(math_op) => math_op.eval(env, self)?,
+            ASTBlockType::LogicalOp(logical_op) => logical_op.eval(env, self)?,
 
-        ASTBlockType::CompareOp(compare_op) => compare_op.eval(env)?,
-        ASTBlockType::ForLoop(for_loop) => eval_for_loop(for_loop, env)?,
-        ASTBlockType::WhileLoop(while_loop) => eval_while_loop(while_loop, env)?,
+            ASTBlockType::CompareOp(compare_op) => compare_op.eval(env, self)?,
+            ASTBlockType::ForLoop(for_loop) => self.eval_for_loop(for_loop, env)?,
+            ASTBlockType::WhileLoop(while_loop) => self.eval_while_loop(while_loop, env)?,
 
-        ASTBlockType::Value(val) => ControlFlow::Simple(UVRTValue::from_uvvalue(val.value.clone())),
-        ASTBlockType::GroupBlock(block) => eval_block(block, env)?,
-        ASTBlockType::Return(block) => eval_return(block, env)?,
+            ASTBlockType::Value(val) => {
+                ControlFlow::Simple(UVRTValue::from_uvvalue(val.value.clone()))
+            },
+            ASTBlockType::GroupBlock(block) => self.eval_block(block, env)?,
+            ASTBlockType::Return(block) => self.eval_return(block, env)?,
 
-        ASTBlockType::Break(_) => ControlFlow::Break,
-        ASTBlockType::Continue(_) => ControlFlow::Continue,
+            ASTBlockType::Break(_) => ControlFlow::Break,
+            ASTBlockType::Continue(_) => ControlFlow::Continue,
 
-        ASTBlockType::FFIDefinition(ffi_def) => load_dll(ffi_def, env)?,
+            ASTBlockType::FFIDefinition(ffi_def) => self.load_dll(ffi_def, env)?,
 
-        _ => todo!(),
-    })
-}
-
-/// Eval every block in node vector
-fn eval_block(
-    nodes: &Vec<Spanned<ASTBlockType>>,
-    env: EnvRef<RTVariable>,
-) -> Result<ControlFlow, SpannedError> {
-    let new_env = Environment::new_child(env);
-
-    let mut last_eval_simple_val = UVRTValue::Void;
-    for node in nodes {
-        match eval(&node.value, new_env.clone())? {
-            ControlFlow::Simple(val) => last_eval_simple_val = val,
-            cf => return Ok(cf),
-        }
+            ASTBlockType::ModuleImport(mi) => self.eval_module(mi, env)?,
+            ASTBlockType::ModuleExport(me) => self.eval_export(me, env)?,
+        })
     }
 
-    Ok(ControlFlow::Simple(last_eval_simple_val))
-}
+    /// Eval every block in node vector
+    fn eval_block(
+        &self,
+        nodes: &Vec<Spanned<ASTBlockType>>,
+        env: EnvRef<RTVariable>,
+    ) -> Result<ControlFlow, SpannedError> {
+        let new_env = Environment::new_child(env);
 
-/// Evaluate return block
-fn eval_return(
-    body: &Spanned<Option<Box<ASTBlockType>>>,
-    env: EnvRef<RTVariable>,
-) -> Result<ControlFlow, SpannedError> {
-    let Some(ref b) = body.value else {
-        return Ok(ControlFlow::Return(UVRTValue::Void));
-    };
+        let mut last_eval_simple_val = UVRTValue::Void;
+        for node in nodes {
+            match self.eval_single(&node.value, new_env.clone())? {
+                ControlFlow::Simple(val) => last_eval_simple_val = val,
+                cf => return Ok(cf),
+            }
+        }
 
-    match eval(b, env)? {
-        ControlFlow::Simple(val) | ControlFlow::Return(val) => Ok(ControlFlow::Return(val)),
-        ControlFlow::Break | ControlFlow::Continue => Ok(ControlFlow::Simple(UVRTValue::Void)),
+        Ok(ControlFlow::Simple(last_eval_simple_val))
+    }
+
+    /// Evaluate return block
+    fn eval_return(
+        &self,
+        body: &Spanned<Option<Box<ASTBlockType>>>,
+        env: EnvRef<RTVariable>,
+    ) -> Result<ControlFlow, SpannedError> {
+        let Some(ref b) = body.value else {
+            return Ok(ControlFlow::Return(UVRTValue::Void));
+        };
+
+        match self.eval_single(b, env)? {
+            ControlFlow::Simple(val) | ControlFlow::Return(val) => Ok(ControlFlow::Return(val)),
+            ControlFlow::Break | ControlFlow::Continue => Ok(ControlFlow::Simple(UVRTValue::Void)),
+        }
     }
 }

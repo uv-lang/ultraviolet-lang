@@ -138,6 +138,9 @@ impl ASTParser {
             // Parse modules import
             "import" if !node.self_closing => self.parse_module_import(node)?,
 
+            // Parse module exports
+            "export" if !node.self_closing => self.parse_export(node)?,
+
             // Parse ffi definition
             "ffi" if !node.self_closing => self.parse_ffi_definition(node)?,
 

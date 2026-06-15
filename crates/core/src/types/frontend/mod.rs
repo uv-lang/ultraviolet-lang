@@ -6,7 +6,7 @@ pub mod typechecker;
 pub mod types;
 
 use anyhow::{Context, Result};
-use std::{fs, ops::Deref, path::Path, rc::Rc};
+use std::{collections::HashMap, fs, ops::Deref, path::Path, rc::Rc};
 
 use crate::{traits::frontend::Positional, types::frontend::ast::ASTBlockType};
 
@@ -150,11 +150,7 @@ impl<T> Deref for Spanned<T> {
 }
 
 pub struct SourceFileParsed {
-    pub source_file: Rc<SourceFile>,
     pub ast: ASTBlockType,
 
-    pub modules: Vec<SourceFileParsed>,
-    // TODO:
-    // pub exports: sth
-    pub alias: String,
+    pub modules: HashMap<String, Rc<SourceFileParsed>>,
 }

@@ -81,6 +81,7 @@ pub enum ASTBlockType {
     FFIDefinition(Spanned<Box<FFIDefinition>>),
 
     ModuleImport(Spanned<ModuleImport>),
+    ModuleExport(Spanned<Vec<Spanned<VariableAccess>>>),
 }
 
 impl<'a> GetBlockName<'a> for ASTBlockType {
@@ -108,6 +109,7 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
             ASTBlockType::ConditionalOp(_) => Cow::Borrowed("if"),
 
             ASTBlockType::ModuleImport(_) => Cow::Borrowed("import"),
+            ASTBlockType::ModuleExport(_) => Cow::Borrowed("export"),
             ASTBlockType::FFIDefinition(_) => Cow::Borrowed("ffi"),
         }
     }
@@ -135,6 +137,7 @@ impl Positional for ASTBlockType {
             ASTBlockType::Continue(c) => c.get_span(),
             ASTBlockType::Break(b) => b.get_span(),
             ASTBlockType::ModuleImport(i) => i.get_span(),
+            ASTBlockType::ModuleExport(e) => e.get_span(),
             ASTBlockType::FFIDefinition(f) => f.get_span(),
         }
     }
@@ -159,6 +162,7 @@ pub struct VariableAssign {
 // ------------------------ Variable Access ----------------------------------
 
 // FIXME: HA-HA Is this really a structure with one field?
+#[derive(Clone, Debug)]
 pub struct VariableAccess {
     pub name: String,
 }

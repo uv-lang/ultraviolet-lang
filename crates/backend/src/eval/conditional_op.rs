@@ -1,4 +1,3 @@
-use crate::eval::{eval, eval_block};
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::Positional,
@@ -9,36 +8,41 @@ use ultraviolet_core::{
     },
 };
 
-/// Evaluate conditional operator
-pub fn eval_conditional_op(
-    co: &Spanned<ConditionalOperator>,
-    env: EnvRef<RTVariable>,
-) -> Result<ControlFlow, SpannedError> {
-    let cf = eval(&co.test, env.clone())?;
-    let ControlFlow::Simple(evaluated_test) = cf else {
-        return Ok(cf);
-    };
+use crate::Evaluator;
 
-    let test_result = match evaluated_test {
-        UVRTValue::Boolean(b) => b,
-        _ => {
-            return Err(SpannedError::new(
-                "Unexpected type for `test` expression. Expected `bool`",
-                co.get_span(),
-            ));
-        },
-    };
+impl Evaluator {
+    /// Evaluate conditional operator
+    pub fn eval_conditional_op(
+        &self,
+        co: &Spanned<ConditionalOperator>,
+        env: EnvRef<RTVariable>,
+    ) -> Result<ControlFlow, SpannedError> {
+        let cf = self.eval_single(&co.test, env.clone())?;
+        let ControlFlow::Simple(evaluated_test) = cf else {
+            return Ok(cf);
+        };
 
-    let branch = if test_result {
-        &co.then_body
-    } else {
-        &co.else_body
-    };
+        let test_result = match evaluated_test {
+            UVRTValue::Boolean(b) => b,
+            _ => {
+                return Err(SpannedError::new(
+                    "Unexpected type for `test` expression. Expected `bool`",
+                    co.get_span(),
+                ));
+            },
+        };
 
-    if let Some(body) = branch {
-        let new_env = Environment::new_child(env.clone());
-        return eval_block(body, new_env);
+        let branch = if test_result {
+            &co.then_body
+        } else {
+            &co.else_body
+        };
+
+        if let Some(body) = branch {
+            let new_env = Environment::new_child(env.clone());
+            return self.eval_block(body, new_env);
+        }
+
+        Ok(ControlFlow::Simple(UVRTValue::Void))
     }
-
-    Ok(ControlFlow::Simple(UVRTValue::Void))
 }

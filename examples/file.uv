@@ -1,37 +1,8 @@
 <main>
     <import>
-        <name>math</name>
+        <name>test</name>
+        <as>a</as>
     </import>
 
-    <ffi>
-        <name>calc_power</name>
-        <dll>
-            <concat$>
-                <str>./examples/dll/dlls/mathdll</str>
-                <dll.suffix />
-            </concat$>
-        </dll>
-        <func>
-            <str>power</str>
-        </func>
-
-        <args>
-            <!-- base -->
-            <f64 />
-            <!-- exp -->
-            <i32 />
-        </args>
-
-        <returns>
-            <f64 />
-        </returns>
-
-    </ffi>
-
-    <println$>
-        <calc_power$>
-            <f64>5</f64>
-            <i32>3</i32>
-        </calc_power$>
-    </println$>
+    <a.abc$></a.abc$>
 </main>

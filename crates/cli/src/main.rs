@@ -1,4 +1,5 @@
 use crate::help::print_help;
+use backend::Evaluator;
 use std::{env::args, path::Path, rc::Rc};
 use ultraviolet_core::{
     errors::SpannedError,
@@ -40,6 +41,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn run(source: Rc<SourceFile>) -> Result<ControlFlow, SpannedError> {
-    let ast = frontend::process_file(source, "", false)?;
-    backend::eval(&ast)
+    let sfp = frontend::process_file(source, false)?;
+    let evaluator = Evaluator::new(sfp, "");
+    evaluator.eval()
 }
