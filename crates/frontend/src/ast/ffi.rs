@@ -16,7 +16,7 @@ use ultraviolet_core::{
 };
 
 impl ASTParser {
-    /// Parse <ffi> structure
+    /// Parse <ffi></ffi> structure
     pub fn parse_ffi_definition(&self, node: &UVParseNode) -> GeneratorOutputType {
         let extra = node.search_extra_children(vec!["name", "dll", "func", "args", "returns"]);
 

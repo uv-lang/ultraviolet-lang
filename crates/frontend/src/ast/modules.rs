@@ -7,7 +7,7 @@ use ultraviolet_core::{
 use crate::ast::{ASTParser, GeneratorOutputType};
 
 impl ASTParser {
-    /// Parse module import tag <import>
+    /// Parse module import tag <import></import>
     pub fn parse_module_import(&self, node: &UVParseNode) -> GeneratorOutputType {
         let extra = node.search_extra_children(vec!["name", "as"]);
 

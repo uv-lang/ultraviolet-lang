@@ -16,7 +16,7 @@ use crate::ast::{
 };
 
 impl ASTParser {
-    /// Parse definition of variables <let>
+    /// Parse definition of variables <let></let>
     pub fn parse_var_definition(&self, node: &UVParseNode) -> GeneratorOutputType {
         let extra = node.search_extra_children(vec!["name", "value", "const", "type"]);
         if !extra.is_empty() {
