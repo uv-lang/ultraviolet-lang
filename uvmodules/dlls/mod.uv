@@ -1,9 +1,8 @@
-<main>
-
+<mod>
     <ffi>
         <name>calc_power</name>
         <dll>
-            <str>./examples/dll/dlls/mathdll.dll</str>
+            <str>mathdll.dll</str>
         </dll>
         <func>
             <str>power</str>
@@ -19,13 +18,9 @@
         <returns>
             <f64 />
         </returns>
-
     </ffi>
 
-    <call println>
-        <call calc_power>
-            <f64>5</f64>
-            <i32>3</i32>
-        </call>
-    </call>
-</main>
+    <export>
+        <calc_power />
+    </export>
+</mod>

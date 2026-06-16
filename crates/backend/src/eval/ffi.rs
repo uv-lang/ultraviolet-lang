@@ -8,6 +8,7 @@ use std::{
     collections::HashMap,
     ffi::{CString, c_void},
     ops::Deref,
+    path::{Path, PathBuf},
     sync::{Arc, OnceLock, RwLock},
 };
 use ultraviolet_core::{
@@ -30,10 +31,10 @@ use ultraviolet_core::{
 
 use crate::Evaluator;
 
-static DLLS: OnceLock<RwLock<HashMap<String, Arc<Library>>>> = OnceLock::new();
+static DLLS: OnceLock<RwLock<HashMap<PathBuf, Arc<Library>>>> = OnceLock::new();
 
 /// All loaded dlls
-pub fn libraries() -> &'static RwLock<HashMap<String, Arc<Library>>> {
+pub fn libraries() -> &'static RwLock<HashMap<PathBuf, Arc<Library>>> {
     DLLS.get_or_init(|| RwLock::new(HashMap::new()))
 }
 
@@ -44,11 +45,19 @@ impl Evaluator {
         ffi_def: &Spanned<Box<FFIDefinition>>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let lib_path = match self.eval_single(ffi_def.dll.deref(), env.clone())? {
+        let path = match self.eval_single(ffi_def.dll.deref(), env.clone())? {
             // Other types in this hand is unreachable due typecheck
-            ControlFlow::Simple(UVRTValue::String(v)) => v,
+            ControlFlow::Simple(UVRTValue::String(v)) => PathBuf::from(v),
             cf => return Ok(cf),
         };
+
+        let lib_path = self
+            .source
+            .source
+            .path
+            .parent()
+            .unwrap_or(Path::new(""))
+            .join(path);
 
         let lib = libraries()
             .try_read()
@@ -64,7 +73,7 @@ impl Evaluator {
                 let lib = unsafe {
                     Arc::new(Library::new(&lib_path).map_err(|e| {
                         SpannedError::new(
-                            format!("Cannot load DLL {}: {}", lib_path, e),
+                            format!("Cannot load DLL {:?}: {}", lib_path, e),
                             ffi_def.get_span(),
                         )
                     })?)
@@ -74,7 +83,7 @@ impl Evaluator {
                     .try_write()
                     .map_err(|e| {
                         SpannedError::new(
-                            format!("Cannot save DLL reference for {}: {}", lib_path, e),
+                            format!("Cannot save DLL reference for {:?}: {}", lib_path, e),
                             ffi_def.get_span(),
                         )
                     })?

@@ -150,6 +150,7 @@ impl<T> Deref for Spanned<T> {
 }
 
 pub struct SourceFileParsed {
+    pub source: Rc<SourceFile>,
     pub ast: ASTBlockType,
 
     pub modules: HashMap<String, Rc<SourceFileParsed>>,

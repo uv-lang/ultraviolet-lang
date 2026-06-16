@@ -37,19 +37,23 @@ pub fn process_file(
         ast_parser.gen_main_ast()?
     };
 
-    let modules = resolve_modules(source, &modules)?;
+    let modules = resolve_modules(source.clone(), &modules)?;
     let dead_code = analyze_dead_code_program(&ast);
 
     if !dead_code.is_empty() {
         dead_code.into_iter().for_each(|e| println!("{e}"));
     }
 
-    let source = Rc::new(SourceFileParsed { ast, modules });
+    let source_parsed = Rc::new(SourceFileParsed {
+        ast,
+        modules,
+        source: source.clone(),
+    });
 
     if !is_mod {
-        let typechecker = Typechecker::new(source.clone(), "");
+        let typechecker = Typechecker::new(source_parsed.clone(), "");
         typechecker.start_typecheck()?;
     }
 
-    Ok(source)
+    Ok(source_parsed)
 }

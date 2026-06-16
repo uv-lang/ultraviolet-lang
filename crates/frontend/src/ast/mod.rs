@@ -76,7 +76,7 @@ impl ASTParser {
     ) -> Result<(ASTBlockType, Vec<Spanned<ModuleImport>>), SpannedError> {
         if self.nodes.name.ne("mod") {
             return Err(SpannedError::new(
-                "The module must begin with the <module> tag",
+                "The module must begin with the <mod> tag",
                 self.nodes.get_span(),
             ));
         }

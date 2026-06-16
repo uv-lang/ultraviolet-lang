@@ -1,12 +1,12 @@
 <main>
     <import>
-        <path>test</path>
-        <as>a</as>
+        <path>dlls</path>
     </import>
 
-    <a.abc$></a.abc$>
-
     <println$>
-        <a.child.okak />
+        <dlls.calc_power$>
+            <f64>5</f64>
+            <i32>3</i32>
+        </dlls.calc_power$>
     </println$>
 </main>

@@ -46,7 +46,7 @@ impl Typechecker {
     ) -> Result<ControlFlow, SpannedError> {
         for exp in e {
             let r = env.borrow().find_var(&exp.name).ok_or(SpannedError::new(
-                format!("Variable {} for export not defined", exp.name),
+                format!("Variable `{}` for export not defined", exp.name),
                 exp.get_span(),
             ))?;
 
