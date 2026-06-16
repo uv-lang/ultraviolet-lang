@@ -131,7 +131,7 @@ impl TokenParser {
                         && ch.eq(&'/')
                     {
                         tag.children.push(UVParseBody::String(Spanned::new(
-                            String::from(ch.clone()),
+                            String::from(*ch),
                             token.span,
                         )));
                     } else {
