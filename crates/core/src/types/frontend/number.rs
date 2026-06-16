@@ -1,3 +1,4 @@
+use crate::types::frontend::CommonError;
 use crate::{
     traits::{
         backend::TypeOf,
@@ -6,7 +7,6 @@ use crate::{
     },
     types::frontend::types::UVType,
 };
-use anyhow::{Result, anyhow};
 use libffi::middle::{Arg, Type};
 use num_traits::NumCast;
 
@@ -110,7 +110,7 @@ macro_rules! define_number {
 
         impl Number {
             /// Create number from number type and value
-            pub fn auto<T: NumCast>(v: T, t: UVType) -> Result<Self> {
+            pub fn auto<T: NumCast>(v: T, t: UVType) -> Result<Self, CommonError> {
                     match t {
                     UVType::Number(t) => Ok(
                         match t {
@@ -118,12 +118,12 @@ macro_rules! define_number {
                                 UVNumberType::$variant =>
                                     Self::$variant(
                                         NumCast::from(v)
-                                            .ok_or(anyhow!("Cannot create number with non-number type"))?
+                                            .ok_or(CommonError::new("Cannot create number with non-number type"))?
                                     ),
                             )*
                         }
                     ),
-                    _ => Err(anyhow!("Cannot create number with non-number type")),
+                    _ => Err(CommonError::new("Cannot create number with non-number type")),
                 }
 
             }

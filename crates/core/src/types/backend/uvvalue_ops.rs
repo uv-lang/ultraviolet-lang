@@ -1,10 +1,10 @@
+use crate::errors::CommonError;
 use crate::traits::ffi::FromFFI;
 use crate::types::frontend::{
     number::{Number, UVNumberType},
     types::UVType,
 };
 use crate::{number_variants, types::backend::UVRTValue};
-use anyhow::{Result, anyhow};
 use std::ffi::CStr;
 use std::ops::{Add, Div, Mul, Rem, Sub};
 
@@ -60,7 +60,7 @@ impl PartialOrd for UVRTValue {
 macro_rules! gen_ffi_to_num {
     ($($variant:ident($ty:ty, $ffi:ident)),* $(,)?) => {
         impl FromFFI for u64 {
-            fn to_uv_value(&self, exp: UVType) -> Result<UVRTValue> {
+            fn to_uv_value(&self, exp: UVType) -> Result<UVRTValue, CommonError> {
                 unsafe {
                     Ok(match exp {
                         UVType::Number(t) => match t {
@@ -88,7 +88,7 @@ macro_rules! gen_ffi_to_num {
                         },
                         UVType::Null => UVRTValue::Null,
                         UVType::Void => UVRTValue::Void,
-                        _ => return Err(anyhow!("Cannot convert this type")),
+                        _ => return Err(CommonError::new("Cannot convert this type")),
                     })
                 }
             }

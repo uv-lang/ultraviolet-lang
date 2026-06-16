@@ -1,4 +1,3 @@
-use anyhow::Result;
 use libffi::{
     low::CodePtr,
     middle::{Arg, Cif, Type},
@@ -12,7 +11,7 @@ use std::{
     sync::{Arc, OnceLock, RwLock},
 };
 use ultraviolet_core::{
-    errors::SpannedError,
+    errors::{CommonError, SpannedError},
     traits::{
         ffi::{AsArg, FromFFI, ToFFIData, ToTypeFFI},
         frontend::{Positional, token_parser::UnwrapOptionError},
@@ -158,7 +157,7 @@ impl Evaluator {
         let args_data = args
             .iter()
             .map(|a| a.to_ffi_data())
-            .collect::<Result<Vec<FFIData>>>()
+            .collect::<Result<Vec<FFIData>, CommonError>>()
             .map_err(|e| {
                 SpannedError::new(
                     format!("Cannot convert ultraviolet value to a C-like: {e}"),

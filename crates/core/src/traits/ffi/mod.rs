@@ -1,5 +1,7 @@
-use crate::types::{backend::UVRTValue, ffi::FFIData, frontend::types::UVType};
-use anyhow::Result;
+use crate::{
+    errors::CommonError,
+    types::{backend::UVRTValue, ffi::FFIData, frontend::types::UVType},
+};
 use libffi::middle::{Arg, Type};
 
 pub trait ToTypeFFI {
@@ -14,10 +16,10 @@ pub trait AsArg {
 
 pub trait ToFFIData {
     /// Convert value to a owned struct
-    fn to_ffi_data(&self) -> Result<FFIData<'_>>;
+    fn to_ffi_data(&self) -> Result<FFIData<'_>, CommonError>;
 }
 
 pub trait FromFFI {
     /// Converts ffi data to a Ultraviolet val
-    fn to_uv_value(&self, exp: UVType) -> Result<UVRTValue>;
+    fn to_uv_value(&self, exp: UVType) -> Result<UVRTValue, CommonError>;
 }

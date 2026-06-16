@@ -5,10 +5,11 @@ pub mod tokens;
 pub mod typechecker;
 pub mod types;
 
-use anyhow::{Context, Result};
-use std::{collections::HashMap, fs, ops::Deref, path::Path, rc::Rc};
+use std::{collections::HashMap, error::Error, fs, ops::Deref, path::Path, rc::Rc};
 
-use crate::{traits::frontend::Positional, types::frontend::ast::ASTBlockType};
+use crate::{
+    errors::CommonError, traits::frontend::Positional, types::frontend::ast::ASTBlockType,
+};
 
 /// Representation of input file
 #[derive(Debug, Clone, PartialEq)]
@@ -29,7 +30,7 @@ impl SourceFile {
 
     Returns `Err` when provided file not found or cannot be read
     */
-    pub fn load(path: &Path) -> Result<Self> {
+    pub fn load(path: &Path) -> Result<Self, Box<dyn Error>> {
         let code: String = fs::read_to_string(path)?;
         Ok(Self {
             path: path.into(),
@@ -73,19 +74,25 @@ impl SourceFile {
     }
 
     /// Get full line by provided line No
-    pub fn get_line_content(&self, line: usize) -> Result<&str> {
-        let line_index_start = self.line_starts.get(line).context("")?;
+    pub fn get_line_content(&self, line: usize) -> Result<&str, Box<dyn Error>> {
+        let line_index_start = self.line_starts.get(line).ok_or(CommonError::default())?;
         let code_len = self.code.len();
         let line_index_end = self.line_starts.get(line + 1).unwrap_or(&code_len);
 
         // Convert char indexes to a bytes
-        let line_start_byte = self.char_to_byte.get(*line_index_start).context("")?;
-        let line_end_byte = self.char_to_byte.get(*line_index_end).context("")?;
+        let line_start_byte = self
+            .char_to_byte
+            .get(*line_index_start)
+            .ok_or(CommonError::default())?;
+        let line_end_byte = self
+            .char_to_byte
+            .get(*line_index_end)
+            .ok_or(CommonError::default())?;
 
         let line_content = self
             .code
             .get(*line_start_byte..*line_end_byte)
-            .context("")?
+            .ok_or(CommonError::default())?
             .trim_end_matches("\n");
 
         Ok(line_content)

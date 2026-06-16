@@ -1,8 +1,7 @@
 use crate::ast::{ASTParser, GeneratorOutputType};
-use anyhow::Result;
-use std::ops::Deref;
+use std::{error::Error, ops::Deref};
 use ultraviolet_core::{
-    errors::SpannedError,
+    errors::{CommonError, SpannedError},
     number_variants,
     traits::frontend::{Positional, ast::StringToUVNumberType, token_parser::UnwrapOptionError},
     types::frontend::{
@@ -61,10 +60,10 @@ macro_rules! gen_parse_number_fn {
             validate_inner(node)?;
             let inner_contents = node.get_inner_literal().unwrap_or_spanned(node.get_span())?;
 
-            let parse = || -> Result<Number> {
+            let parse = || -> Result<Number, Box<dyn Error>> {
                 match node.name.as_str() {
                     $(stringify!($ty) => Ok(Number::$variant(inner_contents.parse::<$ty>()?)),)*
-                    _ => Err(anyhow::anyhow!("Unknown number type"))
+                    _ => Err(Box::new(CommonError::new("Unknown number type")))
                 }
             };
 

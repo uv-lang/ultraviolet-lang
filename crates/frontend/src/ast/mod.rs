@@ -1,7 +1,5 @@
-use std::cell::RefCell;
-
-use anyhow::Result;
 use regex::Regex;
+use std::{cell::RefCell, sync::OnceLock};
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::{
@@ -15,8 +13,6 @@ use ultraviolet_core::{
         tokens::UVParseNode,
     },
 };
-
-use once_cell::sync::Lazy;
 
 mod compare_op;
 mod conditional_op;
@@ -33,11 +29,12 @@ mod variables;
 
 pub type GeneratorOutputType = Result<ASTBlockType, SpannedError>;
 
-static IDENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-zA-Z_.][a-zA-Z0-9_.]*$").unwrap());
+static IDENT_REGEX: OnceLock<Regex> = OnceLock::new();
 
 /// Check if provided string is a valid var/fn identifier
 fn is_valid_identifier(s: &str) -> bool {
-    IDENT_REGEX.is_match(s)
+    let reg = IDENT_REGEX.get_or_init(|| Regex::new(r"^[a-zA-Z_.][a-zA-Z0-9_.]*$").unwrap());
+    reg.is_match(s)
 }
 
 pub struct ASTParser {

@@ -1,13 +1,12 @@
-use anyhow::{Context, Result};
+use crate::{
+    errors::{CommonError, ErrorType, SpannedError},
+    traits::frontend::Positional,
+};
 use colored::{Color, Colorize};
 use std::{
     cmp::min,
+    error::Error,
     fmt::{self, Write},
-};
-
-use crate::{
-    errors::{ErrorType, SpannedError},
-    traits::frontend::Positional,
 };
 
 /// Trait for positional errors, that renders error messages
@@ -18,7 +17,7 @@ pub trait ErrorRenderer {
     fn display(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 
     /// Render extended error message
-    fn render_extended(&self) -> Result<String>;
+    fn render_extended(&self) -> Result<String, Box<dyn Error>>;
 }
 
 impl ErrorRenderer for SpannedError {
@@ -45,7 +44,7 @@ impl ErrorRenderer for SpannedError {
         )
     }
 
-    fn render_extended(&self) -> Result<String> {
+    fn render_extended(&self) -> Result<String, Box<dyn Error>> {
         let (line, col) = self.span.source_file.get_line_col(self.get_span());
         let mut line_content = self.span.source_file.get_line_content(line)?;
         let original_len = line_content.len();
@@ -53,7 +52,7 @@ impl ErrorRenderer for SpannedError {
         line_content = line_content.trim_start();
         let col_offsetted = col
             .checked_sub(original_len - line_content.len())
-            .context("")?;
+            .ok_or(CommonError::default())?;
 
         let error_line_link = self.render_error_line(line, col);
 

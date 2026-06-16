@@ -68,3 +68,33 @@ impl fmt::Display for SpannedError {
 }
 
 impl std::error::Error for SpannedError {}
+
+/// Default unspanned error
+#[derive(Default)]
+pub struct CommonError {
+    message: String,
+}
+
+impl CommonError {
+    pub fn new(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+        }
+    }
+}
+
+impl std::error::Error for CommonError {}
+
+impl fmt::Display for CommonError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Error: {}", self.message)
+    }
+}
+
+impl fmt::Debug for CommonError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CommonError")
+            .field("message", &self.message)
+            .finish()
+    }
+}

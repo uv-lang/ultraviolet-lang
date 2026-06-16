@@ -1,4 +1,3 @@
-use anyhow::{Result, anyhow};
 use libffi::middle::{Arg, Type};
 use std::{
     ffi::{CString, c_void},
@@ -6,6 +5,7 @@ use std::{
 };
 
 use crate::{
+    errors::CommonError,
     traits::ffi::{AsArg, ToFFIData, ToTypeFFI},
     types::{backend::UVRTValue, frontend::types::UVType},
 };
@@ -31,15 +31,16 @@ pub enum FFIData<'a> {
 }
 
 impl ToFFIData for UVRTValue {
-    fn to_ffi_data(&'_ self) -> Result<FFIData<'_>> {
+    fn to_ffi_data(&'_ self) -> Result<FFIData<'_>, CommonError> {
         Ok(match self {
             UVRTValue::Number(n) => FFIData::Number(n.as_arg()),
             UVRTValue::String(s) => FFIData::String(
-                CString::new(s.clone()).map_err(|_| anyhow!("Found zero byte in string"))?,
+                CString::new(s.clone())
+                    .map_err(|_| CommonError::new("Found zero byte in string"))?,
             ),
             UVRTValue::Boolean(b) => FFIData::Boolean(if *b { 1 } else { 0 }),
             UVRTValue::Null => FFIData::Null,
-            _ => return Err(anyhow!("Cannot create C pointer to this value")),
+            _ => return Err(CommonError::new("Cannot create C pointer to this value")),
         })
     }
 }

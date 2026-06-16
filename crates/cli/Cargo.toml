@@ -6,7 +6,6 @@ authors.workspace = true
 repository.workspace = true
 
 [dependencies]
-anyhow.workspace = true
 frontend = { path = "../frontend" }
 backend  = { path = "../backend" }
 ultraviolet-core = { path = "../core" }

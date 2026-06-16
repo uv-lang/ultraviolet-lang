@@ -6,7 +6,6 @@ authors.workspace = true
 repository.workspace = true
 
 [dependencies]
-anyhow.workspace = true
 colored = "3.0.0"
 num-traits = "0.2.19"
 libffi = "5.1.0"
