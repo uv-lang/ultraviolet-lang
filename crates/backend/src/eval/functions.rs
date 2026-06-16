@@ -99,10 +99,11 @@ impl Evaluator {
             EvalArgsResult::Flow(cf) => return Ok(cf),
         };
 
-        let call_env = Rc::new(RefCell::new(Environment {
-            symbols: f_struct.moved_symbols.clone(),
-            parent: None,
-        }));
+        let call_env = Environment::new_child(env);
+        call_env
+            .borrow_mut()
+            .symbols
+            .extend(f_struct.moved_symbols.clone());
 
         if let Some(name) = &f_struct.definition_name {
             call_env.borrow_mut().define_variable(

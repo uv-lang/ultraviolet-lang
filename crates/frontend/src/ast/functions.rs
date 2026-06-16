@@ -76,7 +76,7 @@ impl ASTParser {
                 arguments,
                 return_type: validate_and_parse_inner_type_block(node, "returns")?,
                 body: Rc::new(self.parse_children_vec(body)?),
-                moved_symbols: RefCell::new(Vec::new()),
+                moved_symbols: RefCell::new(Default::default()),
             },
             node.get_span(),
         ))))
