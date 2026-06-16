@@ -19,19 +19,14 @@ impl Evaluator {
         mi: &Spanned<ModuleImport>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let name = mi
-            .alias
-            .clone()
-            .map_or_else(|| mi.name.clone().unwrap(), |a| a.unwrap());
-
-        let Some(module_ast) = self.source.modules.get(&name) else {
+        let Some(module_ast) = self.source.modules.get(&mi.name.value) else {
             return Err(SpannedError::new(
                 "[INTERNAL ERROR] Cannot find loaded module",
                 mi.get_span(),
             ));
         };
 
-        let evaluator = Evaluator::new(module_ast.clone(), name);
+        let evaluator = Evaluator::new(module_ast.clone(), &mi.name.value);
         evaluator.eval()?;
 
         env.borrow_mut()

@@ -16,8 +16,8 @@ use ultraviolet_core::{
 use crate::process_file;
 
 /// Get path relative to current
-fn get_relative_path(path: &PathBuf) -> Result<PathBuf, io::Error> {
-    let mut p = current_dir()?.join(path);
+fn get_relative_path(mod_path: &Path, path: &PathBuf) -> Result<PathBuf, io::Error> {
+    let mut p = mod_path.parent().unwrap_or(Path::new("")).join(path);
     p.set_extension("uv");
     Ok(p)
 }
@@ -44,11 +44,12 @@ fn get_global_modules_path(_path: PathBuf) -> Result<PathBuf, io::Error> {
 
 /// Resolving a relative path along a chain of paths
 fn resolve_by_path(
+    current_file: Rc<SourceFile>,
     module: &Spanned<ModuleImport>,
 ) -> Result<(String, Rc<SourceFileParsed>), SpannedError> {
-    let mut path = PathBuf::from(module.name.as_str());
+    let mut path = PathBuf::from(module.path.as_str());
 
-    if let Ok(p) = get_relative_path(&path)
+    if let Ok(p) = get_relative_path(&current_file.path, &path)
         && exists_file(&p)
     {
         path = p;
@@ -58,7 +59,7 @@ fn resolve_by_path(
         path = p;
     } else {
         return Err(SpannedError::new(
-            format!("Could not load module `{}`", module.name.deref()),
+            format!("Could not load module `{}`", module.path.deref()),
             module.get_span(),
         ));
     }
@@ -70,21 +71,19 @@ fn resolve_by_path(
         )
     })?;
 
-    let name = if let Some(al) = &module.alias {
-        al.clone().unwrap()
-    } else {
-        path.file_stem().unwrap().to_string_lossy().to_string()
-    };
-
-    Ok((name, process_file(Rc::new(source), true)?))
+    Ok((
+        module.name.clone().unwrap(),
+        process_file(Rc::new(source), true)?,
+    ))
 }
 
 pub fn resolve_modules(
+    current_file: Rc<SourceFile>,
     modules: &[Spanned<ModuleImport>],
 ) -> Result<HashMap<String, Rc<SourceFileParsed>>, SpannedError> {
     let mut hm = HashMap::new();
     for module in modules.iter() {
-        let (s, f) = resolve_by_path(module)?;
+        let (s, f) = resolve_by_path(current_file.clone(), module)?;
         hm.insert(s, f);
     }
 

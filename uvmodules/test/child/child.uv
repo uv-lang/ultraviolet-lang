@@ -1,0 +1,12 @@
+<mod>
+    <let>
+        <name>okak</name>
+        <value>
+            <str>Hello okak</str>
+        </value>
+    </let>
+
+    <export>
+        <okak />
+    </export>
+</mod>

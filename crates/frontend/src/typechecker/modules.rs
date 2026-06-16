@@ -21,19 +21,14 @@ impl Typechecker {
         mi: &Spanned<ModuleImport>,
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let name = mi
-            .alias
-            .clone()
-            .map_or_else(|| mi.name.clone().unwrap(), |a| a.unwrap());
-
-        let Some(module_ast) = self.source.modules.get(&name) else {
+        let Some(module_ast) = self.source.modules.get(&mi.name.value) else {
             return Err(SpannedError::new(
                 "[INTERNAL ERROR] Cannot find loaded module",
                 mi.get_span(),
             ));
         };
 
-        let typechecker = Typechecker::new(module_ast.clone(), name);
+        let typechecker = Typechecker::new(module_ast.clone(), &mi.name.value);
         typechecker.start_typecheck()?;
 
         env.borrow_mut()

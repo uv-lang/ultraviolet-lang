@@ -109,10 +109,10 @@ impl TokenParser {
                     },
 
                     UVParseState::TagBody => {
-                        tag.children.push(UVParseBody::String(Spanned {
-                            value: lit.to_owned(),
-                            span: token.get_span(),
-                        }));
+                        tag.children.push(UVParseBody::String(Spanned::new(
+                            lit.to_owned(),
+                            token.get_span(),
+                        )));
                     },
                     UVParseState::ClosingTagName => {
                         parse_state = UVParseState::ClosingAngleBracketClosingTag;
@@ -126,10 +126,20 @@ impl TokenParser {
                     },
                 },
                 UVLexerTokens::Unknown(ch) => {
-                    return Err(SpannedError::new(
-                        format!("Unexpected token: `{ch}`"),
-                        token.get_span(),
-                    ));
+                    if matches!(parse_state, UVParseState::TagBody)
+                        && tag.name.eq("path")
+                        && ch.eq(&'/')
+                    {
+                        tag.children.push(UVParseBody::String(Spanned::new(
+                            String::from(ch.clone()),
+                            token.span,
+                        )));
+                    } else {
+                        return Err(SpannedError::new(
+                            format!("Unexpected token: `{ch}`"),
+                            token.get_span(),
+                        ));
+                    }
                 },
             }
         }

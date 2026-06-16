@@ -1,4 +1,8 @@
 <mod>
+    <import>
+        <path>child/child</path>
+    </import>
+
     <let>
         <name>name</name>
         <value>
@@ -16,10 +20,15 @@
                     <name />
                 </concat$>
             </println$>
+
+            <println$>
+                <child.okak />
+            </println$>
         </body>
     </fn>
 
     <export>
         <abc />
+        <child.okak />
     </export>
 </mod>

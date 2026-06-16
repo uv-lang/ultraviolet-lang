@@ -374,8 +374,8 @@ pub struct FFIDefinition {
 /// Represents a module, that should be imported
 #[derive(Clone, Debug)]
 pub struct ModuleImport {
+    pub path: Spanned<String>,
     pub name: Spanned<String>,
-    pub alias: Option<Spanned<String>>,
 }
 // ---------------------------- TESTS ----------------------------------------
 

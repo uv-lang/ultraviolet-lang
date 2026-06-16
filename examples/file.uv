@@ -1,8 +1,12 @@
 <main>
     <import>
-        <name>test</name>
+        <path>test</path>
         <as>a</as>
     </import>
 
     <a.abc$></a.abc$>
+
+    <println$>
+        <a.child.okak />
+    </println$>
 </main>

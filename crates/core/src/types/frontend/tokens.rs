@@ -106,6 +106,17 @@ impl UVParseNode {
             })
             .collect()
     }
+
+    /// Get all nested literals
+    pub fn get_all_literals(&self) -> Vec<&Spanned<String>> {
+        self.children
+            .iter()
+            .filter_map(|ch| match ch {
+                UVParseBody::Tag(_) => None,
+                UVParseBody::String(s) => Some(s),
+            })
+            .collect()
+    }
 }
 
 impl Positional for UVParseNode {

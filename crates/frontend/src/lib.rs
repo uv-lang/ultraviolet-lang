@@ -26,7 +26,7 @@ pub fn process_file(
     let mut lexer = Lexer::new(source.clone());
     let tokens = lexer.parse();
 
-    let mut token_parser = TokenParser::new(tokens, source);
+    let mut token_parser = TokenParser::new(tokens, source.clone());
     let parse_tree = token_parser.parse()?;
 
     let ast_parser = ASTParser::new(parse_tree);
@@ -37,7 +37,7 @@ pub fn process_file(
         ast_parser.gen_main_ast()?
     };
 
-    let modules = resolve_modules(&modules)?;
+    let modules = resolve_modules(source, &modules)?;
     let dead_code = analyze_dead_code_program(&ast);
 
     if !dead_code.is_empty() {

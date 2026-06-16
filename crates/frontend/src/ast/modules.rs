@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::{Positional, token_parser::UnwrapOptionError},
@@ -13,7 +15,7 @@ use crate::ast::{ASTParser, GeneratorOutputType};
 impl ASTParser {
     /// Parse module import tag <import></import>
     pub fn parse_module_import(&self, node: &UVParseNode) -> GeneratorOutputType {
-        let extra = node.search_extra_children(vec!["name", "as"]);
+        let extra = node.search_extra_children(vec!["path", "as"]);
 
         if !extra.is_empty() {
             let first_extra = extra.first().unwrap_or_spanned(node.get_span())?;
@@ -24,37 +26,52 @@ impl ASTParser {
             ));
         }
 
-        let name_block = node.get_one_tag_by_name("name").ok_or(SpannedError::new(
-            "Module import should have a name",
+        let path_block = node.get_one_tag_by_name("path").ok_or(SpannedError::new(
+            "Module import should have a path",
             node.get_span(),
         ))?;
 
-        if !name_block.all_literals() || name_block.children_len() != 1 {
+        if !path_block.all_literals() {
             return Err(SpannedError::new(
-                "Module import name should contain literal",
-                name_block.get_span(),
+                "Module import path should contain only literals",
+                path_block.get_span(),
             ));
         }
 
-        let name = name_block
-            .get_inner_literal()
-            .unwrap_or_spanned(name_block.get_span())?;
+        let path =
+            path_block
+                .get_all_literals()
+                .into_iter()
+                .fold(String::new(), |mut acc, curr| {
+                    acc.push_str(&curr.value);
+                    acc
+                });
 
         let alias = match node.get_one_tag_by_name("as") {
             Some(n) if !n.all_literals() || n.children_len() != 1 => {
                 return Err(SpannedError::new(
                     "Module import alias should contain literal",
-                    name_block.get_span(),
+                    path_block.get_span(),
                 ));
             },
             Some(n) => Some(n.get_inner_literal().unwrap_or_spanned(node.get_span())?),
             None => None,
         };
 
+        let name = if let Some(al) = alias {
+            al.clone().unwrap()
+        } else {
+            PathBuf::from(path.clone())
+                .file_stem()
+                .unwrap()
+                .to_string_lossy()
+                .to_string()
+        };
+
         let module = Spanned::new(
             ModuleImport {
-                name: name.clone(),
-                alias: alias.cloned(),
+                path: Spanned::new(path, path_block.get_span()),
+                name: Spanned::new(name, path_block.get_span()),
             },
             node.get_span(),
         );
