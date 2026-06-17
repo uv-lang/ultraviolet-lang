@@ -36,6 +36,7 @@ impl Evaluator {
                 self.assign_variable(var_assign, env)?
             },
             ASTBlockType::VariableAccess(var_acc) => self.access_variable(var_acc, env)?,
+            ASTBlockType::ReferenceCreate(rc) => self.create_reference(rc, env)?,
 
             // Functions things
             ASTBlockType::FunctionDefinition(function_definition) => {

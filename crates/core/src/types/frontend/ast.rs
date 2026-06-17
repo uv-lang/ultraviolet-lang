@@ -1,15 +1,27 @@
 use core::fmt;
-use std::{borrow::Cow, cell::RefCell, collections::HashSet, rc::Rc};
+use std::{
+    borrow::Cow,
+    cell::RefCell,
+    collections::HashSet,
+    rc::{Rc, Weak},
+};
 
 use crate::{
-    traits::frontend::{
-        Positional,
-        ast::{
-            ArgumentsCount, GetBlockName, GetOperands, GetType, StringToUVCompareOp,
-            StringToUVLogicalOp, StringToUVMathOp,
+    traits::{
+        UnwrapWeakRefCell,
+        frontend::{
+            Positional,
+            ast::{
+                ArgumentsCount, GetBlockName, GetOperands, GetType, StringToUVCompareOp,
+                StringToUVLogicalOp, StringToUVMathOp,
+            },
         },
     },
-    types::frontend::{Span, Spanned, number::Number, types::UVType},
+    types::frontend::{
+        Span, Spanned,
+        number::Number,
+        types::{ReferenceType, UVType},
+    },
 };
 
 pub type ASTSpannedBody = Spanned<Vec<Spanned<ASTBlockType>>>;
@@ -22,6 +34,8 @@ pub enum UVValue {
     Boolean(bool),
     Null,
     Void,
+
+    Reference(Weak<RefCell<UVValue>>),
 }
 
 impl GetType for UVValue {
@@ -33,6 +47,11 @@ impl GetType for UVValue {
             UVValue::Null => UVType::Null,
 
             UVValue::Void => UVType::Void,
+            // FIXME: Remove unwrap
+            // FIXME: Should an internally referenced object be created here?
+            UVValue::Reference(r) => UVType::Reference(Box::new(ReferenceType::new(
+                r.unwrap_weak().borrow().get_type(),
+            ))),
         }
     }
 }
@@ -45,6 +64,8 @@ impl std::fmt::Display for UVValue {
             UVValue::Boolean(b) => write!(f, "{b}"),
             UVValue::Null => write!(f, "null"),
             UVValue::Void => write!(f, "void"),
+            // FIXME: Remove unwrap
+            UVValue::Reference(r) => write!(f, "{}", r.unwrap_weak().borrow()),
         }
     }
 }
@@ -60,6 +81,7 @@ pub enum ASTBlockType {
     FunctionCall(Box<Spanned<FunctionCall>>),
     VariableAssignment(Box<Spanned<VariableAssign>>),
     VariableAccess(Spanned<VariableAccess>),
+    ReferenceCreate(Spanned<VariableAccess>),
 
     ConditionalOp(Box<Spanned<ConditionalOperator>>),
 
@@ -92,6 +114,7 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
             ASTBlockType::VariableDefinition(_) => Cow::Borrowed("let"),
             ASTBlockType::VariableAssignment(a) => Cow::Borrowed(&a.name),
             ASTBlockType::VariableAccess(a) => Cow::Borrowed(&a.name),
+            ASTBlockType::ReferenceCreate(r) => Cow::Borrowed(&r.value.name),
 
             ASTBlockType::MathOp(m) => Cow::Owned(m.op_type.to_string().to_lowercase()),
             ASTBlockType::LogicalOp(l) => Cow::Owned(l.op_type.to_string().to_lowercase()),
@@ -139,6 +162,7 @@ impl Positional for ASTBlockType {
             ASTBlockType::ModuleImport(i) => i.get_span(),
             ASTBlockType::ModuleExport(e) => e.get_span(),
             ASTBlockType::FFIDefinition(f) => f.get_span(),
+            ASTBlockType::ReferenceCreate(r) => r.get_span(),
         }
     }
 }
@@ -405,26 +429,6 @@ mod tests {
 
     #[test]
     fn type_compatible_with() {
-        assert!(
-            UVType::Union(vec![UVType::Number(UVNumberType::F64), UVType::Null])
-                .is_assignable_from(&UVType::Null)
-        );
-
-        assert!(
-            UVType::Union(vec![
-                UVType::Number(UVNumberType::I64),
-                UVType::Number(UVNumberType::F64)
-            ])
-            .is_assignable_from(&UVType::Union(vec![UVType::Number(UVNumberType::I64)]))
-        );
-
-        assert!(
-            !UVType::Number(UVNumberType::I64).is_assignable_from(&UVType::Union(vec![
-                UVType::Number(UVNumberType::I64),
-                UVType::Null
-            ]))
-        );
-
         assert!(!UVType::Number(UVNumberType::I64).is_assignable_from(&UVType::Boolean));
     }
 }

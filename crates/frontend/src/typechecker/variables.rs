@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::{Positional, ast::IsAssignable},
@@ -7,7 +9,7 @@ use ultraviolet_core::{
             Spanned,
             ast::{VariableAccess, VariableAssign, VariableDefinition},
             typechecker::{ControlFlow, UVTypeVariable},
-            types::UVType,
+            types::{ReferenceType, UVType},
         },
     },
 };
@@ -21,7 +23,7 @@ impl Typechecker {
         vd: &Spanned<VariableDefinition>,
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let mut val = match self.typecheck(&vd.value.value, env.clone())? {
+        let val = match self.typecheck(&vd.value.value, env.clone())? {
             ControlFlow::Simple(uvtype) => uvtype,
             cf => return Ok(cf),
         };
@@ -33,11 +35,9 @@ impl Typechecker {
                         "Expected type `{}`, got `{}` for variable `{}`",
                         expected.value, val, vd.name.value
                     ),
-                    vd.get_span(),
+                    vd.value.value.get_span(),
                 ));
             }
-
-            val = expected.value.clone();
         }
 
         if env.borrow().find_var(&vd.name.value).is_some() {
@@ -66,7 +66,7 @@ impl Typechecker {
             ));
         };
 
-        let var = var_rc.borrow();
+        let mut var = var_rc.borrow_mut();
         if var.constant {
             return Err(SpannedError::new(
                 format!("Cannot assign to a constant `{}` variable", va.name),
@@ -89,6 +89,8 @@ impl Typechecker {
             ));
         }
 
+        var.value = t;
+
         Ok(ControlFlow::Simple(UVType::Void))
     }
 
@@ -105,6 +107,43 @@ impl Typechecker {
             ));
         };
 
-        Ok(ControlFlow::Simple(var_rc.borrow().value.clone()))
+        let borrowed = var_rc.borrow();
+
+        if let UVType::Reference(r) = &borrowed.value {
+            let Some(referenced_var) = &r.reference else {
+                return Err(SpannedError::new_tipped(
+                    "This is a dangling reference",
+                    "Report about this issue to https://github.com/Andcool-Systems/ultraviolet-lang",
+                    va.get_span(),
+                ));
+            };
+
+            if referenced_var.upgrade().is_none() {
+                return Err(SpannedError::new(
+                    "Value at this reference is freed before accessing",
+                    va.get_span(),
+                ));
+            }
+        }
+
+        Ok(ControlFlow::Simple(borrowed.value.clone()))
+    }
+
+    /// Check and validate reference creation
+    pub fn check_reference_create(
+        &self,
+        rc: &Spanned<VariableAccess>,
+        env: EnvRef<UVTypeVariable>,
+    ) -> Result<ControlFlow, SpannedError> {
+        let Some(var_rc) = env.borrow().find_var(&rc.name) else {
+            return Err(SpannedError::new(
+                format!("Reference `{}` not defined", rc.name),
+                rc.get_span(),
+            ));
+        };
+
+        Ok(ControlFlow::Simple(UVType::Reference(Box::new(
+            ReferenceType::new_referenced(var_rc.borrow().value.clone(), Rc::downgrade(&var_rc)),
+        ))))
     }
 }

@@ -8,7 +8,7 @@ use ultraviolet_core::{
     types::frontend::{
         Spanned,
         tokens::UVParseNode,
-        types::{UVFunctionType, UVType},
+        types::{ReferenceType, UVFunctionType, UVType},
     },
 };
 
@@ -35,11 +35,14 @@ pub fn parse_type_raw(node: &UVParseNode) -> Result<UVType, SpannedError> {
     }
 
     if let Some(t) = node.name.as_str().to_uvtype() {
+        if node.extra_param.eq("ref") {
+            return Ok(UVType::Reference(Box::new(ReferenceType::new(t))));
+        }
+
         return Ok(t);
     }
 
     Ok(match node.name.as_str() {
-        "union" => parse_union(node)?,
         "fn" => parse_fn_type(node)?,
 
         // TODO: Make this accessible from user env
@@ -51,35 +54,6 @@ pub fn parse_type_raw(node: &UVParseNode) -> Result<UVType, SpannedError> {
             ));
         },
     })
-}
-
-fn parse_union(node: &UVParseNode) -> Result<UVType, SpannedError> {
-    if !node.all_tags() {
-        return Err(SpannedError::new(
-            "All children inside union tag must be known types",
-            node.get_span(),
-        ));
-    }
-
-    if node.children_len() == 0 {
-        return Err(SpannedError::new(
-            "Union type cannot be empty",
-            node.get_span(),
-        ));
-    }
-
-    if node.children_len() == 1 {
-        let t = node.get_tag_at(0).unwrap_or_spanned(node.get_span())?;
-        return parse_type_raw(t);
-    }
-
-    let types = node
-        .get_all_tags()
-        .into_iter()
-        .map(parse_type_raw)
-        .collect::<Result<Vec<UVType>, SpannedError>>()?;
-
-    Ok(UVType::new_union(types))
 }
 
 /// Try to find inner type tag and parse its children types

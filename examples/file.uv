@@ -1,12 +1,26 @@
 <main>
-    <import>
-        <path>dlls</path>
-    </import>
+    <let>
+        <name>a</name>
+        <type>
+            <i8 />
+        </type>
+        <value>
+            <i8>0</i8>
+        </value>
+        <const />
+    </let>
+
+    <let>
+        <name>reference</name>
+        <type>
+            <i8 ref />
+        </type>
+        <value>
+            <a ref />
+        </value>
+    </let>
 
     <println$>
-        <dlls.calc_power$>
-            <f64>5</f64>
-            <i32>3</i32>
-        </dlls.calc_power$>
+        <reference />
     </println$>
 </main>

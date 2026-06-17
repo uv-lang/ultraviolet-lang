@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::Evaluator;
 use ultraviolet_core::{
     errors::SpannedError,
@@ -85,5 +87,24 @@ impl Evaluator {
         } else {
             Ok(result)
         }
+    }
+
+    /// Creates a reference to a variable
+    pub fn create_reference(
+        &self,
+        reference_create: &Spanned<VariableAccess>,
+        env: EnvRef<RTVariable>,
+    ) -> Result<ControlFlow, SpannedError> {
+        let var = env
+            .borrow()
+            .find_var(reference_create.name.clone())
+            .ok_or(SpannedError::new(
+                format!("Name `{}` not defined", reference_create.name),
+                reference_create.get_span(),
+            ))?;
+
+        Ok(ControlFlow::Simple(UVRTValue::Reference(Rc::downgrade(
+            &var,
+        ))))
     }
 }

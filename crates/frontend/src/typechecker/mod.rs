@@ -59,6 +59,7 @@ impl Typechecker {
             ASTBlockType::VariableDefinition(vd) => self.check_variable_definition(vd, env)?,
             ASTBlockType::VariableAssignment(va) => self.check_variable_assign(va, env)?,
             ASTBlockType::VariableAccess(va) => self.check_variable_access(va, env)?,
+            ASTBlockType::ReferenceCreate(rc) => self.check_reference_create(rc, env)?,
 
             ASTBlockType::FunctionDefinition(fd) => self.check_function_definition(fd, env)?,
             ASTBlockType::FunctionCall(fc) => self.check_function_call(fc, env)?,
@@ -80,7 +81,6 @@ impl Typechecker {
 
             ASTBlockType::ModuleImport(i) => self.typecheck_module(i, env)?,
             ASTBlockType::ModuleExport(e) => self.typecheck_export(e, env)?,
-            //_ => ControlFlow::Simple(UVType::Void),
         })
     }
 

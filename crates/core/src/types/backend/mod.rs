@@ -1,6 +1,6 @@
 use crate::{
     errors::SpannedError,
-    traits::{backend::TypeOf, frontend::ast::GetType},
+    traits::{UnwrapWeakRefCell, backend::TypeOf, frontend::ast::GetType},
     types::{
         EnvRef,
         backend::ffi::FFIFunction,
@@ -12,7 +12,11 @@ use crate::{
         },
     },
 };
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    rc::{Rc, Weak},
+};
 pub mod ffi;
 pub mod uvvalue_ops;
 
@@ -55,6 +59,8 @@ pub enum UVRTValue {
     Function(RTFunction),
     BuiltInFunction(BuiltInFunction),
     FFIFunction(FFIFunction),
+
+    Reference(Weak<RefCell<RTVariable>>),
 }
 
 impl std::fmt::Display for UVRTValue {
@@ -68,6 +74,8 @@ impl std::fmt::Display for UVRTValue {
             UVRTValue::Function(_) => write!(f, "<function>"),
             UVRTValue::BuiltInFunction(_) => write!(f, "<built-in function>"),
             UVRTValue::FFIFunction(_) => write!(f, "<ffi function>"),
+            // FIXME: Remove unwrap
+            UVRTValue::Reference(r) => write!(f, "{}", r.upgrade().unwrap().borrow()),
         }
     }
 }
@@ -81,6 +89,7 @@ impl UVRTValue {
             UVValue::Boolean(b) => Self::Boolean(b),
             UVValue::Null => Self::Null,
             UVValue::Void => Self::Void,
+            UVValue::Reference(_) => unreachable!(), // FIXME: Is this correct?
         }
     }
 }
@@ -143,6 +152,8 @@ impl TypeOf for UVRTValue {
             UVRTValue::Function(_) | UVRTValue::BuiltInFunction(_) | UVRTValue::FFIFunction(_) => {
                 String::from("function")
             },
+            // FIXME: Remove unwrap
+            UVRTValue::Reference(r) => String::from(r.unwrap_weak().borrow().value.typeof_str()),
         }
     }
 }

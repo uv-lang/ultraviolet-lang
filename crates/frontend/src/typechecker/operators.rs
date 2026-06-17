@@ -21,10 +21,6 @@ fn are_comparable(a: &UVType, b: &UVType) -> bool {
         (UVType::Number(_), UVType::Number(_)) => true,
 
         _ if a == b => true,
-
-        (UVType::Union(types), other) => types.iter().all(|t| are_comparable(t, other)),
-        (other, UVType::Union(types)) => types.iter().all(|t| are_comparable(other, t)),
-
         _ => false,
     }
 }
@@ -32,7 +28,6 @@ fn are_comparable(a: &UVType, b: &UVType) -> bool {
 fn is_number_like(t: &UVType) -> bool {
     match t {
         UVType::Number(_) => true,
-        UVType::Union(types) => types.iter().all(is_number_like),
         _ => false,
     }
 }
@@ -113,8 +108,13 @@ impl Typechecker {
 
         let return_type = match (then_body, else_body) {
             (None, None) => UVType::Void,
-            (None, Some(t)) | (Some(t), None) => UVType::new_union(vec![t, UVType::Void]),
-            (Some(t), Some(_)) => t,
+            (Some(l), Some(r)) if r == l => l,
+            _ => {
+                return Err(SpannedError::new(
+                    "Type mismatch for conditional operator hands",
+                    op.get_span(),
+                ));
+            },
         };
 
         Ok(ControlFlow::Simple(return_type))

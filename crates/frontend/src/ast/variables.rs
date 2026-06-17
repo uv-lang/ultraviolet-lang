@@ -137,6 +137,17 @@ impl ASTParser {
             ));
         }
 
+
+        // If variable is accessed as reference - create reference block
+        if node.extra_param.eq("ref") {
+            return Ok(ASTBlockType::ReferenceCreate(Spanned::new(
+                VariableAccess {
+                    name: node.name.clone(),
+                },
+                node.get_span(),
+            )));
+        }
+
         Ok(ASTBlockType::VariableAccess(Spanned::new(
             VariableAccess {
                 name: node.name.clone(),

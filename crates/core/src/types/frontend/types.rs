@@ -1,12 +1,12 @@
 use colored::Colorize;
-use std::ops::Deref;
+use std::{cell::RefCell, ops::Deref, rc::Weak};
 
 use crate::{
     traits::frontend::ast::{IsAssignable, StringToUVNumberType, StringToUVType},
-    types::frontend::number::UVNumberType,
+    types::frontend::{number::UVNumberType, typechecker::UVTypeVariable},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// User environment function type
 pub struct UVFunctionType {
     pub args: Vec<UVType>,
@@ -15,7 +15,7 @@ pub struct UVFunctionType {
 
 // ---------------------- Builtin functions -------------------------------
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UVBuiltinFunctionArguments {
     /// Arguments of any type and quantity
     Any,
@@ -25,7 +25,7 @@ pub enum UVBuiltinFunctionArguments {
     AllOf(UVType),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UVBuiltinFunctionType {
     pub args: UVBuiltinFunctionArguments,
     pub returns: UVType,
@@ -34,7 +34,7 @@ pub struct UVBuiltinFunctionType {
 // ------------------------------------------------------------------------
 
 /// Ultraviolet primitive types
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UVType {
     Number(UVNumberType),
     String,
@@ -47,8 +47,34 @@ pub enum UVType {
     /// Unreachable from user env
     Any,
 
-    Union(Vec<UVType>),
+    Reference(Box<ReferenceType>),
+
     Optional(Box<UVType>),
+}
+
+#[derive(Debug, Clone)]
+pub struct ReferenceType {
+    pub t: UVType,
+    pub reference: Option<Weak<RefCell<UVTypeVariable>>>,
+}
+
+impl ReferenceType {
+    /// Create new reference with empty reference field
+    ///
+    /// Used e.g. <int ref />
+    pub fn new(t: UVType) -> Self {
+        Self { t, reference: None }
+    }
+
+    /// Create new reference with non-empty reference field
+    ///
+    /// Used for real references to a variables
+    pub fn new_referenced(t: UVType, reference: Weak<RefCell<UVTypeVariable>>) -> Self {
+        Self {
+            t,
+            reference: Some(reference),
+        }
+    }
 }
 
 impl std::fmt::Display for UVType {
@@ -73,52 +99,16 @@ impl std::fmt::Display for UVType {
             },
             UVType::BuiltInFunction(_) => write!(f, "<built-in function>"),
             UVType::Any => write!(f, "<any />"),
-            UVType::Union(u) => {
-                write!(
-                    f,
-                    "<union>{}</union>",
-                    u.iter()
-                        .map(|i| i.to_string())
-                        .collect::<Vec<_>>()
-                        .join(" ")
-                )
-            },
             UVType::Optional(t) => {
                 write!(f, "<optional>{}</optional>", t.to_string().green().bold())
             },
+            // FIXME: Remove unwrap
+            UVType::Reference(r) => write!(f, "reference to {}", r.t),
         }
     }
 }
 
 impl UVType {
-    /// Create new union type
-    pub fn new_union(types: Vec<UVType>) -> UVType {
-        let mut flat = Vec::new();
-
-        for t in types {
-            t.flatten_into(&mut flat);
-        }
-
-        flat.sort();
-        flat.dedup();
-
-        if flat.len() == 1 {
-            flat.into_iter().next().unwrap()
-        } else {
-            UVType::Union(flat)
-        }
-    }
-
-    /// Flat Union type to provided output vector
-    pub fn flatten_into(&self, out: &mut Vec<Self>) {
-        match self {
-            Self::Union(types) => {
-                types.iter().for_each(|t| t.flatten_into(out));
-            },
-            t => out.push(t.clone()),
-        }
-    }
-
     /// Flatten optional type
     pub fn flat_optional(self) -> UVType {
         match self {
@@ -149,9 +139,6 @@ impl IsAssignable for UVType {
         }
 
         match (self, other) {
-            (_, UVType::Union(types)) => types.iter().all(|t| self.is_assignable_from(t)),
-            (UVType::Union(types), _) => types.iter().any(|t| t.is_assignable_from(other)),
-
             (UVType::Optional(lv), rv) => lv.deref() == rv,
 
             (UVType::Any, _) => true,
@@ -179,3 +166,11 @@ impl StringToUVType for str {
         }
     }
 }
+
+impl PartialEq for ReferenceType {
+    fn eq(&self, other: &Self) -> bool {
+        self.t == other.t
+    }
+}
+
+impl Eq for ReferenceType {}
