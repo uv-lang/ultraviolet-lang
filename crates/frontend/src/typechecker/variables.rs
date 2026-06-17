@@ -28,16 +28,16 @@ impl Typechecker {
             cf => return Ok(cf),
         };
 
-        if let Some(expected) = &vd.expected_type {
-            if !expected.value.is_assignable_from(&val) {
-                return Err(SpannedError::new(
-                    format!(
-                        "Expected type `{}`, got `{}` for variable `{}`",
-                        expected.value, val, vd.name.value
-                    ),
-                    vd.value.value.get_span(),
-                ));
-            }
+        if let Some(expected) = &vd.expected_type
+            && !expected.value.is_assignable_from(&val)
+        {
+            return Err(SpannedError::new(
+                format!(
+                    "Expected type `{}`, got `{}` for variable `{}`",
+                    expected.value, val, vd.name.value
+                ),
+                vd.value.value.get_span(),
+            ));
         }
 
         if env.borrow().find_var(&vd.name.value).is_some() {

@@ -26,10 +26,7 @@ fn are_comparable(a: &UVType, b: &UVType) -> bool {
 }
 
 fn is_number_like(t: &UVType) -> bool {
-    match t {
-        UVType::Number(_) => true,
-        _ => false,
-    }
+    matches!(t, UVType::Number(_))
 }
 
 impl Typechecker {

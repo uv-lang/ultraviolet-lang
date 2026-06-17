@@ -153,7 +153,7 @@ impl TypeOf for UVRTValue {
                 String::from("function")
             },
             // FIXME: Remove unwrap
-            UVRTValue::Reference(r) => String::from(r.unwrap_weak().borrow().value.typeof_str()),
+            UVRTValue::Reference(r) => r.unwrap_weak().borrow().value.typeof_str(),
         }
     }
 }

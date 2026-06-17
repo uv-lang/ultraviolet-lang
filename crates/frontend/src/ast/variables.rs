@@ -137,7 +137,6 @@ impl ASTParser {
             ));
         }
 
-
         // If variable is accessed as reference - create reference block
         if node.extra_param.eq("ref") {
             return Ok(ASTBlockType::ReferenceCreate(Spanned::new(
