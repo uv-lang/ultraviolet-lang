@@ -59,10 +59,9 @@ pub struct ReferenceType {
 }
 
 impl ReferenceType {
-    #[allow(rustdoc::invalid_html_tags)]
     /// Create new reference with empty reference field
     ///
-    /// Used e.g. `<int ref />``
+    /// Used e.g. `<int ref />`
     pub fn new(t: UVType) -> Self {
         Self { t, reference: None }
     }
