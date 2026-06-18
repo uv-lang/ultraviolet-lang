@@ -74,14 +74,16 @@ macro_rules! define_number {
             $(
                 $variant,
             )*
+            AnyNumber
         }
 
         impl std::fmt::Display for UVNumberType {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 match self {
                     $(
-                        UVNumberType::$variant => write!(f, "<{} />", stringify!($ty)),
+                        UVNumberType::$variant=> write!(f, "<{} />", stringify!($ty)),
                     )*
+                    UVNumberType::AnyNumber =>  write!(f, "any number")
                 }
             }
         }
@@ -121,6 +123,7 @@ macro_rules! define_number {
                                             .ok_or(CommonError::new("Cannot create number with non-number type"))?
                                     ),
                             )*
+                            UVNumberType::AnyNumber => unreachable!()
                         }
                     ),
                     _ => Err(CommonError::new("Cannot create number with non-number type")),
@@ -142,6 +145,7 @@ macro_rules! define_number {
                 Some(
                     match self {
                         $(Self::$variant => Type::$ffi(),)*
+                        UVNumberType::AnyNumber => unreachable!()
                     }
                 )
              }

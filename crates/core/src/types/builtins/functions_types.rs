@@ -1,8 +1,9 @@
 use crate::types::{
     EnvRef,
     frontend::{
+        number::UVNumberType,
         typechecker::UVTypeVariable,
-        types::{UVBuiltinFunctionArguments, UVBuiltinFunctionType, UVType},
+        types::{ReferenceType, UVBuiltinFunctionArguments, UVBuiltinFunctionType, UVType},
     },
 };
 
@@ -61,6 +62,32 @@ pub fn init_builtin_types_functions(env: EnvRef<UVTypeVariable>) {
         UVTypeVariable::new_from(
             UVType::BuiltInFunction(Box::new(UVBuiltinFunctionType {
                 args: UVBuiltinFunctionArguments::AllOf(UVType::String),
+                returns: UVType::String,
+            })),
+            true,
+        ),
+    );
+
+    borrowed_env.define_variable(
+        "inc",
+        UVTypeVariable::new_from(
+            UVType::BuiltInFunction(Box::new(UVBuiltinFunctionType {
+                args: UVBuiltinFunctionArguments::Args(vec![UVType::Reference(Box::new(
+                    ReferenceType::new(UVType::Number(UVNumberType::AnyNumber)),
+                ))]),
+                returns: UVType::String,
+            })),
+            true,
+        ),
+    );
+
+    borrowed_env.define_variable(
+        "dec",
+        UVTypeVariable::new_from(
+            UVType::BuiltInFunction(Box::new(UVBuiltinFunctionType {
+                args: UVBuiltinFunctionArguments::Args(vec![UVType::Reference(Box::new(
+                    ReferenceType::new(UVType::Number(UVNumberType::AnyNumber)),
+                ))]),
                 returns: UVType::String,
             })),
             true,

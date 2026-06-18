@@ -140,6 +140,9 @@ impl IsAssignable for UVType {
         match (self, other) {
             (UVType::Optional(lv), rv) => lv.deref() == rv,
 
+            (UVType::Reference(lr), UVType::Reference(rr)) => lr.t.is_assignable_from(&rr.t),
+            (UVType::Number(UVNumberType::AnyNumber), UVType::Number(_)) => true,
+
             (UVType::Any, _) => true,
             (_, UVType::Any) => false,
 

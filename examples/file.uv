@@ -1,27 +1,14 @@
 <main>
     <let>
         <name>a</name>
-        <type>
-            <i8 />
-        </type>
         <value>
-            <i8>0</i8>
+            <u8>0</u8>
         </value>
     </let>
 
-    <let>
-        <name>reference</name>
-        <type>
-            <i8 ref />
-        </type>
-        <value>
-            <a ref />
-        </value>
-    </let>
-
-    <reference deref>
-        <i8>15</i8>
-    </reference>
+    <inc$>
+        <a ref />
+    </inc$>
 
     <println$>
         <a />

@@ -1,10 +1,11 @@
 use std::io::{self, Write};
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::backend::TypeOf,
+    traits::{backend::TypeOf, frontend::ast::GetType},
     types::{
         EnvRef,
         backend::{BuiltInFunction, ControlFlow, RTVariable, UVRTValue},
+        frontend::number::Number,
     },
 };
 
@@ -46,6 +47,22 @@ pub fn init_builtin_functions(env: EnvRef<RTVariable>) {
         "concat",
         RTVariable::new_from(
             UVRTValue::BuiltInFunction(BuiltInFunction::new_from(concat)),
+            true,
+        ),
+    );
+
+    borrowed_env.define_variable(
+        "inc",
+        RTVariable::new_from(
+            UVRTValue::BuiltInFunction(BuiltInFunction::new_from(inc)),
+            true,
+        ),
+    );
+
+    borrowed_env.define_variable(
+        "dec",
+        RTVariable::new_from(
+            UVRTValue::BuiltInFunction(BuiltInFunction::new_from(dec)),
             true,
         ),
     );
@@ -153,4 +170,52 @@ fn concat(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, S
     });
 
     Ok(ControlFlow::Simple(UVRTValue::String(str)))
+}
+
+/// Built-in number `inc` function
+///
+/// Receives a reference to a value
+fn inc(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
+    let Some(UVRTValue::Reference(r)) = args.first() else {
+        // This check is performed by typechecker
+        unreachable!()
+    };
+
+    let Some(strong) = r.upgrade() else {
+        // This check is performed by typechecker
+        unreachable!();
+    };
+
+    let new = {
+        let borrowed = strong.borrow();
+        // SAFETY: Unwrap is safe, because sum math operation is allowed only for numbers
+        &borrowed.value + &UVRTValue::Number(Number::auto(1, borrowed.value.get_type()).unwrap())
+    };
+
+    (*strong.borrow_mut()).value = new;
+    Ok(ControlFlow::Simple(UVRTValue::Void))
+}
+
+/// Built-in number `dec` function
+///
+/// Receives a reference to a value
+fn dec(args: &[UVRTValue], _env: EnvRef<RTVariable>) -> Result<ControlFlow, SpannedError> {
+    let Some(UVRTValue::Reference(r)) = args.first() else {
+        // This check is performed by typechecker
+        unreachable!()
+    };
+
+    let Some(strong) = r.upgrade() else {
+        // This check is performed by typechecker
+        unreachable!();
+    };
+
+    let new = {
+        let borrowed = strong.borrow();
+        // SAFETY: Unwrap is safe, because sum math operation is allowed only for numbers
+        &borrowed.value - &UVRTValue::Number(Number::auto(1, borrowed.value.get_type()).unwrap())
+    };
+
+    (*strong.borrow_mut()).value = new;
+    Ok(ControlFlow::Simple(UVRTValue::Void))
 }

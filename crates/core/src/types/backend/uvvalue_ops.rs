@@ -69,6 +69,11 @@ macro_rules! gen_ffi_to_num {
                                     let val = *( self as *const u64 as *const $ty );
                                     UVRTValue::Number(Number::$variant(val))
                             },)*
+                            UVNumberType::AnyNumber => {
+                                // This hand is unreachable, but for compatibility I'll leave this here
+                                let val = *( self as *const u64 as *const f64 );
+                                UVRTValue::Number(Number::F64(val))
+                            }
                         },
                         UVType::String => {
                             let char_ptr = *( self as *const u64 as *const *const i8 );
