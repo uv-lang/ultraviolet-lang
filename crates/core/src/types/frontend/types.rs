@@ -102,7 +102,6 @@ impl std::fmt::Display for UVType {
             UVType::Optional(t) => {
                 write!(f, "<optional>{}</optional>", t.to_string().green().bold())
             },
-            // FIXME: Remove unwrap
             UVType::Reference(r) => write!(f, "reference to {}", r.t),
         }
     }

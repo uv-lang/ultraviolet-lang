@@ -119,13 +119,19 @@ impl ASTParser {
             .get_tag_at(0)
             .ok_or(SpannedError::new("Cannot get inner tag", node.get_span()))?;
 
-        Ok(ASTBlockType::VariableAssignment(Box::new(Spanned::new(
+        let block = Box::new(Spanned::new(
             VariableAssign {
                 name: node.name.clone(),
                 value: Spanned::new(self.generate_ast(value)?, value.get_span()),
             },
             node.get_span(),
-        ))))
+        ));
+
+        if node.extra_param.eq("deref") {
+            return Ok(ASTBlockType::DereferenceAssignment(block));
+        }
+
+        Ok(ASTBlockType::VariableAssignment(block))
     }
 
     /// Parse variable access block
@@ -140,6 +146,16 @@ impl ASTParser {
         // If variable is accessed as reference - create reference block
         if node.extra_param.eq("ref") {
             return Ok(ASTBlockType::ReferenceCreate(Spanned::new(
+                VariableAccess {
+                    name: node.name.clone(),
+                },
+                node.get_span(),
+            )));
+        }
+
+        // If reference is dereferenced - create dereference block
+        if node.extra_param.eq("deref") {
+            return Ok(ASTBlockType::Dereference(Spanned::new(
                 VariableAccess {
                     name: node.name.clone(),
                 },

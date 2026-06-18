@@ -82,6 +82,8 @@ pub enum ASTBlockType {
     VariableAssignment(Box<Spanned<VariableAssign>>),
     VariableAccess(Spanned<VariableAccess>),
     ReferenceCreate(Spanned<VariableAccess>),
+    Dereference(Spanned<VariableAccess>),
+    DereferenceAssignment(Box<Spanned<VariableAssign>>),
 
     ConditionalOp(Box<Spanned<ConditionalOperator>>),
 
@@ -115,6 +117,10 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
             ASTBlockType::VariableAssignment(a) => Cow::Borrowed(&a.name),
             ASTBlockType::VariableAccess(a) => Cow::Borrowed(&a.name),
             ASTBlockType::ReferenceCreate(r) => Cow::Borrowed(&r.value.name),
+            ASTBlockType::Dereference(r) => Cow::Borrowed(&r.value.name),
+            ASTBlockType::DereferenceAssignment(deref_assign) => {
+                Cow::Borrowed(&deref_assign.value.name)
+            },
 
             ASTBlockType::MathOp(m) => Cow::Owned(m.op_type.to_string().to_lowercase()),
             ASTBlockType::LogicalOp(l) => Cow::Owned(l.op_type.to_string().to_lowercase()),
@@ -163,6 +169,8 @@ impl Positional for ASTBlockType {
             ASTBlockType::ModuleExport(e) => e.get_span(),
             ASTBlockType::FFIDefinition(f) => f.get_span(),
             ASTBlockType::ReferenceCreate(r) => r.get_span(),
+            ASTBlockType::Dereference(d) => d.get_span(),
+            ASTBlockType::DereferenceAssignment(d) => d.get_span(),
         }
     }
 }

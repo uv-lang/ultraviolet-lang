@@ -5,7 +5,7 @@ use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::Positional,
     types::{
-        EnvRef, Environment,
+        EnvRef,
         backend::{ControlFlow, RTVariable, UVRTValue},
         frontend::{
             Spanned,
@@ -71,15 +71,7 @@ impl Evaluator {
                 )
             })?;
 
-        if sym.borrow().constant {
-            return Err(SpannedError::new(
-                "Cannot assign to a constant variable",
-                assign_var.get_span(),
-            ));
-        }
-
-        let new_env = Environment::new_child(env);
-        let result = self.eval_single(&assign_var.value.value, new_env)?;
+        let result = self.eval_single(&assign_var.value.value, env)?;
 
         if let ControlFlow::Simple(uvvalue) = result {
             (*sym.borrow_mut()).value = uvvalue;
@@ -106,5 +98,71 @@ impl Evaluator {
         Ok(ControlFlow::Simple(UVRTValue::Reference(Rc::downgrade(
             &var,
         ))))
+    }
+
+    /// Dereferences a reference
+    pub fn dereference(
+        &self,
+        dereference: &Spanned<VariableAccess>,
+        env: EnvRef<RTVariable>,
+    ) -> Result<ControlFlow, SpannedError> {
+        let var = env
+            .borrow()
+            .find_var(dereference.name.clone())
+            .ok_or(SpannedError::new(
+                format!("Name `{}` not defined", dereference.name),
+                dereference.get_span(),
+            ))?;
+
+        let UVRTValue::Reference(r) = &var.borrow().value else {
+            // SAFETY: This check is performed by typechecker
+            unreachable!()
+        };
+
+        let Some(upgraded) = r.upgrade() else {
+            return Err(SpannedError::new(
+                "Value at this pointer is freed",
+                dereference.get_span(),
+            ));
+        };
+
+        // FIXME: Should the value be copied here?
+        Ok(ControlFlow::Simple(upgraded.borrow().value.clone()))
+    }
+
+    /// Assign to a referenced variable
+    pub fn assign_reference(
+        &self,
+        assign_ref: &Spanned<VariableAssign>,
+        env: EnvRef<RTVariable>,
+    ) -> Result<ControlFlow, SpannedError> {
+        let sym = env
+            .borrow()
+            .find_var(assign_ref.name.clone())
+            .ok_or_else(|| {
+                SpannedError::new(
+                    format!("Reference `{}` not defined", assign_ref.name),
+                    assign_ref.get_span(),
+                )
+            })?;
+
+        let UVRTValue::Reference(r) = &sym.borrow().value else {
+            // SAFETY: This check is performed by typechecker
+            unreachable!()
+        };
+
+        let Some(strong) = r.upgrade() else {
+            // SAFETY: This check is performed by typechecker
+            unreachable!()
+        };
+
+        let result = self.eval_single(&assign_ref.value.value, env)?;
+
+        if let ControlFlow::Simple(uvvalue) = result {
+            (*strong.borrow_mut()).value = uvvalue;
+            Ok(ControlFlow::Simple(UVRTValue::Void))
+        } else {
+            Ok(result)
+        }
     }
 }

@@ -60,6 +60,10 @@ impl Typechecker {
             ASTBlockType::VariableAssignment(va) => self.check_variable_assign(va, env)?,
             ASTBlockType::VariableAccess(va) => self.check_variable_access(va, env)?,
             ASTBlockType::ReferenceCreate(rc) => self.check_reference_create(rc, env)?,
+            ASTBlockType::Dereference(deref) => self.check_dereference(deref, env)?,
+            ASTBlockType::DereferenceAssignment(deref_assign) => {
+                self.check_dereference_assign(deref_assign, env)?
+            },
 
             ASTBlockType::FunctionDefinition(fd) => self.check_function_definition(fd, env)?,
             ASTBlockType::FunctionCall(fc) => self.check_function_call(fc, env)?,

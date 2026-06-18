@@ -137,7 +137,7 @@ impl Typechecker {
     ) -> Result<ControlFlow, SpannedError> {
         let Some(var_rc) = env.borrow().find_var(&rc.name) else {
             return Err(SpannedError::new(
-                format!("Reference `{}` not defined", rc.name),
+                format!("Variable `{}` not defined", rc.name),
                 rc.get_span(),
             ));
         };
@@ -145,5 +145,108 @@ impl Typechecker {
         Ok(ControlFlow::Simple(UVType::Reference(Box::new(
             ReferenceType::new_referenced(var_rc.borrow().value.clone(), Rc::downgrade(&var_rc)),
         ))))
+    }
+
+    /// Check and validate dereference
+    pub fn check_dereference(
+        &self,
+        dr: &Spanned<VariableAccess>,
+        env: EnvRef<UVTypeVariable>,
+    ) -> Result<ControlFlow, SpannedError> {
+        let Some(var_rc) = env.borrow().find_var(&dr.name) else {
+            return Err(SpannedError::new(
+                format!("Reference `{}` not defined", dr.name),
+                dr.get_span(),
+            ));
+        };
+
+        let borrowed = var_rc.borrow();
+        let UVType::Reference(rf) = &borrowed.value else {
+            return Err(SpannedError::new(
+                "Cannot dereference primitive value",
+                dr.get_span(),
+            ));
+        };
+
+        let Some(referenced_var) = &rf.reference else {
+            return Err(SpannedError::new_tipped(
+                "This is a dangling reference",
+                "Report about this issue to https://github.com/Andcool-Systems/ultraviolet-lang",
+                dr.get_span(),
+            ));
+        };
+
+        let Some(upgraded) = referenced_var.upgrade() else {
+            return Err(SpannedError::new(
+                "Value at this reference is freed before accessing",
+                dr.get_span(),
+            ));
+        };
+
+        Ok(ControlFlow::Simple(upgraded.borrow().value.clone()))
+    }
+
+    /// Check dereference assign
+    pub fn check_dereference_assign(
+        &self,
+        va: &Spanned<VariableAssign>,
+        env: EnvRef<UVTypeVariable>,
+    ) -> Result<ControlFlow, SpannedError> {
+        let Some(reference) = env.borrow().find_var(&va.name) else {
+            return Err(SpannedError::new(
+                format!("Symbol {} not found", va.name),
+                va.get_span(),
+            ));
+        };
+
+        let borrowed = reference.borrow();
+        let UVType::Reference(r) = &borrowed.value else {
+            return Err(SpannedError::new(
+                "Cannot dereference non-reference variable",
+                va.get_span(),
+            ));
+        };
+
+        let Some(referenced_var) = &r.reference else {
+            return Err(SpannedError::new_tipped(
+                "This is a dangling reference",
+                "Report about this issue to https://github.com/Andcool-Systems/ultraviolet-lang",
+                va.get_span(),
+            ));
+        };
+
+        let Some(strong_ref) = referenced_var.upgrade() else {
+            return Err(SpannedError::new(
+                "Value at this reference is freed before accessing",
+                va.get_span(),
+            ));
+        };
+
+        let mut borrowed_ref = strong_ref.borrow_mut();
+        if borrowed_ref.constant {
+            return Err(SpannedError::new(
+                "Attempt to assign to dereferenced constant value",
+                va.get_span(),
+            ));
+        }
+
+        let t = match self.typecheck(&va.value.value, env.clone())? {
+            ControlFlow::Simple(uvtype) => uvtype,
+            cf => return Ok(cf),
+        };
+
+        if !borrowed_ref.value.is_assignable_from(&t) {
+            return Err(SpannedError::new(
+                format!(
+                    "Expected type `{}`, got `{}` for reference `{}`",
+                    borrowed_ref.value, t, va.name
+                ),
+                va.get_span(),
+            ));
+        }
+
+        borrowed_ref.value = t;
+
+        Ok(ControlFlow::Simple(UVType::Void))
     }
 }
