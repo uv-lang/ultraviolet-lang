@@ -1,16 +1,5 @@
 <main>
-    <let>
-        <name>a</name>
-        <value>
-            <u8>0</u8>
-        </value>
-    </let>
-
-    <inc$>
-        <a ref />
-    </inc$>
-
-    <println$>
-        <a />
-    </println$>
+    <call println>
+        <str>Hello World!</str>
+    </call>
 </main>
