@@ -1,6 +1,6 @@
 use crate::{
     errors::SpannedError,
-    traits::{UnwrapWeakRefCell, backend::TypeOf, frontend::ast::GetType},
+    traits::{UnwrapWeakRefCell, backend::TypeOf, ffi::EnumPayloadPtr, frontend::ast::GetType},
     types::{
         EnvRef,
         backend::ffi::FFIFunction,
@@ -15,6 +15,7 @@ use crate::{
 use std::{
     cell::RefCell,
     collections::HashMap,
+    ffi::c_void,
     rc::{Rc, Weak},
 };
 pub mod ffi;
@@ -90,6 +91,22 @@ impl UVRTValue {
             UVValue::Null => Self::Null,
             UVValue::Void => Self::Void,
             UVValue::Reference(_) => unreachable!(), // FIXME: Is this correct?
+        }
+    }
+}
+
+impl EnumPayloadPtr for UVRTValue {
+    #[allow(unsafe_op_in_unsafe_fn)]
+    unsafe fn payload_ptr(ptr: *mut Self) -> *mut c_void {
+        match &mut *ptr {
+            UVRTValue::Number(v) => Number::payload_ptr(v),
+            UVRTValue::String(v) => v as *const _ as *mut c_void,
+            UVRTValue::Boolean(v) => v as *const _ as *mut c_void,
+
+            // FIXME: Is we allow nested references in ffi?
+            UVRTValue::Reference(_) => todo!(),
+
+            _ => unreachable!(),
         }
     }
 }
