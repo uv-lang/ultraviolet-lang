@@ -54,7 +54,7 @@ impl ToFFIData for UVRTValue {
                     .upgrade()
                     .ok_or_else(|| CommonError::new("Reference dropped"))?;
 
-                let base = strong.as_ptr() as *const c_void as *mut u8;
+                let base = strong.as_ptr() as *const c_void;
                 let field = base.add(offset_of!(RTVariable, value));
                 FFIData::Reference(UVRTValue::payload_ptr(field as *mut UVRTValue))
             },
