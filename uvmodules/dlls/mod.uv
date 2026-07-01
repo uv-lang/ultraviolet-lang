@@ -13,10 +13,13 @@
             <f64 />
             <!-- exp -->
             <i32 />
+
+            <!-- res -->
+            <f64 ref />
         </args>
 
         <returns>
-            <f64 />
+            <void />
         </returns>
     </ffi>
 

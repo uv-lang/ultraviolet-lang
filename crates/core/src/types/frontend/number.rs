@@ -1,3 +1,4 @@
+use crate::traits::ffi::EnumPayloadPtr;
 use crate::types::frontend::CommonError;
 use crate::{
     traits::{
@@ -7,6 +8,7 @@ use crate::{
     },
     types::frontend::types::UVType,
 };
+use core::ffi::c_void;
 use libffi::middle::{Arg, Type};
 use num_traits::NumCast;
 
@@ -157,6 +159,16 @@ macro_rules! define_number {
             fn as_arg(&'_ self) -> Arg<'_> {
                 match self {
                     $(Self::$variant(v) => Arg::new(v),)*
+                }
+            }
+        }
+
+
+        impl EnumPayloadPtr for Number {
+            #[allow(unsafe_op_in_unsafe_fn)]
+            unsafe fn payload_ptr(ptr: *mut Self) -> *mut c_void {
+                match &mut *ptr {
+                    $(Self::$variant(v) => v as *const _ as *mut c_void,)*
                 }
             }
         }
