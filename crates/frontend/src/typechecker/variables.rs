@@ -7,7 +7,7 @@ use ultraviolet_core::{
         EnvRef,
         frontend::{
             Spanned,
-            ast::{VariableAccess, VariableAssign, VariableDefinition},
+            ast::{VariableAssign, VariableDefinition},
             typechecker::{ControlFlow, UVTypeVariable},
             types::{ReferenceType, UVType},
         },
@@ -97,12 +97,12 @@ impl Typechecker {
     /// Check variable is defined and get its type
     pub fn check_variable_access(
         &self,
-        va: &Spanned<VariableAccess>,
+        va: &Spanned<String>,
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let Some(var_rc) = env.borrow().find_var(&va.name) else {
+        let Some(var_rc) = env.borrow().find_var(&va.value) else {
             return Err(SpannedError::new(
-                format!("Variable `{}` not defined", va.name),
+                format!("Variable `{}` not defined", va.value),
                 va.get_span(),
             ));
         };
@@ -132,12 +132,12 @@ impl Typechecker {
     /// Check and validate reference creation
     pub fn check_reference_create(
         &self,
-        rc: &Spanned<VariableAccess>,
+        rc: &Spanned<String>,
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let Some(var_rc) = env.borrow().find_var(&rc.name) else {
+        let Some(var_rc) = env.borrow().find_var(&rc.value) else {
             return Err(SpannedError::new(
-                format!("Variable `{}` not defined", rc.name),
+                format!("Variable `{}` not defined", rc.value),
                 rc.get_span(),
             ));
         };
@@ -150,12 +150,12 @@ impl Typechecker {
     /// Check and validate dereference
     pub fn check_dereference(
         &self,
-        dr: &Spanned<VariableAccess>,
+        dr: &Spanned<String>,
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let Some(var_rc) = env.borrow().find_var(&dr.name) else {
+        let Some(var_rc) = env.borrow().find_var(&dr.value) else {
             return Err(SpannedError::new(
-                format!("Reference `{}` not defined", dr.name),
+                format!("Reference `{}` not defined", dr.value),
                 dr.get_span(),
             ));
         };

@@ -9,7 +9,7 @@ use ultraviolet_core::{
         backend::{ControlFlow, RTVariable, UVRTValue},
         frontend::{
             Spanned,
-            ast::{VariableAccess, VariableAssign, VariableDefinition},
+            ast::{VariableAssign, VariableDefinition},
         },
     },
 };
@@ -43,13 +43,13 @@ impl Evaluator {
     /// Access variable by value
     pub fn access_variable(
         &self,
-        var_acc: &Spanned<VariableAccess>,
+        var_acc: &Spanned<String>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        match env.borrow().find_var(var_acc.name.clone()) {
+        match env.borrow().find_var(var_acc.value.clone()) {
             Some(sym) => Ok(ControlFlow::Simple(sym.borrow().clone().value)),
             None => Err(SpannedError::new(
-                format!("Name `{}` not defined", var_acc.name),
+                format!("Name `{}` not defined", var_acc.value),
                 var_acc.get_span(),
             )),
         }
@@ -84,14 +84,14 @@ impl Evaluator {
     /// Creates a reference to a variable
     pub fn create_reference(
         &self,
-        reference_create: &Spanned<VariableAccess>,
+        reference_create: &Spanned<String>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
         let var = env
             .borrow()
-            .find_var(reference_create.name.clone())
+            .find_var(reference_create.value.clone())
             .ok_or(SpannedError::new(
-                format!("Name `{}` not defined", reference_create.name),
+                format!("Name `{}` not defined", reference_create.value),
                 reference_create.get_span(),
             ))?;
 
@@ -103,14 +103,14 @@ impl Evaluator {
     /// Dereferences a reference
     pub fn dereference(
         &self,
-        dereference: &Spanned<VariableAccess>,
+        dereference: &Spanned<String>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
         let var = env
             .borrow()
-            .find_var(dereference.name.clone())
+            .find_var(dereference.value.clone())
             .ok_or(SpannedError::new(
-                format!("Name `{}` not defined", dereference.name),
+                format!("Name `{}` not defined", dereference.value),
                 dereference.get_span(),
             ))?;
 

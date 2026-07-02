@@ -46,8 +46,6 @@ impl Evaluator {
             })?)
         };
 
-        // FIXME: Должен ли интерпретатор создавать итератор в родительском скоупе для
-        // снижения количества аллокаций для нового скоупа?
         env.borrow_mut().define_variable(
             for_node.iterator.value.clone(),
             RTVariable::new_from(start.clone(), false),

@@ -7,14 +7,11 @@ use std::{
 };
 
 use crate::{
-    traits::{
-        UnwrapWeakRefCell,
-        frontend::{
-            Positional,
-            ast::{
-                ArgumentsCount, GetBlockName, GetOperands, GetType, StringToUVCompareOp,
-                StringToUVLogicalOp, StringToUVMathOp,
-            },
+    traits::frontend::{
+        Positional,
+        ast::{
+            ArgumentsCount, GetBlockName, GetOperands, GetType, StringToUVCompareOp,
+            StringToUVLogicalOp, StringToUVMathOp,
         },
     },
     types::frontend::{
@@ -45,13 +42,14 @@ impl GetType for UVValue {
             UVValue::String(_) => UVType::String,
             UVValue::Boolean(_) => UVType::Boolean,
             UVValue::Null => UVType::Null,
-
             UVValue::Void => UVType::Void,
-            // FIXME: Remove unwrap
-            // FIXME: Should an internally referenced object be created here?
-            UVValue::Reference(r) => UVType::Reference(Box::new(ReferenceType::new(
-                r.unwrap_weak().borrow().get_type(),
-            ))),
+
+            UVValue::Reference(r) => {
+                let Some(val) = r.upgrade() else {
+                    return UVType::Null;
+                };
+                UVType::Reference(Box::new(ReferenceType::new(val.borrow().get_type())))
+            },
         }
     }
 }
@@ -64,8 +62,12 @@ impl std::fmt::Display for UVValue {
             UVValue::Boolean(b) => write!(f, "{b}"),
             UVValue::Null => write!(f, "null"),
             UVValue::Void => write!(f, "void"),
-            // FIXME: Remove unwrap
-            UVValue::Reference(r) => write!(f, "{}", r.unwrap_weak().borrow()),
+            UVValue::Reference(r) => {
+                let Some(val) = r.upgrade() else {
+                    return write!(f, "NULL");
+                };
+                write!(f, "{}", val.borrow())
+            },
         }
     }
 }
@@ -80,9 +82,11 @@ pub enum ASTBlockType {
 
     FunctionCall(Box<Spanned<FunctionCall>>),
     VariableAssignment(Box<Spanned<VariableAssign>>),
-    VariableAccess(Spanned<VariableAccess>),
-    ReferenceCreate(Spanned<VariableAccess>),
-    Dereference(Spanned<VariableAccess>),
+
+    VariableAccess(Spanned<String>),
+    ReferenceCreate(Spanned<String>),
+    Dereference(Spanned<String>),
+
     DereferenceAssignment(Box<Spanned<VariableAssign>>),
 
     ConditionalOp(Box<Spanned<ConditionalOperator>>),
@@ -105,7 +109,7 @@ pub enum ASTBlockType {
     FFIDefinition(Spanned<Box<FFIDefinition>>),
 
     ModuleImport(Spanned<ModuleImport>),
-    ModuleExport(Spanned<Vec<Spanned<VariableAccess>>>),
+    ModuleExport(Spanned<Vec<Spanned<String>>>),
 }
 
 impl<'a> GetBlockName<'a> for ASTBlockType {
@@ -115,9 +119,9 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
             ASTBlockType::ModuleBlock(_) => Cow::Borrowed("mod"),
             ASTBlockType::VariableDefinition(_) => Cow::Borrowed("let"),
             ASTBlockType::VariableAssignment(a) => Cow::Borrowed(&a.name),
-            ASTBlockType::VariableAccess(a) => Cow::Borrowed(&a.name),
-            ASTBlockType::ReferenceCreate(r) => Cow::Borrowed(&r.value.name),
-            ASTBlockType::Dereference(r) => Cow::Borrowed(&r.value.name),
+            ASTBlockType::VariableAccess(a) => Cow::Borrowed(a),
+            ASTBlockType::ReferenceCreate(r) => Cow::Borrowed(r),
+            ASTBlockType::Dereference(r) => Cow::Borrowed(r),
             ASTBlockType::DereferenceAssignment(deref_assign) => {
                 Cow::Borrowed(&deref_assign.value.name)
             },
@@ -189,14 +193,6 @@ pub struct VariableDefinition {
 pub struct VariableAssign {
     pub name: String,
     pub value: Spanned<ASTBlockType>,
-}
-
-// ------------------------ Variable Access ----------------------------------
-
-// FIXME: HA-HA Is this really a structure with one field?
-#[derive(Clone, Debug)]
-pub struct VariableAccess {
-    pub name: String,
 }
 
 // ------------------ Generic Operations structure ---------------------------

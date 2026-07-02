@@ -153,8 +153,6 @@ macro_rules! define_number {
              }
         }
 
-        // FIXME:! Number и данные внутри него могут не дожить до момента использования ссылки
-        // может вызвать ошибку сегментации
         impl AsArg for Number {
             fn as_arg(&'_ self) -> Arg<'_> {
                 match self {

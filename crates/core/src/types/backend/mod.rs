@@ -1,6 +1,6 @@
 use crate::{
     errors::SpannedError,
-    traits::{UnwrapWeakRefCell, backend::TypeOf, ffi::EnumPayloadPtr, frontend::ast::GetType},
+    traits::{backend::TypeOf, ffi::EnumPayloadPtr, frontend::ast::GetType},
     types::{
         EnvRef,
         backend::ffi::FFIFunction,
@@ -16,6 +16,7 @@ use std::{
     cell::RefCell,
     collections::HashMap,
     ffi::c_void,
+    mem::offset_of,
     rc::{Rc, Weak},
 };
 pub mod ffi;
@@ -75,8 +76,12 @@ impl std::fmt::Display for UVRTValue {
             UVRTValue::Function(_) => write!(f, "<function>"),
             UVRTValue::BuiltInFunction(_) => write!(f, "<built-in function>"),
             UVRTValue::FFIFunction(_) => write!(f, "<ffi function>"),
-            // FIXME: Remove unwrap
-            UVRTValue::Reference(r) => write!(f, "{}", r.upgrade().unwrap().borrow()),
+            UVRTValue::Reference(r) => {
+                let Some(val) = r.upgrade() else {
+                    return write!(f, "NULL");
+                };
+                write!(f, "{}", val.borrow())
+            },
         }
     }
 }
@@ -90,7 +95,7 @@ impl UVRTValue {
             UVValue::Boolean(b) => Self::Boolean(b),
             UVValue::Null => Self::Null,
             UVValue::Void => Self::Void,
-            UVValue::Reference(_) => unreachable!(), // FIXME: Is this correct?
+            UVValue::Reference(_) => unreachable!(),
         }
     }
 }
@@ -103,8 +108,17 @@ impl EnumPayloadPtr for UVRTValue {
             UVRTValue::String(v) => v as *const _ as *mut c_void,
             UVRTValue::Boolean(v) => v as *const _ as *mut c_void,
 
-            // FIXME: Is we allow nested references in ffi?
-            UVRTValue::Reference(_) => todo!(),
+            UVRTValue::Reference(v) => {
+                let Some(strong) = v.upgrade() else {
+                    // # Safety
+                    // This hand is unreachable due typecheck
+                    unreachable!()
+                };
+
+                let base = strong.as_ptr() as *const c_void;
+                let field = base.add(offset_of!(RTVariable, value));
+                UVRTValue::payload_ptr(field as *mut UVRTValue)
+            },
 
             _ => unreachable!(),
         }
@@ -169,8 +183,12 @@ impl TypeOf for UVRTValue {
             UVRTValue::Function(_) | UVRTValue::BuiltInFunction(_) | UVRTValue::FFIFunction(_) => {
                 String::from("function")
             },
-            // FIXME: Remove unwrap
-            UVRTValue::Reference(r) => r.unwrap_weak().borrow().value.typeof_str(),
+            UVRTValue::Reference(r) => {
+                let Some(val) = r.upgrade() else {
+                    return String::from("NULL");
+                };
+                val.borrow().value.typeof_str()
+            },
         }
     }
 }

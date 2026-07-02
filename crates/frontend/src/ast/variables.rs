@@ -5,7 +5,7 @@ use ultraviolet_core::{
     traits::frontend::{Positional, token_parser::UnwrapOptionError},
     types::frontend::{
         Spanned,
-        ast::{ASTBlockType, VariableAccess, VariableAssign, VariableDefinition},
+        ast::{ASTBlockType, VariableAssign, VariableDefinition},
         tokens::UVParseNode,
     },
 };
@@ -146,9 +146,7 @@ impl ASTParser {
         // If variable is accessed as reference - create reference block
         if node.extra_param.eq("ref") {
             return Ok(ASTBlockType::ReferenceCreate(Spanned::new(
-                VariableAccess {
-                    name: node.name.clone(),
-                },
+                node.name.clone(),
                 node.get_span(),
             )));
         }
@@ -156,17 +154,13 @@ impl ASTParser {
         // If reference is dereferenced - create dereference block
         if node.extra_param.eq("deref") {
             return Ok(ASTBlockType::Dereference(Spanned::new(
-                VariableAccess {
-                    name: node.name.clone(),
-                },
+                node.name.clone(),
                 node.get_span(),
             )));
         }
 
         Ok(ASTBlockType::VariableAccess(Spanned::new(
-            VariableAccess {
-                name: node.name.clone(),
-            },
+            node.name.clone(),
             node.get_span(),
         )))
     }

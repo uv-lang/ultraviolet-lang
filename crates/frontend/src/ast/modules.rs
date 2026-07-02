@@ -5,7 +5,7 @@ use ultraviolet_core::{
     traits::frontend::{Positional, token_parser::UnwrapOptionError},
     types::frontend::{
         Spanned,
-        ast::{ASTBlockType, ModuleImport, VariableAccess},
+        ast::{ASTBlockType, ModuleImport},
         tokens::UVParseNode,
     },
 };
@@ -109,14 +109,9 @@ impl ASTParser {
                     ));
                 }
 
-                Ok(Spanned::new(
-                    VariableAccess {
-                        name: t.name.clone(),
-                    },
-                    t.get_span(),
-                ))
+                Ok(Spanned::new(t.name.clone(), t.get_span()))
             })
-            .collect::<Result<Vec<Spanned<VariableAccess>>, SpannedError>>()?;
+            .collect::<Result<Vec<Spanned<String>>, SpannedError>>()?;
 
         if exports.is_empty() {
             return Err(SpannedError::new(

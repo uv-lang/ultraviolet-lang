@@ -84,8 +84,6 @@ macro_rules! gen_ffi_to_num {
                             let c_str = CStr::from_ptr(char_ptr);
                             let rust_str = c_str.to_string_lossy().into_owned();
                             UVRTValue::String(rust_str)
-
-                            // FIXME:? Should code free the string memory
                         },
                         UVType::Boolean => {
                             let val = *(self as *const u64 as *const u8);

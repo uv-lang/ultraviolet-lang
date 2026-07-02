@@ -5,7 +5,7 @@ use ultraviolet_core::{
         EnvRef,
         frontend::{
             Spanned,
-            ast::{ModuleImport, VariableAccess},
+            ast::ModuleImport,
             typechecker::{ControlFlow, UVTypeVariable},
             types::UVType,
         },
@@ -41,18 +41,18 @@ impl Typechecker {
     /// Parse module export block
     pub fn typecheck_export(
         &self,
-        e: &Vec<Spanned<VariableAccess>>,
+        e: &Vec<Spanned<String>>,
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
         for exp in e {
-            let r = env.borrow().find_var(&exp.name).ok_or(SpannedError::new(
-                format!("Variable `{}` for export not defined", exp.name),
+            let r = env.borrow().find_var(&exp.value).ok_or(SpannedError::new(
+                format!("Variable `{}` for export not defined", exp.value),
                 exp.get_span(),
             ))?;
 
             self.exports
                 .borrow_mut()
-                .insert(format!("{}.{}", self.current_name, exp.name.clone()), r);
+                .insert(format!("{}.{}", self.current_name, exp.value.clone()), r);
         }
 
         Ok(ControlFlow::Simple(UVType::Void))
