@@ -1,0 +1,46 @@
+<main>
+    <struct>
+        <!-- First char is uppercase!! -->
+        <name>Structure</name>
+
+        <!-- Declaration of structure fields -->
+        <field>
+
+            <!--
+                good: 
+                <public />
+                <readonly />
+            --> 
+            <name>field_1</name>
+            <type>
+                <i64 />
+            </type>
+        </field>
+
+        <!-- Structure methods have syntax like regular functions -->
+        <method>
+            <name>sum</name>
+
+            <arg>
+                <name>argument_1</name>
+                <type>
+                    <i8 />
+                </type>
+            </arg>
+            
+            <returns>
+                <i8 />
+            </returns>
+            
+            <body>
+                <return>
+                    <sum>
+                        <self.field_1 />
+                        <argument_2 />
+                    </sum>
+                </return>
+            </body>
+        </method>
+    </struct>
+
+</main>

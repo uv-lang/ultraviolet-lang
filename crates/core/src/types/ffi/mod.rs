@@ -1,8 +1,5 @@
 use libffi::middle::{Arg, Type};
-use std::{
-    ffi::{CString, c_void},
-    ptr,
-};
+use std::ffi::{CString, c_void};
 
 use core::mem::offset_of;
 
@@ -33,7 +30,6 @@ pub enum FFIData<'a> {
     Arg(Arg<'a>),
     String(CString),
     Boolean(u8),
-    Null,
     Reference(*const c_void),
 }
 
@@ -46,7 +42,6 @@ impl ToFFIData for UVRTValue {
                     .map_err(|_| CommonError::new("Found zero byte in string"))?,
             ),
             UVRTValue::Boolean(b) => FFIData::Boolean(if *b { 1 } else { 0 }),
-            UVRTValue::Null => FFIData::Null,
             UVRTValue::Reference(data) => unsafe {
                 // create an owned pointer boxed inside the enum so its address lives
                 // for the lifetime of the FFIData value
@@ -70,11 +65,6 @@ impl<'a> AsArg for FFIData<'a> {
             FFIData::String(c_str) => Arg::new(c_str),
             FFIData::Boolean(b) => Arg::new(b),
             FFIData::Reference(ptr) => Arg::new(ptr),
-
-            // TODO: A null pointer must not be passed as a value
-            // In most FFIs, a null pointer is used to pass a value back
-            // to the calling code. However, at the time of implementation of FFI in Ultraviolet there are no pointers
-            FFIData::Null => Arg::new(&(ptr::null::<c_void>())),
         }
     }
 }
