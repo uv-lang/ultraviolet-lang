@@ -1,4 +1,7 @@
+use std::rc::Rc;
+
 use crate::typechecker::Typechecker;
+use rand::{Rng, distr::Alphanumeric};
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::{Positional, ast::IsAssignable},
@@ -8,10 +11,19 @@ use ultraviolet_core::{
             Span, Spanned,
             ast::{ASTBlockType, FunctionCall, FunctionDefinition},
             typechecker::{ControlFlow, UVTypeVariable},
-            types::{UVBuiltinFunctionArguments, UVFunctionType, UVType},
+            types::{ReferenceType, UVBuiltinFunctionArguments, UVFunctionType, UVType},
         },
     },
 };
+
+/// Generates random str
+fn random_name(len: usize) -> String {
+    rand::rng()
+        .sample_iter(&Alphanumeric)
+        .take(len)
+        .map(char::from)
+        .collect()
+}
 
 enum TypecheckArgsResult {
     Types(Vec<UVType>),
@@ -41,12 +53,24 @@ impl Typechecker {
                 },
                 _ => {},
             }
+            let mut arg_t = arg.arg_type.value.clone();
+            if let UVType::Reference(rr) = &arg_t {
+                let v = inner_env.borrow_mut().define_variable(
+                    random_name(5),
+                    UVTypeVariable::new_from(rr.t.clone(), false),
+                );
+
+                arg_t = UVType::Reference(Box::new(ReferenceType::new_referenced(
+                    rr.t.clone(),
+                    Rc::downgrade(&v),
+                )));
+            }
 
             inner_env.borrow_mut().define_variable(
                 &arg.name.value,
-                UVTypeVariable::new_from(arg.arg_type.value.clone(), true),
+                UVTypeVariable::new_from(arg_t.clone(), false),
             );
-            args.push(arg.arg_type.value.clone());
+            args.push(arg_t);
         }
 
         let exp = fd

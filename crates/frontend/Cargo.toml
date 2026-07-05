@@ -7,4 +7,5 @@ repository.workspace = true
 
 [dependencies]
 regex = "1.12.3"
+rand = "0.9"
 ultraviolet-core = { path = "../core" }

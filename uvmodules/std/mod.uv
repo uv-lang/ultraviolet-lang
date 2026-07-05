@@ -1,0 +1,22 @@
+<mod>
+    <fn>
+        <name>inc</name>
+        <arg>
+            <name>x</name>
+            <type><i8 ref /></type>
+        </arg>
+
+        <body>
+            <x deref>
+                <sum>
+                    <x deref />
+                    <i8>1</i8>
+                </sum>
+            </x>
+        </body>
+    </fn>
+
+    <export>
+        <inc />
+    </export>
+</mod>

@@ -1,25 +1,18 @@
 <main>
     <import>
-        <path>dlls</path>
+        <path>std</path>
     </import>
 
     <let>
         <name>result</name>
-        <type>
-            <f64 />
-        </type>
-
         <value>
-            <f64>67</f64>
+            <i8>67</i8>
         </value>
     </let>
 
-    <dlls.calc_power$>
-        <f64>5</f64>
-        <i32>3</i32>
+    <std.inc$>
         <result ref />
-    </dlls.calc_power$>
-
+    </std.inc$>
 
     <println$>
         <result />

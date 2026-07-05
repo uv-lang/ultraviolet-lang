@@ -5,7 +5,14 @@ pub mod tokens;
 pub mod typechecker;
 pub mod types;
 
-use std::{collections::HashMap, error::Error, fs, ops::Deref, path::Path, rc::Rc};
+use std::{
+    collections::HashMap,
+    error::Error,
+    fs,
+    ops::{Deref, DerefMut},
+    path::Path,
+    rc::Rc,
+};
 
 use crate::{
     errors::CommonError, traits::frontend::Positional, types::frontend::ast::ASTBlockType,
@@ -153,6 +160,12 @@ impl<T> Deref for Spanned<T> {
 
     fn deref(&self) -> &Self::Target {
         &self.value
+    }
+}
+
+impl<T> DerefMut for Spanned<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.value
     }
 }
 

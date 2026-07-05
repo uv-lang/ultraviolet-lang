@@ -72,9 +72,10 @@ impl<T> Environment<T> {
     }
 
     /// Define variable in current scope
-    pub fn define_variable(&mut self, name: impl Into<String>, value: T) {
-        self.symbols
-            .insert(name.into(), Rc::new(RefCell::new(value)));
+    pub fn define_variable(&mut self, name: impl Into<String>, value: T) -> Rc<RefCell<T>> {
+        let rc = Rc::new(RefCell::new(value));
+        self.symbols.insert(name.into(), rc.clone());
+        rc
     }
 
     /// Remove symbol from CURRENT scope

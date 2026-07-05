@@ -222,8 +222,7 @@ impl Typechecker {
             ));
         };
 
-        let mut borrowed_ref = strong_ref.borrow_mut();
-        if borrowed_ref.constant {
+        if strong_ref.borrow_mut().constant {
             return Err(SpannedError::new(
                 "Attempt to assign to dereferenced constant value",
                 va.get_span(),
@@ -234,6 +233,8 @@ impl Typechecker {
             ControlFlow::Simple(uvtype) => uvtype,
             cf => return Ok(cf),
         };
+
+        let mut borrowed_ref = strong_ref.borrow_mut();
 
         if !borrowed_ref.value.is_assignable_from(&t) {
             return Err(SpannedError::new(
