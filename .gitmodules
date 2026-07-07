@@ -1,0 +1,3 @@
+[submodule "libs/uvstdlib"]
+	path = libs/uvstdlib
+	url = https://github.com/Andcool-Systems/uvstdlib.git
