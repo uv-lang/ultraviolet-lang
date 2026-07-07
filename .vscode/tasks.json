@@ -50,6 +50,27 @@
             }
         },
         {
+            "label": "Build libs",
+            "detail": "Build Ultraviolet libs",
+            "type": "shell",
+            "command": "sh ./build_submodules.sh release",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "runOptions": {
+                "reevaluateOnRerun": true
+            },
+            "options": {
+                "statusbar": {
+                    "label": "$(build) Build libs"
+                }
+            }
+        },
+        {
             "label": "Test",
             "detail": "Test Rust application",
             "type": "shell",

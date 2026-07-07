@@ -19,6 +19,7 @@ pub struct SymbolsUseInterceptor {
 pub struct Environment<T> {
     pub symbols: HashMap<String, Rc<RefCell<T>>>,
     pub parent: Option<EnvRef<T>>,
+    pub neighbor_envs: HashMap<String, EnvRef<T>>,
 
     /// Used for intercept inner names, that been accessed
     pub interceptor: Option<Rc<SymbolsUseInterceptor>>,
@@ -30,6 +31,7 @@ impl<T> Environment<T> {
         Rc::new(RefCell::new(Self {
             symbols: HashMap::new(),
             parent: None,
+            neighbor_envs: HashMap::new(),
 
             interceptor: None,
         }))
@@ -40,6 +42,7 @@ impl<T> Environment<T> {
         Rc::new(RefCell::new(Self {
             symbols: sym,
             parent: None,
+            neighbor_envs: HashMap::new(),
 
             interceptor: None,
         }))
@@ -50,6 +53,7 @@ impl<T> Environment<T> {
         Rc::new(RefCell::new(Self {
             symbols: HashMap::new(),
             parent: Some(parent.clone()),
+            neighbor_envs: HashMap::new(),
 
             interceptor: parent.borrow().interceptor.clone(),
         }))
