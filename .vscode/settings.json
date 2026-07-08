@@ -6,6 +6,7 @@
         "uvlogical",
         "uvmath",
         "UVRT",
+        "uvstdlib",
         "uvtype",
         "uvvalue"
     ]

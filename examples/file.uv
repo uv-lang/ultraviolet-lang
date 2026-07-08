@@ -1,20 +1,11 @@
 <main>
     <import>
-        <path>std</path>
+        <path>uvstdlib</path>
     </import>
 
-    <let>
-        <name>result</name>
-        <value>
-            <i8>67</i8>
-        </value>
-    </let>
-
-    <std.inc$>
-        <result ref />
-    </std.inc$>
-
     <println$>
-        <result />
+        <uvstdlib.sin$>
+            <f64>1</f64>
+        </uvstdlib.sin$>
     </println$>
 </main>
