@@ -5,10 +5,13 @@
 * derived from the Rust standard library
 */
 use std::f64::consts::{E, PI};
-use ultraviolet_core::types::{
-    EnvRef,
-    backend::{RTVariable, UVRTValue},
-    frontend::number::Number,
+use ultraviolet_core::{
+    traits::EnvironmentTrait,
+    types::{
+        EnvRef,
+        backend::{RTVariable, UVRTValue},
+        frontend::number::Number,
+    },
 };
 
 /// Initialize built-in constants

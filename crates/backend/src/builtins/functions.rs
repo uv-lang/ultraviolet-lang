@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::{backend::TypeOf, frontend::ast::GetType},
+    traits::{EnvironmentTrait, backend::TypeOf, frontend::ast::GetType},
     types::{
         EnvRef,
         backend::{BuiltInFunction, ControlFlow, RTVariable, UVRTValue},

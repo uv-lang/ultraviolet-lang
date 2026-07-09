@@ -1,9 +1,12 @@
-use crate::types::{
-    EnvRef,
-    frontend::{
-        number::UVNumberType,
-        typechecker::UVTypeVariable,
-        types::{ReferenceType, UVBuiltinFunctionArguments, UVBuiltinFunctionType, UVType},
+use crate::{
+    traits::EnvironmentTrait,
+    types::{
+        EnvRef,
+        frontend::{
+            number::UVNumberType,
+            typechecker::UVTypeVariable,
+            types::{ReferenceType, UVBuiltinFunctionArguments, UVBuiltinFunctionType, UVType},
+        },
     },
 };
 

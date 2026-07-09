@@ -1,6 +1,7 @@
 use std::rc::Rc;
 use std::{cell::RefCell, collections::HashMap};
 
+use ultraviolet_core::traits::EnvironmentTrait;
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::Positional,

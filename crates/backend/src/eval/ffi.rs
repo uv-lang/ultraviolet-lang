@@ -13,6 +13,7 @@ use std::{
 use ultraviolet_core::{
     errors::{CommonError, SpannedError},
     traits::{
+        EnvironmentTrait,
         ffi::{AsArg, FromFFI, ToFFIData, ToTypeFFI},
         frontend::{Positional, token_parser::UnwrapOptionError},
     },

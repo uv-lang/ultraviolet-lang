@@ -1,7 +1,10 @@
 use crate::Evaluator;
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::{Positional, ast::GetType, token_parser::UnwrapOptionError},
+    traits::{
+        EnvironmentTrait,
+        frontend::{Positional, ast::GetType, token_parser::UnwrapOptionError},
+    },
     types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTVariable, UVRTValue},

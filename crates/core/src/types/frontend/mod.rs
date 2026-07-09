@@ -32,15 +32,25 @@ pub struct SourceFile {
 }
 
 impl SourceFile {
-    /**
-    Load source file from Path
+    /// Load source file from Path
+    ///
+    /// Returns `Err` when provided file not found or cannot be read
+    pub fn load(path: &Path) -> Result<Self, CommonError> {
+        let code: String = fs::read_to_string(path).map_err(|e| {
+            CommonError::new(format!(
+                "Cannot open source file `{}`: {}",
+                path.to_string_lossy(),
+                e
+            ))
+        })?;
+        Ok(Self::from_str(code, path.into()))
+    }
 
-    Returns `Err` when provided file not found or cannot be read
-    */
-    pub fn load(path: &Path) -> Result<Self, Box<dyn Error>> {
-        let code: String = fs::read_to_string(path)?;
-        Ok(Self {
-            path: path.into(),
+    /// Create source file from raw str
+    pub fn from_str(str: impl Into<String>, path: Box<Path>) -> Self {
+        let code: String = str.into();
+        Self {
+            path,
             code: code.clone(),
             char_to_byte: code.char_indices().map(|(i, _)| i).collect(),
             line_starts: std::iter::once(0)
@@ -51,7 +61,7 @@ impl SourceFile {
                         .map(|(i, _)| i),
                 )
                 .collect(),
-        })
+        }
     }
 
     /// Get line and column of provided Span

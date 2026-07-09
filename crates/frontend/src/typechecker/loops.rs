@@ -1,6 +1,6 @@
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::Positional,
+    traits::{EnvironmentTrait, frontend::Positional},
     types::{
         EnvRef, Environment,
         frontend::{

@@ -333,16 +333,21 @@ impl Lexer {
 
 #[cfg(test)]
 mod tests {
-    /*
+    use std::{path::Path, rc::Rc};
     use ultraviolet_core::types::frontend::{
-        Span,
+        SourceFile, Span,
         lexer::{UVLexerTokens, UVToken},
     };
 
     use crate::lexer::Lexer;
 
+    fn get_source_file(code: &str) -> SourceFile {
+        SourceFile::from_str(code, Box::<Path>::from(Path::new("")))
+    }
+
     fn get_tokens(code: &str) -> Vec<UVLexerTokens> {
-        Lexer::new(code.to_owned())
+        let sf = get_source_file(code);
+        Lexer::new(Rc::new(sf))
             .parse()
             .into_iter()
             .map(|t| t.token)
@@ -475,75 +480,76 @@ mod tests {
 
     #[test]
     fn test_indexes() {
+        let sf: Rc<SourceFile> = Rc::new(get_source_file("<main>test</main>"));
         assert_eq!(
-            Lexer::new("<main>test</main>".to_owned()).parse(),
+            Lexer::new(sf.clone()).parse(),
             [
                 UVToken {
                     token: UVLexerTokens::OpeningAngleBracket,
-                    span: Span::new(0, 1)
+                    span: Span::new(0, 1, sf.clone())
                 },
                 UVToken {
                     token: UVLexerTokens::Literal("main".to_owned()),
-                    span: Span::new(1, 5)
+                    span: Span::new(1, 5, sf.clone())
                 },
                 UVToken {
                     token: UVLexerTokens::ClosingAngleBracket,
-                    span: Span::new(5, 6)
+                    span: Span::new(5, 6, sf.clone())
                 },
                 UVToken {
                     token: UVLexerTokens::Literal("test".to_owned()),
-                    span: Span::new(6, 10)
+                    span: Span::new(6, 10, sf.clone())
                 },
                 UVToken {
                     token: UVLexerTokens::OpeningAngleBracketSlash,
-                    span: Span::new(10, 12)
+                    span: Span::new(10, 12, sf.clone())
                 },
                 UVToken {
                     token: UVLexerTokens::Literal("main".to_owned()),
-                    span: Span::new(12, 16)
+                    span: Span::new(12, 16, sf.clone())
                 },
                 UVToken {
                     token: UVLexerTokens::ClosingAngleBracket,
-                    span: Span::new(16, 17)
+                    span: Span::new(16, 17, sf.clone())
                 },
             ]
         )
     }
     #[test]
     fn test_labeled_indexes() {
+        let sf: Rc<SourceFile> = Rc::new(get_source_file("<str-123>test</str-123>"));
         assert_eq!(
-            Lexer::new("<str-123>test</str-123>".to_owned()).parse(),
+            Lexer::new(sf.clone()).parse(),
             [
                 UVToken {
                     token: UVLexerTokens::OpeningAngleBracket,
-                    span: Span::new(0, 1)
+                    span: Span::new(0, 1, sf.clone())
                 },
                 UVToken {
                     token: UVLexerTokens::Literal("str".to_string()),
-                    span: Span::new(1, 8)
+                    span: Span::new(1, 8, sf.clone())
                 },
                 UVToken {
                     token: UVLexerTokens::ClosingAngleBracket,
-                    span: Span::new(8, 9)
+                    span: Span::new(8, 9, sf.clone())
                 },
                 UVToken {
                     token: UVLexerTokens::RawString("test".to_string()),
-                    span: Span::new(9, 13)
+                    span: Span::new(9, 13, sf.clone())
                 },
                 UVToken {
                     token: UVLexerTokens::OpeningAngleBracketSlash,
-                    span: Span::new(13, 15)
+                    span: Span::new(13, 15, sf.clone())
                 },
                 UVToken {
                     token: UVLexerTokens::Literal("str".to_string()),
-                    span: Span::new(15, 22)
+                    span: Span::new(15, 22, sf.clone())
                 },
                 UVToken {
                     token: UVLexerTokens::ClosingAngleBracket,
-                    span: Span::new(22, 23)
+                    span: Span::new(22, 23, sf.clone())
                 },
             ]
         )
     }
-    */
 }

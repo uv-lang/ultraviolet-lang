@@ -1,7 +1,7 @@
 use std::ops::Deref;
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::{ffi::ToTypeFFI, frontend::Positional},
+    traits::{EnvironmentTrait, ffi::ToTypeFFI, frontend::Positional},
     types::{
         EnvRef,
         frontend::{

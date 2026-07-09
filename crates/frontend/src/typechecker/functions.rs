@@ -4,7 +4,10 @@ use crate::typechecker::Typechecker;
 use rand::{Rng, distr::Alphanumeric};
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::{Positional, ast::IsAssignable},
+    traits::{
+        EnvironmentTrait,
+        frontend::{Positional, ast::IsAssignable},
+    },
     types::{
         EnvRef, Environment,
         frontend::{

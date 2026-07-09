@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::Evaluator;
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::Positional,
+    traits::{EnvironmentTrait, frontend::Positional},
     types::{
         EnvRef,
         backend::{ControlFlow, RTVariable, UVRTValue},

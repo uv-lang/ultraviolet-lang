@@ -2,7 +2,10 @@ use std::rc::Rc;
 
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::{Positional, ast::IsAssignable},
+    traits::{
+        EnvironmentTrait,
+        frontend::{Positional, ast::IsAssignable},
+    },
     types::{
         EnvRef,
         frontend::{

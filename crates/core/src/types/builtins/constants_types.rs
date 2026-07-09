@@ -1,6 +1,9 @@
-use crate::types::{
-    EnvRef,
-    frontend::{number::UVNumberType, typechecker::UVTypeVariable, types::UVType},
+use crate::{
+    traits::EnvironmentTrait,
+    types::{
+        EnvRef,
+        frontend::{number::UVNumberType, typechecker::UVTypeVariable, types::UVType},
+    },
 };
 
 pub fn init_builtin_types_constants(env: EnvRef<UVTypeVariable>) {

@@ -4,6 +4,8 @@ use std::{
     rc::Rc,
 };
 
+use crate::traits::EnvironmentTrait;
+
 pub mod backend;
 pub mod builtins;
 pub mod ffi;
@@ -59,8 +61,21 @@ impl<T> Environment<T> {
         }))
     }
 
-    /// Find symbol by name
-    pub fn find_var(&self, name: impl Into<String>) -> Option<Rc<RefCell<T>>> {
+    /// Enable interception of accessed symbols
+    pub fn enable_interception(&mut self) {
+        self.interceptor = Some(Rc::new(SymbolsUseInterceptor::default()))
+    }
+
+    /// Intercept symbol usage
+    pub fn intercept(&self, name: String) {
+        if let Some(i) = &self.interceptor {
+            i.intercepted_names.borrow_mut().insert(name);
+        }
+    }
+}
+
+impl<T> EnvironmentTrait<T> for Environment<T> {
+    fn find_var(&self, name: impl Into<String>) -> Option<Rc<RefCell<T>>> {
         let n = name.into();
         if let Some(sym) = self.symbols.get(&n) {
             self.intercept(n);
@@ -75,27 +90,13 @@ impl<T> Environment<T> {
         None
     }
 
-    /// Define variable in current scope
-    pub fn define_variable(&mut self, name: impl Into<String>, value: T) -> Rc<RefCell<T>> {
+    fn define_variable(&mut self, name: impl Into<String>, value: T) -> Rc<RefCell<T>> {
         let rc = Rc::new(RefCell::new(value));
         self.symbols.insert(name.into(), rc.clone());
         rc
     }
 
-    /// Remove symbol from CURRENT scope
-    pub fn remove_symbol(&mut self, name: impl Into<String>) -> bool {
+    fn remove_symbol(&mut self, name: impl Into<String>) -> bool {
         self.symbols.remove(&name.into()).is_some()
-    }
-
-    /// Enable interception of accessed symbols
-    pub fn enable_interception(&mut self) {
-        self.interceptor = Some(Rc::new(SymbolsUseInterceptor::default()))
-    }
-
-    /// Intercept symbol usage
-    pub fn intercept(&self, name: String) {
-        if let Some(i) = &self.interceptor {
-            i.intercepted_names.borrow_mut().insert(name);
-        }
     }
 }
