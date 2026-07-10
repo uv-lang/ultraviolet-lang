@@ -74,7 +74,7 @@
             "label": "Test",
             "detail": "Test Rust application",
             "type": "shell",
-            "command": "cargo test --workspace",
+            "command": "cargo test --workspace; cargo doc --workspace --all-features --no-deps --locked",
             "group": {
                 "kind": "test",
                 "isDefault": false

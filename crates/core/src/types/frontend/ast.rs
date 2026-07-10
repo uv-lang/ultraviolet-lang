@@ -85,10 +85,10 @@ pub enum ASTBlockType {
 
     FunctionCall(Box<Spanned<FunctionCall>>),
 
-    /// <var deref/... >...</var>
+    /// `<var deref/... >...</var>`
     VariableAssignment(Box<Spanned<VariableAssign>>),
 
-    /// <var ref/deref/... />
+    /// `<var ref/deref/... />`
     VariableAccess(Spanned<VariableAccess>),
 
     ConditionalOp(Box<Spanned<ConditionalOperator>>),
