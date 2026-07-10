@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{ops::Deref, rc::Rc};
 
 use ultraviolet_core::{
     errors::SpannedError,
@@ -32,12 +32,15 @@ impl TokenParser {
     /// Parse and get Parse Tree
     pub fn parse(&mut self) -> Result<UVParseNode, SpannedError> {
         let mut parse_state = UVParseState::Unknown;
-        let mut tag = UVParseNode {
-            name: String::new(),
-            children: Vec::new(),
-            self_closing: false,
-            extra_param: String::new(),
-            span: Span::new(0, 0, self.source_file.clone()),
+        let mut tag = {
+            let span = Span::new(0, 0, self.source_file.clone());
+            UVParseNode {
+                name: Spanned::new(String::default(), span.clone()),
+                children: Vec::new(),
+                self_closing: false,
+                extra_param: Spanned::new(String::default(), span.clone()),
+                span,
+            }
         };
 
         let mut closing_tag_name = String::new();
@@ -61,7 +64,7 @@ impl TokenParser {
                         parse_state = UVParseState::TagBody
                     },
                     UVParseState::ClosingAngleBracketClosingTag => {
-                        if tag.name.ne(&closing_tag_name) {
+                        if tag.name.value.ne(&closing_tag_name) {
                             return Err(SpannedError::new(
                                 format!(
                                     "Unexpected closing tag `{}`. Expected `{}`",
@@ -100,12 +103,12 @@ impl TokenParser {
                 },
                 UVLexerTokens::Literal(lit) | UVLexerTokens::RawString(lit) => match parse_state {
                     UVParseState::TagName => {
-                        tag.name = lit.to_owned();
+                        tag.name = Spanned::new(lit.to_owned(), token.get_span());
                         parse_state = UVParseState::ExtraParam;
                     },
                     UVParseState::ExtraParam => {
                         parse_state = UVParseState::ClosingAngleBracketOpeningTag;
-                        tag.extra_param = lit.to_owned();
+                        tag.extra_param = Spanned::new(lit.to_owned(), token.get_span());
                     },
 
                     UVParseState::TagBody => {
@@ -127,7 +130,7 @@ impl TokenParser {
                 },
                 UVLexerTokens::Unknown(ch) => {
                     if matches!(parse_state, UVParseState::TagBody)
-                        && tag.name.eq("path")
+                        && tag.name.deref().eq("path")
                         && ch.eq(&'/')
                     {
                         tag.children.push(UVParseBody::String(Spanned::new(

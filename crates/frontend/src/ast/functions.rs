@@ -137,19 +137,9 @@ impl ASTParser {
             ));
         }
 
-        if !is_valid_identifier(&node.extra_param) {
-            return Err(SpannedError::new(
-                format!(
-                    "{} is not a valid identifier for function call",
-                    node.extra_param
-                ),
-                node.get_span(),
-            ));
-        }
-
         Ok(ASTBlockType::FunctionCall(Box::new(Spanned::new(
             FunctionCall {
-                name: node.extra_param.clone(),
+                name: Self::split_symbol_name(node.extra_param.clone())?,
                 args: self.parse_function_call_arguments(node.get_all_tags())?,
             },
             node.get_span(),

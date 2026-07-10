@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{ops::Deref, slice};
 use ultraviolet_core::{
     errors::SpannedError,
     traits::{EnvironmentTrait, ffi::ToTypeFFI, frontend::Positional},
@@ -21,7 +21,11 @@ impl Typechecker {
         ffi_d: &Spanned<Box<FFIDefinition>>,
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        if env.borrow().find_var(ffi_d.name.deref()).is_some() {
+        if env
+            .borrow()
+            .find_var(slice::from_ref(&ffi_d.name.clone()))
+            .is_some()
+        {
             return Err(SpannedError::new(
                 format!("`{}` already defined", *ffi_d.name),
                 ffi_d.get_span(),

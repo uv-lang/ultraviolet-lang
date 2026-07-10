@@ -4,7 +4,10 @@ use ultraviolet_core::{
     types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTVariable, UVRTValue},
-        frontend::{Spanned, ast::ASTBlockType},
+        frontend::{
+            Spanned,
+            ast::{ASTBlockType, AccessType, AssignType},
+        },
     },
 };
 mod compare;
@@ -32,14 +35,15 @@ impl Evaluator {
 
             // Variables things
             ASTBlockType::VariableDefinition(def) => self.define_variable(def, env)?,
-            ASTBlockType::VariableAssignment(var_assign) => {
-                self.assign_variable(var_assign, env)?
+            ASTBlockType::VariableAssignment(var_assign) => match var_assign.assign_type {
+                AssignType::Simple => self.assign_variable(var_assign, env)?,
+                AssignType::Dereference => self.assign_reference(var_assign, env)?,
             },
-            ASTBlockType::VariableAccess(var_acc) => self.access_variable(var_acc, env)?,
-            ASTBlockType::ReferenceCreate(rc) => self.create_reference(rc, env)?,
-            ASTBlockType::Dereference(deref) => self.dereference(deref, env)?,
-            ASTBlockType::DereferenceAssignment(deref_assign) => {
-                self.assign_reference(deref_assign, env)?
+
+            ASTBlockType::VariableAccess(var_acc) => match var_acc.access_type {
+                AccessType::Simple => self.access_variable(var_acc, env)?,
+                AccessType::Dereference => self.dereference(var_acc, env)?,
+                AccessType::Reference => self.create_reference(var_acc, env)?,
             },
 
             // Functions things

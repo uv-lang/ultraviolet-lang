@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::rc::Rc;
 
 use ultraviolet_core::{
     errors::SpannedError,
@@ -8,7 +8,7 @@ use ultraviolet_core::{
         builtins::DefineBuiltinsType,
         frontend::{
             SourceFileParsed, Spanned,
-            ast::ASTBlockType,
+            ast::{ASTBlockType, AccessType, AssignType},
             typechecker::{ControlFlow, UVTypeVariable},
             types::UVType,
         },
@@ -25,7 +25,7 @@ mod variables;
 pub struct Typechecker {
     pub source: Rc<SourceFileParsed>,
     pub current_name: String,
-    pub exports: RefCell<HashMap<String, Rc<RefCell<UVTypeVariable>>>>,
+    pub exports: EnvRef<UVTypeVariable>,
 }
 
 impl Typechecker {
@@ -33,7 +33,7 @@ impl Typechecker {
         Self {
             source: sf,
             current_name: name.into(),
-            exports: RefCell::default(),
+            exports: Environment::new(),
         }
     }
 
@@ -57,12 +57,15 @@ impl Typechecker {
             },
 
             ASTBlockType::VariableDefinition(vd) => self.check_variable_definition(vd, env)?,
-            ASTBlockType::VariableAssignment(va) => self.check_variable_assign(va, env)?,
-            ASTBlockType::VariableAccess(va) => self.check_variable_access(va, env)?,
-            ASTBlockType::ReferenceCreate(rc) => self.check_reference_create(rc, env)?,
-            ASTBlockType::Dereference(deref) => self.check_dereference(deref, env)?,
-            ASTBlockType::DereferenceAssignment(deref_assign) => {
-                self.check_dereference_assign(deref_assign, env)?
+            ASTBlockType::VariableAssignment(va) => match va.assign_type {
+                AssignType::Simple => self.check_variable_assign(va, env)?,
+                AssignType::Dereference => self.check_dereference_assign(va, env)?,
+            },
+
+            ASTBlockType::VariableAccess(va) => match va.access_type {
+                AccessType::Simple => self.check_variable_access(va, env)?,
+                AccessType::Dereference => self.check_dereference(va, env)?,
+                AccessType::Reference => self.check_reference_create(va, env)?,
             },
 
             ASTBlockType::FunctionDefinition(fd) => self.check_function_definition(fd, env)?,

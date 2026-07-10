@@ -33,7 +33,7 @@ pub struct UVBuiltinFunctionType {
 
 // ------------------------------------------------------------------------
 
-/// Ultraviolet primitive types
+/// Ultraviolet types
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UVType {
     Number(UVNumberType),
@@ -50,6 +50,9 @@ pub enum UVType {
     Reference(Box<ReferenceType>),
 
     Optional(Box<UVType>),
+
+    /// A type that always produces an inequality when tested against another type
+    Unassignable,
 }
 
 #[derive(Debug, Clone)]
@@ -103,6 +106,7 @@ impl std::fmt::Display for UVType {
                 write!(f, "<optional>{}</optional>", t.to_string().green().bold())
             },
             UVType::Reference(r) => write!(f, "reference to {}", r.t),
+            UVType::Unassignable => write!(f, "unassignable"),
         }
     }
 }
@@ -133,6 +137,10 @@ impl UVType {
 
 impl IsAssignable for UVType {
     fn is_assignable_from(&self, other: &UVType) -> bool {
+        if matches!(self, UVType::Unassignable) || matches!(other, UVType::Unassignable) {
+            return false;
+        }
+
         if self == other {
             return true;
         }

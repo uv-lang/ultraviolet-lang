@@ -8,7 +8,7 @@ use std::f64::consts::{E, PI};
 use ultraviolet_core::{
     traits::EnvironmentTrait,
     types::{
-        EnvRef,
+        EnvRef, Environment,
         backend::{RTVariable, UVRTValue},
         frontend::number::Number,
     },
@@ -58,18 +58,24 @@ pub fn init_builtin_constants(env: EnvRef<RTVariable>) {
         ),
     );
 
-    borrowed_env.define_variable(
-        "dll.prefix",
-        RTVariable::new_from(
-            UVRTValue::String(std::env::consts::DLL_PREFIX.to_string()),
-            true,
-        ),
-    );
-    borrowed_env.define_variable(
-        "dll.suffix",
-        RTVariable::new_from(
-            UVRTValue::String(std::env::consts::DLL_SUFFIX.to_string()),
-            true,
-        ),
-    );
+    let dll_env = Environment::<RTVariable>::new();
+    {
+        let mut borrowed_dll_env = dll_env.borrow_mut();
+        borrowed_dll_env.define_variable(
+            "prefix",
+            RTVariable::new_from(
+                UVRTValue::String(std::env::consts::DLL_PREFIX.to_string()),
+                true,
+            ),
+        );
+        borrowed_dll_env.define_variable(
+            "suffix",
+            RTVariable::new_from(
+                UVRTValue::String(std::env::consts::DLL_SUFFIX.to_string()),
+                true,
+            ),
+        );
+    }
+
+    borrowed_env.define_variable("dll", RTVariable::new_environmental(dll_env));
 }

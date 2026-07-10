@@ -1,15 +1,18 @@
-use std::rc::Rc;
+use std::{rc::Rc, slice};
 
 use crate::Evaluator;
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::{EnvironmentTrait, frontend::Positional},
+    traits::{
+        EnvironmentTrait,
+        frontend::{Positional, UVDisplay},
+    },
     types::{
         EnvRef,
         backend::{ControlFlow, RTVariable, UVRTValue},
         frontend::{
             Spanned,
-            ast::{VariableAssign, VariableDefinition},
+            ast::{VariableAccess, VariableAssign, VariableDefinition},
         },
     },
 };
@@ -21,7 +24,11 @@ impl Evaluator {
         var_def: &Spanned<VariableDefinition>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        if env.borrow().find_var(var_def.name.value.clone()).is_some() {
+        if env
+            .borrow()
+            .find_var(slice::from_ref(&var_def.name))
+            .is_some()
+        {
             return Err(SpannedError::new(
                 format!("Variable `{}` already defined", var_def.name.value),
                 var_def.get_span(),
@@ -43,13 +50,13 @@ impl Evaluator {
     /// Access variable by value
     pub fn access_variable(
         &self,
-        var_acc: &Spanned<String>,
+        var_acc: &Spanned<VariableAccess>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        match env.borrow().find_var(var_acc.value.clone()) {
+        match env.borrow().find_var(&var_acc.name) {
             Some(sym) => Ok(ControlFlow::Simple(sym.borrow().clone().value)),
             None => Err(SpannedError::new(
-                format!("Name `{}` not defined", var_acc.value),
+                format!("Name `{}` not defined", var_acc.name.join(".")),
                 var_acc.get_span(),
             )),
         }
@@ -61,15 +68,12 @@ impl Evaluator {
         assign_var: &Spanned<VariableAssign>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let sym = env
-            .borrow()
-            .find_var(assign_var.name.clone())
-            .ok_or_else(|| {
-                SpannedError::new(
-                    format!("Variable `{}` not defined", assign_var.name),
-                    assign_var.get_span(),
-                )
-            })?;
+        let sym = env.borrow().find_var(&assign_var.name).ok_or_else(|| {
+            SpannedError::new(
+                format!("Variable `{}` not defined", assign_var.name.join(".")),
+                assign_var.get_span(),
+            )
+        })?;
 
         let result = self.eval_single(&assign_var.value.value, env)?;
 
@@ -84,14 +88,14 @@ impl Evaluator {
     /// Creates a reference to a variable
     pub fn create_reference(
         &self,
-        reference_create: &Spanned<String>,
+        reference_create: &Spanned<VariableAccess>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
         let var = env
             .borrow()
-            .find_var(reference_create.value.clone())
+            .find_var(&reference_create.name)
             .ok_or(SpannedError::new(
-                format!("Name `{}` not defined", reference_create.value),
+                format!("Name `{}` not defined", reference_create.name.join(".")),
                 reference_create.get_span(),
             ))?;
 
@@ -103,14 +107,14 @@ impl Evaluator {
     /// Dereferences a reference
     pub fn dereference(
         &self,
-        dereference: &Spanned<String>,
+        dereference: &Spanned<VariableAccess>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
         let var = env
             .borrow()
-            .find_var(dereference.value.clone())
+            .find_var(&dereference.name)
             .ok_or(SpannedError::new(
-                format!("Name `{}` not defined", dereference.value),
+                format!("Name `{}` not defined", dereference.name.join(".")),
                 dereference.get_span(),
             ))?;
 
@@ -136,15 +140,12 @@ impl Evaluator {
         assign_ref: &Spanned<VariableAssign>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let sym = env
-            .borrow()
-            .find_var(assign_ref.name.clone())
-            .ok_or_else(|| {
-                SpannedError::new(
-                    format!("Reference `{}` not defined", assign_ref.name),
-                    assign_ref.get_span(),
-                )
-            })?;
+        let sym = env.borrow().find_var(&assign_ref.name).ok_or_else(|| {
+            SpannedError::new(
+                format!("Reference `{}` not defined", assign_ref.name.join(".")),
+                assign_ref.get_span(),
+            )
+        })?;
 
         let UVRTValue::Reference(r) = &sym.borrow().value else {
             // SAFETY: This check is performed by typechecker

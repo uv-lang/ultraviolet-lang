@@ -5,6 +5,7 @@ pub mod tokens;
 pub mod typechecker;
 pub mod types;
 
+use core::fmt;
 use std::{
     collections::HashMap,
     error::Error,
@@ -15,11 +16,13 @@ use std::{
 };
 
 use crate::{
-    errors::CommonError, traits::frontend::Positional, types::frontend::ast::ASTBlockType,
+    errors::CommonError,
+    traits::frontend::{Positional, UVDisplay},
+    types::frontend::ast::ASTBlockType,
 };
 
 /// Representation of input file
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SourceFile {
     pub path: Box<Path>,
     pub code: String,
@@ -116,7 +119,7 @@ impl SourceFile {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 /// Span displays the portion of the source code that a token or AST node occupies
 pub struct Span {
     pub start: usize,
@@ -136,7 +139,7 @@ impl Span {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 /// Type `T` with span
 pub struct Spanned<T> {
     pub value: T,
@@ -176,6 +179,46 @@ impl<T> Deref for Spanned<T> {
 impl<T> DerefMut for Spanned<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.value
+    }
+}
+
+impl<T: fmt::Display> fmt::Display for Spanned<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
+impl<T> UVDisplay for Vec<Spanned<T>>
+where
+    T: Into<String> + Clone,
+{
+    fn join(&self, del: &str) -> String {
+        self.iter()
+            .enumerate()
+            .fold(String::default(), |mut acc, (i, el)| {
+                acc.push_str(&el.value.clone().into());
+
+                if i != self.len() - 1 {
+                    acc.push_str(del);
+                }
+                acc
+            })
+    }
+}
+
+impl<T> Positional for Vec<Spanned<T>>
+where
+    T: Into<String> + Clone,
+{
+    fn get_span(&self) -> Span {
+        let s = self.first().unwrap();
+        let e = self.last().unwrap();
+
+        Span::new(
+            s.get_span().start,
+            e.get_span().end,
+            s.get_span().source_file,
+        )
     }
 }
 

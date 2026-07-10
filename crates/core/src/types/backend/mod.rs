@@ -1,12 +1,15 @@
 use crate::{
     errors::SpannedError,
-    traits::{backend::TypeOf, ffi::EnumPayloadPtr, frontend::ast::GetType},
+    traits::{
+        GetVariableContainedEnvironment, backend::TypeOf, ffi::EnumPayloadPtr,
+        frontend::ast::GetType,
+    },
     types::{
         EnvRef,
         backend::ffi::FFIFunction,
         frontend::{
             Spanned,
-            ast::{ASTBlockType, UVValue},
+            ast::{ASTBlockType, SymbolName, UVValue},
             number::Number,
             types::UVType,
         },
@@ -27,7 +30,7 @@ pub struct RTFunction {
     pub args_names_order: Vec<String>,
     pub body: Rc<Vec<Spanned<ASTBlockType>>>,
     pub definition_name: Option<String>,
-    pub moved_symbols: HashMap<String, Rc<RefCell<RTVariable>>>,
+    pub moved_symbols: HashMap<SymbolName, Rc<RefCell<RTVariable>>>,
 }
 
 /// Call signature for built-in function
@@ -130,6 +133,8 @@ impl EnumPayloadPtr for UVRTValue {
 pub struct RTVariable {
     pub value: UVRTValue,
     pub constant: bool,
+
+    pub contained_env: Option<EnvRef<RTVariable>>,
 }
 
 impl std::fmt::Display for RTVariable {
@@ -144,7 +149,24 @@ impl RTVariable {
         Self {
             value: val,
             constant,
+            contained_env: None,
         }
+    }
+
+    /// Create new contained env
+    pub fn new_environmental(env: EnvRef<RTVariable>) -> Self {
+        Self {
+            value: UVRTValue::Void,
+            constant: true,
+            contained_env: Some(env),
+        }
+    }
+}
+
+impl GetVariableContainedEnvironment for RTVariable {
+    type Out = RTVariable;
+    fn get_variable_contained_env(&self) -> Option<EnvRef<Self::Out>> {
+        self.contained_env.clone()
     }
 }
 

@@ -5,7 +5,7 @@ use ultraviolet_core::{
     traits::frontend::{Positional, token_parser::UnwrapOptionError},
     types::frontend::{
         Spanned,
-        ast::{ASTBlockType, ModuleImport},
+        ast::{ASTBlockType, ModuleImport, SymbolName},
         tokens::UVParseNode,
     },
 };
@@ -109,9 +109,9 @@ impl ASTParser {
                     ));
                 }
 
-                Ok(Spanned::new(t.name.clone(), t.get_span()))
+                Self::split_symbol_name(t.name.clone())
             })
-            .collect::<Result<Vec<Spanned<String>>, SpannedError>>()?;
+            .collect::<Result<Vec<SymbolName>, SpannedError>>()?;
 
         if exports.is_empty() {
             return Err(SpannedError::new(

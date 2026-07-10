@@ -8,7 +8,7 @@ use std::{
 
 use crate::{
     traits::frontend::{
-        Positional,
+        Positional, UVDisplay,
         ast::{
             ArgumentsCount, GetBlockName, GetOperands, GetType, StringToUVCompareOp,
             StringToUVLogicalOp, StringToUVMathOp,
@@ -22,6 +22,9 @@ use crate::{
 };
 
 pub type ASTSpannedBody = Spanned<Vec<Spanned<ASTBlockType>>>;
+
+/// var.child.child
+pub type SymbolName = Vec<Spanned<String>>;
 
 /// Typed value container
 #[derive(Debug, Clone)]
@@ -81,13 +84,12 @@ pub enum ASTBlockType {
     FunctionDefinition(Box<Spanned<FunctionDefinition>>),
 
     FunctionCall(Box<Spanned<FunctionCall>>),
+
+    /// <var deref/... >...</var>
     VariableAssignment(Box<Spanned<VariableAssign>>),
 
-    VariableAccess(Spanned<String>),
-    ReferenceCreate(Spanned<String>),
-    Dereference(Spanned<String>),
-
-    DereferenceAssignment(Box<Spanned<VariableAssign>>),
+    /// <var ref/deref/... />
+    VariableAccess(Spanned<VariableAccess>),
 
     ConditionalOp(Box<Spanned<ConditionalOperator>>),
 
@@ -109,7 +111,7 @@ pub enum ASTBlockType {
     FFIDefinition(Spanned<Box<FFIDefinition>>),
 
     ModuleImport(Spanned<ModuleImport>),
-    ModuleExport(Spanned<Vec<Spanned<String>>>),
+    ModuleExport(Spanned<Vec<SymbolName>>),
 }
 
 impl<'a> GetBlockName<'a> for ASTBlockType {
@@ -118,13 +120,8 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
             ASTBlockType::CodeBlock(_) => Cow::Borrowed("code"),
             ASTBlockType::ModuleBlock(_) => Cow::Borrowed("mod"),
             ASTBlockType::VariableDefinition(_) => Cow::Borrowed("let"),
-            ASTBlockType::VariableAssignment(a) => Cow::Borrowed(&a.name),
-            ASTBlockType::VariableAccess(a) => Cow::Borrowed(a),
-            ASTBlockType::ReferenceCreate(r) => Cow::Borrowed(r),
-            ASTBlockType::Dereference(r) => Cow::Borrowed(r),
-            ASTBlockType::DereferenceAssignment(deref_assign) => {
-                Cow::Borrowed(&deref_assign.value.name)
-            },
+            ASTBlockType::VariableAssignment(a) => Cow::Owned(a.name.join(".")),
+            ASTBlockType::VariableAccess(a) => Cow::Owned(a.name.join(".")),
 
             ASTBlockType::MathOp(m) => Cow::Owned(m.op_type.to_string().to_lowercase()),
             ASTBlockType::LogicalOp(l) => Cow::Owned(l.op_type.to_string().to_lowercase()),
@@ -172,9 +169,6 @@ impl Positional for ASTBlockType {
             ASTBlockType::ModuleImport(i) => i.get_span(),
             ASTBlockType::ModuleExport(e) => e.get_span(),
             ASTBlockType::FFIDefinition(f) => f.get_span(),
-            ASTBlockType::ReferenceCreate(r) => r.get_span(),
-            ASTBlockType::Dereference(d) => d.get_span(),
-            ASTBlockType::DereferenceAssignment(d) => d.get_span(),
         }
     }
 }
@@ -190,9 +184,28 @@ pub struct VariableDefinition {
 
 // ------------------------- Variable Assign ---------------------------------
 
+pub enum AssignType {
+    Simple,
+    Dereference,
+}
+
 pub struct VariableAssign {
-    pub name: String,
+    pub name: SymbolName,
     pub value: Spanned<ASTBlockType>,
+    pub assign_type: AssignType,
+}
+
+// ------------------------- Variable Access ---------------------------------
+
+pub enum AccessType {
+    Simple,
+    Dereference,
+    Reference,
+}
+
+pub struct VariableAccess {
+    pub name: SymbolName,
+    pub access_type: AccessType,
 }
 
 // ------------------ Generic Operations structure ---------------------------
@@ -375,13 +388,13 @@ pub struct FunctionDefinition {
     pub return_type: Option<Spanned<UVType>>,
 
     pub body: Rc<Vec<Spanned<ASTBlockType>>>,
-    pub moved_symbols: RefCell<HashSet<String>>,
+    pub moved_symbols: RefCell<HashSet<SymbolName>>,
 }
 
 // ------------------------- Function Call -----------------------------------
 
 pub struct FunctionCall {
-    pub name: String,
+    pub name: Vec<Spanned<String>>,
     pub args: Vec<Spanned<ASTBlockType>>,
 }
 

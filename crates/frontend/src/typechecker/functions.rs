@@ -6,7 +6,7 @@ use ultraviolet_core::{
     errors::SpannedError,
     traits::{
         EnvironmentTrait,
-        frontend::{Positional, ast::IsAssignable},
+        frontend::{Positional, UVDisplay, ast::IsAssignable},
     },
     types::{
         EnvRef, Environment,
@@ -131,9 +131,10 @@ impl Typechecker {
         fc: &Spanned<FunctionCall>,
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let Some(var) = env.borrow().find_var(fc.name.clone()) else {
+        let simplified_name = fc.name.join(".");
+        let Some(var) = env.borrow().find_var(&fc.name) else {
             return Err(SpannedError::new(
-                format!("Function `{}` not found", fc.name),
+                format!("Function `{}` not found", simplified_name),
                 fc.get_span(),
             ));
         };
@@ -149,12 +150,12 @@ impl Typechecker {
             UVType::BuiltInFunction(f) => {
                 match &f.args {
                     UVBuiltinFunctionArguments::Args(expected) => {
-                        self.validate_args(expected, &args_types, &fc.name, fc.get_span())?
+                        self.validate_args(expected, &args_types, &simplified_name, fc.get_span())?
                     },
                     UVBuiltinFunctionArguments::AllOf(all_t) => self.validate_args(
                         &vec![all_t.clone(); args_types.len()],
                         &args_types,
-                        &fc.name,
+                        &simplified_name,
                         fc.get_span(),
                     )?,
                     _ => {},
@@ -164,12 +165,12 @@ impl Typechecker {
             },
 
             UVType::Function(f) => {
-                self.validate_args(&f.args, &args_types, &fc.name, fc.get_span())?;
+                self.validate_args(&f.args, &args_types, &simplified_name, fc.get_span())?;
                 Ok(ControlFlow::Simple(f.returns.clone()))
             },
 
             _ => Err(SpannedError::new(
-                format!("`{}` is not callable", fc.name),
+                format!("`{}` is not callable", simplified_name),
                 fc.get_span(),
             )),
         }

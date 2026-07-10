@@ -1,3 +1,5 @@
+use core::slice;
+
 use crate::Evaluator;
 use ultraviolet_core::{
     errors::SpannedError,
@@ -59,7 +61,7 @@ impl Evaluator {
         loop {
             let current = env
                 .borrow()
-                .find_var(&for_node.iterator.value)
+                .find_var(slice::from_ref(&for_node.iterator))
                 .unwrap_or_spanned(for_node.iterator.get_span())?;
 
             if current.borrow().value > end {
@@ -78,7 +80,7 @@ impl Evaluator {
 
             (*env
                 .borrow_mut()
-                .find_var(&for_node.iterator.value)
+                .find_var(slice::from_ref(&for_node.iterator))
                 .unwrap_or_spanned(for_node.iterator.get_span())?
                 .borrow_mut())
             .value = new_val;

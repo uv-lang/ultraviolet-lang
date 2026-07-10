@@ -8,14 +8,14 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct UVParseNode {
-    pub name: String,
+    pub name: Spanned<String>,
     pub children: Vec<UVParseBody>,
 
     /// Node is self-closing `<name />`
     pub self_closing: bool,
 
     /// Node extra param `<name extra_param>...</ node>`
-    pub extra_param: String,
+    pub extra_param: Spanned<String>,
 
     pub span: Span,
 }
@@ -29,7 +29,7 @@ impl UVParseNode {
     /** Get the first TAG whose name matches the passed argument `name` */
     pub fn get_one_tag_by_name(&self, name: &str) -> Option<&UVParseNode> {
         self.children.iter().find_map(|ch| match ch {
-            UVParseBody::Tag(node) if node.name == name => Some(node.as_ref()),
+            UVParseBody::Tag(node) if node.name.value == name => Some(node.as_ref()),
             _ => None,
         })
     }
@@ -39,7 +39,7 @@ impl UVParseNode {
         self.children
             .iter()
             .filter_map(|ch| match ch {
-                UVParseBody::Tag(node) if node.name == name => Some(node.as_ref()),
+                UVParseBody::Tag(node) if node.name.value == name => Some(node.as_ref()),
                 _ => None,
             })
             .collect()

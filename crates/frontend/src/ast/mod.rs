@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::{cell::RefCell, sync::OnceLock};
+use std::{cell::RefCell, ops::Deref, sync::OnceLock};
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::{
@@ -8,7 +8,7 @@ use ultraviolet_core::{
         token_parser::UnwrapOptionError,
     },
     types::frontend::{
-        Spanned,
+        Span, Spanned,
         ast::{ASTBlockType, ModuleImport},
         tokens::UVParseNode,
     },
@@ -33,7 +33,7 @@ static IDENT_REGEX: OnceLock<Regex> = OnceLock::new();
 
 /// Check if provided string is a valid var/fn identifier
 fn is_valid_identifier(s: &str) -> bool {
-    let reg = IDENT_REGEX.get_or_init(|| Regex::new(r"^[a-zA-Z_.][a-zA-Z0-9_.]*$").unwrap());
+    let reg = IDENT_REGEX.get_or_init(|| Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*$").unwrap());
     reg.is_match(s)
 }
 
@@ -49,9 +49,10 @@ impl ASTParser {
             nodes: node,
         }
     }
+
     /// Parse `main` content
     pub fn gen_main_ast(self) -> Result<(ASTBlockType, Vec<Spanned<ModuleImport>>), SpannedError> {
-        if self.nodes.name.ne("main") {
+        if self.nodes.name.deref().ne("main") {
             return Err(SpannedError::new(
                 "The program must begin with the <main> tag",
                 self.nodes.get_span(),
@@ -71,7 +72,7 @@ impl ASTParser {
     pub fn gen_module_ast(
         self,
     ) -> Result<(ASTBlockType, Vec<Spanned<ModuleImport>>), SpannedError> {
-        if self.nodes.name.ne("mod") {
+        if self.nodes.name.deref().ne("mod") {
             return Err(SpannedError::new(
                 "The module must begin with the <mod> tag",
                 self.nodes.get_span(),
@@ -128,7 +129,7 @@ impl ASTParser {
             // Parse function call with trailing `$` symbol
             c if c.ends_with("$") => {
                 let mut new_node = node.clone();
-                new_node.extra_param = node.name.trim_end_matches("$").to_owned();
+                new_node.extra_param.value = node.name.trim_end_matches("$").to_owned();
                 self.parse_function_call(&new_node)?
             },
 
@@ -199,5 +200,48 @@ impl ASTParser {
         };
 
         Ok(ASTBlockType::Return(Spanned::new(ch, node.get_span())))
+    }
+
+    /// Spits symbol name by dot delimiter and validates
+    fn split_symbol_name(str: Spanned<String>) -> Result<Vec<Spanned<String>>, SpannedError> {
+        let mut vec = Vec::new();
+
+        let mut start = 0;
+        let span_start = str.get_span().start;
+        for (pos, _) in str.value.match_indices('.') {
+            let part = &str.value[start..pos];
+
+            if part.is_empty() || !is_valid_identifier(part) {
+                return Err(SpannedError::new("Invalid name for symbol", str.get_span()));
+            }
+
+            vec.push(Spanned::new(
+                part.to_string(),
+                Span::new(
+                    span_start + start,
+                    span_start + pos,
+                    str.get_span().source_file.clone(),
+                ),
+            ));
+
+            start = pos + 1;
+        }
+
+        let last = &str.value[start..];
+
+        if last.is_empty() || !is_valid_identifier(last) {
+            return Err(SpannedError::new("Invalid name for symbol", str.get_span()));
+        }
+
+        vec.push(Spanned::new(
+            last.to_string(),
+            Span::new(
+                span_start + start,
+                span_start + str.value.len(),
+                str.get_span().source_file.clone(),
+            ),
+        ));
+
+        Ok(vec)
     }
 }

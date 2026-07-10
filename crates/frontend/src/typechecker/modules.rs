@@ -1,11 +1,14 @@
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::{EnvironmentTrait, frontend::Positional},
+    traits::{
+        EnvironmentTrait,
+        frontend::{Positional, UVDisplay},
+    },
     types::{
         EnvRef,
         frontend::{
             Spanned,
-            ast::ModuleImport,
+            ast::{ModuleImport, SymbolName},
             typechecker::{ControlFlow, UVTypeVariable},
             types::UVType,
         },
@@ -31,9 +34,10 @@ impl Typechecker {
         let typechecker = Typechecker::new(module_ast.clone(), &mi.name.value);
         typechecker.start_typecheck()?;
 
-        env.borrow_mut()
-            .symbols
-            .extend(typechecker.exports.borrow().clone());
+        env.borrow_mut().define_variable(
+            typechecker.current_name.clone(),
+            UVTypeVariable::new_environmental(typechecker.exports),
+        );
 
         Ok(ControlFlow::Simple(UVType::Void))
     }
@@ -41,18 +45,18 @@ impl Typechecker {
     /// Parse module export block
     pub fn typecheck_export(
         &self,
-        e: &Vec<Spanned<String>>,
+        e: &Vec<SymbolName>,
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
         for exp in e {
-            let r = env.borrow().find_var(&exp.value).ok_or(SpannedError::new(
-                format!("Variable `{}` for export not defined", exp.value),
+            let r = env.borrow().find_var(exp).ok_or(SpannedError::new(
+                format!("Variable `{}` for export not defined", exp.join(".")),
                 exp.get_span(),
             ))?;
 
             self.exports
                 .borrow_mut()
-                .insert(format!("{}.{}", self.current_name, exp.value.clone()), r);
+                .define_variable_rc(exp.join("."), r);
         }
 
         Ok(ControlFlow::Simple(UVType::Void))

@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::{
@@ -35,7 +37,7 @@ pub fn parse_type_raw(node: &UVParseNode) -> Result<UVType, SpannedError> {
     }
 
     if let Some(t) = node.name.as_str().to_uvtype() {
-        if node.extra_param.eq("ref") {
+        if node.extra_param.deref().eq("ref") {
             return Ok(UVType::Reference(Box::new(ReferenceType::new(t))));
         }
 

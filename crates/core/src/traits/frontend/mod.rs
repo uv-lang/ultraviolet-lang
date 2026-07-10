@@ -10,3 +10,8 @@ pub trait Positional {
     /// Get associated Span
     fn get_span(&self) -> Span;
 }
+
+/// Internal display fmt trait
+pub trait UVDisplay {
+    fn join(&self, del: &str) -> String;
+}

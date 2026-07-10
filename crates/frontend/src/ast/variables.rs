@@ -5,7 +5,10 @@ use ultraviolet_core::{
     traits::frontend::{Positional, token_parser::UnwrapOptionError},
     types::frontend::{
         Spanned,
-        ast::{ASTBlockType, VariableAssign, VariableDefinition},
+        ast::{
+            ASTBlockType, AccessType, AssignType, VariableAccess, VariableAssign,
+            VariableDefinition,
+        },
         tokens::UVParseNode,
     },
 };
@@ -119,17 +122,19 @@ impl ASTParser {
             .get_tag_at(0)
             .ok_or(SpannedError::new("Cannot get inner tag", node.get_span()))?;
 
+        let assign_type = match node.extra_param.as_str() {
+            "deref" => AssignType::Dereference,
+            _ => AssignType::Simple,
+        };
+
         let block = Box::new(Spanned::new(
             VariableAssign {
-                name: node.name.clone(),
+                name: Self::split_symbol_name(node.name.clone())?,
                 value: Spanned::new(self.generate_ast(value)?, value.get_span()),
+                assign_type,
             },
             node.get_span(),
         ));
-
-        if node.extra_param.eq("deref") {
-            return Ok(ASTBlockType::DereferenceAssignment(block));
-        }
 
         Ok(ASTBlockType::VariableAssignment(block))
     }
@@ -143,24 +148,17 @@ impl ASTParser {
             ));
         }
 
-        // If variable is accessed as reference - create reference block
-        if node.extra_param.eq("ref") {
-            return Ok(ASTBlockType::ReferenceCreate(Spanned::new(
-                node.name.clone(),
-                node.get_span(),
-            )));
-        }
-
-        // If reference is dereferenced - create dereference block
-        if node.extra_param.eq("deref") {
-            return Ok(ASTBlockType::Dereference(Spanned::new(
-                node.name.clone(),
-                node.get_span(),
-            )));
-        }
+        let access_type = match node.extra_param.value.as_str() {
+            "ref" => AccessType::Reference,
+            "deref" => AccessType::Dereference,
+            _ => AccessType::Simple,
+        };
 
         Ok(ASTBlockType::VariableAccess(Spanned::new(
-            node.name.clone(),
+            VariableAccess {
+                name: Self::split_symbol_name(node.name.clone())?,
+                access_type,
+            },
             node.get_span(),
         )))
     }

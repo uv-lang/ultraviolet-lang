@@ -1,11 +1,17 @@
 use crate::Evaluator;
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::{EnvironmentTrait, frontend::Positional},
+    traits::{
+        EnvironmentTrait,
+        frontend::{Positional, UVDisplay},
+    },
     types::{
         EnvRef,
         backend::{ControlFlow, RTVariable, UVRTValue},
-        frontend::{Spanned, ast::ModuleImport},
+        frontend::{
+            Spanned,
+            ast::{ModuleImport, SymbolName},
+        },
     },
 };
 
@@ -26,9 +32,10 @@ impl Evaluator {
         let evaluator = Evaluator::new(module_ast.clone(), &mi.name.value);
         evaluator.eval()?;
 
-        env.borrow_mut()
-            .symbols
-            .extend(evaluator.exports.borrow().clone());
+        env.borrow_mut().define_variable(
+            evaluator.current_name.clone(),
+            RTVariable::new_environmental(evaluator.exports),
+        );
 
         Ok(ControlFlow::Simple(UVRTValue::Void))
     }
@@ -36,18 +43,18 @@ impl Evaluator {
     /// Parse module export block
     pub fn eval_export(
         &self,
-        e: &Vec<Spanned<String>>,
+        e: &Vec<SymbolName>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
         for exp in e {
-            let r = env.borrow().find_var(&exp.value).ok_or(SpannedError::new(
-                format!("Variable {} for export not defined", exp.value),
+            let r = env.borrow().find_var(exp).ok_or(SpannedError::new(
+                format!("Variable {} for export not defined", exp.join(".")),
                 exp.get_span(),
             ))?;
 
             self.exports
                 .borrow_mut()
-                .insert(format!("{}.{}", self.current_name, exp.value.clone()), r);
+                .define_variable_rc(exp.join("."), r);
         }
 
         Ok(ControlFlow::Simple(UVRTValue::Void))

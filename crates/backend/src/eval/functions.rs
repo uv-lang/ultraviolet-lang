@@ -2,9 +2,10 @@ use std::rc::Rc;
 use std::{cell::RefCell, collections::HashMap};
 
 use ultraviolet_core::traits::EnvironmentTrait;
+use ultraviolet_core::types::frontend::ast::SymbolName;
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::Positional,
+    traits::frontend::{Positional, UVDisplay},
     types::{
         EnvRef, Environment,
         backend::{ControlFlow, RTFunction, RTVariable, UVRTValue},
@@ -34,7 +35,7 @@ impl Evaluator {
     ) -> Result<ControlFlow, SpannedError> {
         let args: Vec<String> = def.arguments.iter().map(|e| e.name.value.clone()).collect();
 
-        let mut moved_symbols: HashMap<String, Rc<RefCell<RTVariable>>> = HashMap::new();
+        let mut moved_symbols: HashMap<SymbolName, Rc<RefCell<RTVariable>>> = HashMap::new();
         for name in def.value.moved_symbols.borrow().iter() {
             if let Some(symbol) = env.borrow().find_var(name) {
                 moved_symbols.insert(name.clone(), symbol);
@@ -63,9 +64,9 @@ impl Evaluator {
         call: &Spanned<FunctionCall>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let Some(f) = env.borrow().find_var(call.name.clone()) else {
+        let Some(f) = env.borrow().find_var(&call.name) else {
             return Err(SpannedError::new(
-                format!("`{}` not found", call.name),
+                format!("`{}` not found", call.name.join(".")),
                 call.get_span(),
             ));
         };
@@ -90,7 +91,7 @@ impl Evaluator {
 
         let UVRTValue::Function(f_struct) = &f.borrow().value else {
             return Err(SpannedError::new(
-                format!("`{}` is not callable", call.name),
+                format!("`{}` is not callable", call.name.join(".")),
                 call.get_span(),
             ));
         };
@@ -101,10 +102,9 @@ impl Evaluator {
         };
 
         let call_env = Environment::new_child(env);
-        call_env
-            .borrow_mut()
-            .symbols
-            .extend(f_struct.moved_symbols.clone());
+        for (name, val) in f_struct.moved_symbols.clone() {
+            call_env.borrow_mut().define_intercepted_name(name, val)?;
+        }
 
         if let Some(name) = &f_struct.definition_name {
             call_env.borrow_mut().define_variable(

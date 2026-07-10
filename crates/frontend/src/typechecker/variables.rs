@@ -1,16 +1,16 @@
-use std::rc::Rc;
+use std::{rc::Rc, slice};
 
 use ultraviolet_core::{
     errors::SpannedError,
     traits::{
         EnvironmentTrait,
-        frontend::{Positional, ast::IsAssignable},
+        frontend::{Positional, UVDisplay, ast::IsAssignable},
     },
     types::{
         EnvRef,
         frontend::{
             Spanned,
-            ast::{VariableAssign, VariableDefinition},
+            ast::{VariableAccess, VariableAssign, VariableDefinition},
             typechecker::{ControlFlow, UVTypeVariable},
             types::{ReferenceType, UVType},
         },
@@ -43,7 +43,7 @@ impl Typechecker {
             ));
         }
 
-        if env.borrow().find_var(&vd.name.value).is_some() {
+        if env.borrow().find_var(slice::from_ref(&vd.name)).is_some() {
             return Err(SpannedError::new(
                 format!("Variable with name {} already defined", vd.name.value),
                 vd.get_span(),
@@ -64,7 +64,7 @@ impl Typechecker {
     ) -> Result<ControlFlow, SpannedError> {
         let Some(var_rc) = env.borrow().find_var(&va.name) else {
             return Err(SpannedError::new(
-                format!("Variable `{}` not defined", va.name),
+                format!("Variable `{}` not defined", va.name.join(".")),
                 va.get_span(),
             ));
         };
@@ -72,7 +72,10 @@ impl Typechecker {
         let mut var = var_rc.borrow_mut();
         if var.constant {
             return Err(SpannedError::new(
-                format!("Cannot assign to a constant `{}` variable", va.name),
+                format!(
+                    "Cannot assign to a constant `{}` variable",
+                    va.name.join(".")
+                ),
                 va.get_span(),
             ));
         }
@@ -86,7 +89,9 @@ impl Typechecker {
             return Err(SpannedError::new(
                 format!(
                     "Expected type `{}`, got `{}` for variable `{}`",
-                    var.value, t, va.name
+                    var.value,
+                    t,
+                    va.name.join(".")
                 ),
                 va.get_span(),
             ));
@@ -100,12 +105,12 @@ impl Typechecker {
     /// Check variable is defined and get its type
     pub fn check_variable_access(
         &self,
-        va: &Spanned<String>,
+        va: &Spanned<VariableAccess>,
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let Some(var_rc) = env.borrow().find_var(&va.value) else {
+        let Some(var_rc) = env.borrow().find_var(&va.name) else {
             return Err(SpannedError::new(
-                format!("Variable `{}` not defined", va.value),
+                format!("Variable `{}` not defined", va.name.join(".")),
                 va.get_span(),
             ));
         };
@@ -135,12 +140,12 @@ impl Typechecker {
     /// Check and validate reference creation
     pub fn check_reference_create(
         &self,
-        rc: &Spanned<String>,
+        rc: &Spanned<VariableAccess>,
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let Some(var_rc) = env.borrow().find_var(&rc.value) else {
+        let Some(var_rc) = env.borrow().find_var(&rc.name) else {
             return Err(SpannedError::new(
-                format!("Variable `{}` not defined", rc.value),
+                format!("Variable `{}` not defined", rc.name.join(".")),
                 rc.get_span(),
             ));
         };
@@ -153,12 +158,12 @@ impl Typechecker {
     /// Check and validate dereference
     pub fn check_dereference(
         &self,
-        dr: &Spanned<String>,
+        dr: &Spanned<VariableAccess>,
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let Some(var_rc) = env.borrow().find_var(&dr.value) else {
+        let Some(var_rc) = env.borrow().find_var(&dr.name) else {
             return Err(SpannedError::new(
-                format!("Reference `{}` not defined", dr.value),
+                format!("Reference `{}` not defined", dr.name.join(".")),
                 dr.get_span(),
             ));
         };
@@ -197,7 +202,7 @@ impl Typechecker {
     ) -> Result<ControlFlow, SpannedError> {
         let Some(reference) = env.borrow().find_var(&va.name) else {
             return Err(SpannedError::new(
-                format!("Symbol {} not found", va.name),
+                format!("Symbol {} not found", va.name.join(".")),
                 va.get_span(),
             ));
         };
@@ -243,7 +248,9 @@ impl Typechecker {
             return Err(SpannedError::new(
                 format!(
                     "Expected type `{}`, got `{}` for reference `{}`",
-                    borrowed_ref.value, t, va.name
+                    borrowed_ref.value,
+                    t,
+                    va.name.join(".")
                 ),
                 va.get_span(),
             ));
