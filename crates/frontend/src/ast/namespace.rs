@@ -25,7 +25,7 @@ impl ASTParser {
         Ok(ASTBlockType::Namespace(Spanned::new(
             Namespace {
                 name,
-                body: self.parse_children_vec(&node)?,
+                body: self.parse_children_vec(node)?,
             },
             node.get_span(),
         )))

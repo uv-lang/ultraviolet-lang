@@ -101,34 +101,32 @@ impl TokenParser {
                         return Err(SpannedError::new("Unexpected `</` token", token.get_span()));
                     },
                 },
-                UVLexerTokens::Literal(lit) | UVLexerTokens::RawString(lit) => {
-                    match parse_state {
-                        UVParseState::TagName => {
-                            tag.name = Spanned::new(lit.to_owned(), token.get_span());
-                            parse_state = UVParseState::ExtraParam;
-                        },
-                        UVParseState::ExtraParam => {
-                            parse_state = UVParseState::ClosingAngleBracketOpeningTag;
-                            tag.extra_param = Spanned::new(lit.to_owned(), token.get_span());
-                        },
+                UVLexerTokens::Literal(lit) | UVLexerTokens::RawString(lit) => match parse_state {
+                    UVParseState::TagName => {
+                        tag.name = Spanned::new(lit.to_owned(), token.get_span());
+                        parse_state = UVParseState::ExtraParam;
+                    },
+                    UVParseState::ExtraParam => {
+                        parse_state = UVParseState::ClosingAngleBracketOpeningTag;
+                        tag.extra_param = Spanned::new(lit.to_owned(), token.get_span());
+                    },
 
-                        UVParseState::TagBody => {
-                            tag.children.push(UVParseBody::String(Spanned::new(
-                                lit.to_owned(),
-                                token.get_span(),
-                            )));
-                        },
-                        UVParseState::ClosingTagName => {
-                            parse_state = UVParseState::ClosingAngleBracketClosingTag;
-                            closing_tag_name = lit.to_owned();
-                        },
-                        _ => {
-                            return Err(SpannedError::new(
-                                format!("Unexpected literal `{lit}`"),
-                                token.get_span(),
-                            ));
-                        },
-                    }
+                    UVParseState::TagBody => {
+                        tag.children.push(UVParseBody::String(Spanned::new(
+                            lit.to_owned(),
+                            token.get_span(),
+                        )));
+                    },
+                    UVParseState::ClosingTagName => {
+                        parse_state = UVParseState::ClosingAngleBracketClosingTag;
+                        closing_tag_name = lit.to_owned();
+                    },
+                    _ => {
+                        return Err(SpannedError::new(
+                            format!("Unexpected literal `{lit}`"),
+                            token.get_span(),
+                        ));
+                    },
                 },
                 UVLexerTokens::Unknown(ch) => {
                     if matches!(parse_state, UVParseState::TagBody)
