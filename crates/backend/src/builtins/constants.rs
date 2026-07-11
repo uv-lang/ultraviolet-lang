@@ -77,5 +77,8 @@ pub fn init_builtin_constants(env: EnvRef<RTVariable>) {
         );
     }
 
-    borrowed_env.define_variable("dll", RTVariable::new_environmental(dll_env));
+    borrowed_env.define_variable(
+        "dll",
+        RTVariable::new_from(UVRTValue::Module(dll_env), true),
+    );
 }

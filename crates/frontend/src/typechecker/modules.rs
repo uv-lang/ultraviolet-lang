@@ -36,7 +36,7 @@ impl Typechecker {
 
         env.borrow_mut().define_variable(
             typechecker.current_name.clone(),
-            UVTypeVariable::new_environmental(typechecker.exports),
+            UVTypeVariable::new_from(UVType::Module(typechecker.exports), true),
         );
 
         Ok(ControlFlow::Simple(UVType::Void))
@@ -49,14 +49,9 @@ impl Typechecker {
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
         for exp in e {
-            let r = env.borrow().find_var(exp).ok_or(SpannedError::new(
-                format!("Variable `{}` for export not defined", exp.join(".")),
-                exp.get_span(),
-            ))?;
-
             self.exports
                 .borrow_mut()
-                .define_variable_rc(exp.join("."), r);
+                .define_variable_rc(exp.join("."), env.borrow().find_var(exp)?);
         }
 
         Ok(ControlFlow::Simple(UVType::Void))

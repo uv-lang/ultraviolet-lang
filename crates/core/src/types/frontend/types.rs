@@ -3,10 +3,13 @@ use std::{cell::RefCell, ops::Deref, rc::Weak};
 
 use crate::{
     traits::frontend::ast::{IsAssignable, StringToUVNumberType, StringToUVType},
-    types::frontend::{number::UVNumberType, typechecker::UVTypeVariable},
+    types::{
+        EnvRef, Environment,
+        frontend::{number::UVNumberType, typechecker::UVTypeVariable},
+    },
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 /// User environment function type
 pub struct UVFunctionType {
     pub args: Vec<UVType>,
@@ -15,7 +18,7 @@ pub struct UVFunctionType {
 
 // ---------------------- Builtin functions -------------------------------
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum UVBuiltinFunctionArguments {
     /// Arguments of any type and quantity
     Any,
@@ -25,7 +28,7 @@ pub enum UVBuiltinFunctionArguments {
     AllOf(UVType),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct UVBuiltinFunctionType {
     pub args: UVBuiltinFunctionArguments,
     pub returns: UVType,
@@ -34,7 +37,7 @@ pub struct UVBuiltinFunctionType {
 // ------------------------------------------------------------------------
 
 /// Ultraviolet types
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum UVType {
     Number(UVNumberType),
     String,
@@ -51,11 +54,10 @@ pub enum UVType {
 
     Optional(Box<UVType>),
 
-    /// A type that always produces an inequality when tested against another type
-    Unassignable,
+    Module(EnvRef<UVTypeVariable>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ReferenceType {
     pub t: UVType,
     pub reference: Option<Weak<RefCell<UVTypeVariable>>>,
@@ -106,7 +108,7 @@ impl std::fmt::Display for UVType {
                 write!(f, "<optional>{}</optional>", t.to_string().green().bold())
             },
             UVType::Reference(r) => write!(f, "reference to {}", r.t),
-            UVType::Unassignable => write!(f, "unassignable"),
+            UVType::Module(_) => write!(f, "<module>"),
         }
     }
 }
@@ -137,10 +139,6 @@ impl UVType {
 
 impl IsAssignable for UVType {
     fn is_assignable_from(&self, other: &UVType) -> bool {
-        if matches!(self, UVType::Unassignable) || matches!(other, UVType::Unassignable) {
-            return false;
-        }
-
         if self == other {
             return true;
         }
@@ -184,3 +182,11 @@ impl PartialEq for ReferenceType {
 }
 
 impl Eq for ReferenceType {}
+
+impl PartialEq for Environment<UVTypeVariable> {
+    fn eq(&self, _other: &Self) -> bool {
+        false
+    }
+}
+
+impl Eq for Environment<UVTypeVariable> {}

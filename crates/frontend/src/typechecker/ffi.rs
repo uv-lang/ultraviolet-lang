@@ -24,7 +24,7 @@ impl Typechecker {
         if env
             .borrow()
             .find_var(slice::from_ref(&ffi_d.name.clone()))
-            .is_some()
+            .is_ok()
         {
             return Err(SpannedError::new(
                 format!("`{}` already defined", *ffi_d.name),

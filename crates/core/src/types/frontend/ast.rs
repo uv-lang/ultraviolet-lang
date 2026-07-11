@@ -429,19 +429,13 @@ mod tests {
 
     #[test]
     fn parse_type() {
-        assert_eq!(
-            String::from("i32").to_uvtype(),
-            Some(UVType::Number(UVNumberType::I32))
-        );
-        assert_eq!(String::from("bool").to_uvtype(), Some(UVType::Boolean));
-        assert_eq!(
-            String::from("f64").to_uvtype(),
-            Some(UVType::Number(UVNumberType::F64))
-        );
-        assert_eq!(String::from("null").to_uvtype(), Some(UVType::Null));
-        assert_eq!(String::from("str").to_uvtype(), Some(UVType::String));
+        assert!(String::from("i32").to_uvtype() == Some(UVType::Number(UVNumberType::I32)));
+        assert!(String::from("bool").to_uvtype() == Some(UVType::Boolean));
+        assert!(String::from("f64").to_uvtype() == Some(UVType::Number(UVNumberType::F64)));
+        assert!(String::from("null").to_uvtype() == Some(UVType::Null));
+        assert!(String::from("str").to_uvtype() == Some(UVType::String));
 
-        assert_eq!(String::from("unknown").to_uvtype(), None);
+        assert!(String::from("unknown").to_uvtype().is_none());
     }
 
     #[test]

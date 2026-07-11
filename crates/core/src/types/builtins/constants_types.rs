@@ -33,5 +33,8 @@ pub fn init_builtin_types_constants(env: EnvRef<UVTypeVariable>) {
         borrowed_dll_env.define_variable("suffix", UVTypeVariable::new_from(UVType::String, true));
     }
 
-    borrowed_env.define_variable("dll", UVTypeVariable::new_environmental(dll_env));
+    borrowed_env.define_variable(
+        "dll",
+        UVTypeVariable::new_from(UVType::Module(dll_env), true),
+    );
 }

@@ -132,12 +132,7 @@ impl Typechecker {
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
         let simplified_name = fc.name.join(".");
-        let Some(var) = env.borrow().find_var(&fc.name) else {
-            return Err(SpannedError::new(
-                format!("Function `{}` not found", simplified_name),
-                fc.get_span(),
-            ));
-        };
+        let var = env.borrow().find_var(&fc.name)?;
 
         let args_types = match self.check_args(&fc.args, env.clone())? {
             TypecheckArgsResult::Types(t) => t,

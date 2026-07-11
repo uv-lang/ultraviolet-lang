@@ -37,7 +37,7 @@ impl Evaluator {
 
         let mut moved_symbols: HashMap<SymbolName, Rc<RefCell<RTVariable>>> = HashMap::new();
         for name in def.value.moved_symbols.borrow().iter() {
-            if let Some(symbol) = env.borrow().find_var(name) {
+            if let Ok(symbol) = env.borrow().find_var(name) {
                 moved_symbols.insert(name.clone(), symbol);
             }
         }
@@ -64,12 +64,7 @@ impl Evaluator {
         call: &Spanned<FunctionCall>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        let Some(f) = env.borrow().find_var(&call.name) else {
-            return Err(SpannedError::new(
-                format!("`{}` not found", call.name.join(".")),
-                call.get_span(),
-            ));
-        };
+        let f = env.borrow().find_var(&call.name)?;
 
         if let UVRTValue::BuiltInFunction(f) = &f.borrow().value {
             let evaluated_args = match self.eval_args(&call.args, env.clone())? {

@@ -4,8 +4,6 @@
     </import>
 
     <println$>
-        <uvstdlib.sin$>
-            <f64>1</f64>
-        </uvstdlib.sin$>
+        <uvstdlib />
     </println$>
 </main>

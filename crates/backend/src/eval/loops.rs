@@ -5,7 +5,7 @@ use ultraviolet_core::{
     errors::SpannedError,
     traits::{
         EnvironmentTrait,
-        frontend::{Positional, ast::GetType, token_parser::UnwrapOptionError},
+        frontend::{Positional, ast::GetType},
     },
     types::{
         EnvRef, Environment,
@@ -59,11 +59,7 @@ impl Evaluator {
         let loop_env = Environment::new_child(env.clone());
 
         loop {
-            let current = env
-                .borrow()
-                .find_var(slice::from_ref(&for_node.iterator))
-                .unwrap_or_spanned(for_node.iterator.get_span())?;
-
+            let current = env.borrow().find_var(slice::from_ref(&for_node.iterator))?;
             if current.borrow().value > end {
                 break;
             }
@@ -80,8 +76,7 @@ impl Evaluator {
 
             (*env
                 .borrow_mut()
-                .find_var(slice::from_ref(&for_node.iterator))
-                .unwrap_or_spanned(for_node.iterator.get_span())?
+                .find_var(slice::from_ref(&for_node.iterator))?
                 .borrow_mut())
             .value = new_val;
 

@@ -34,7 +34,7 @@ impl Evaluator {
 
         env.borrow_mut().define_variable(
             evaluator.current_name.clone(),
-            RTVariable::new_environmental(evaluator.exports),
+            RTVariable::new_from(UVRTValue::Module(evaluator.exports), true),
         );
 
         Ok(ControlFlow::Simple(UVRTValue::Void))
@@ -47,14 +47,9 @@ impl Evaluator {
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
         for exp in e {
-            let r = env.borrow().find_var(exp).ok_or(SpannedError::new(
-                format!("Variable {} for export not defined", exp.join(".")),
-                exp.get_span(),
-            ))?;
-
             self.exports
                 .borrow_mut()
-                .define_variable_rc(exp.join("."), r);
+                .define_variable_rc(exp.join("."), env.borrow().find_var(exp)?);
         }
 
         Ok(ControlFlow::Simple(UVRTValue::Void))

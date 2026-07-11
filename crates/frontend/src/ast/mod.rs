@@ -212,7 +212,7 @@ impl ASTParser {
             let part = &str.value[start..pos];
 
             if part.is_empty() || !is_valid_identifier(part) {
-                return Err(SpannedError::new("Invalid name for symbol", str.get_span()));
+                return Err(SpannedError::new("Invalid name", str.get_span()));
             }
 
             vec.push(Spanned::new(
@@ -230,7 +230,7 @@ impl ASTParser {
         let last = &str.value[start..];
 
         if last.is_empty() || !is_valid_identifier(last) {
-            return Err(SpannedError::new("Invalid name for symbol", str.get_span()));
+            return Err(SpannedError::new("Invalid name", str.get_span()));
         }
 
         vec.push(Spanned::new(

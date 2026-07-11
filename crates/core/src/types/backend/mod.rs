@@ -66,6 +66,8 @@ pub enum UVRTValue {
     FFIFunction(FFIFunction),
 
     Reference(Weak<RefCell<RTVariable>>),
+
+    Module(EnvRef<RTVariable>),
 }
 
 impl std::fmt::Display for UVRTValue {
@@ -79,6 +81,7 @@ impl std::fmt::Display for UVRTValue {
             UVRTValue::Function(_) => write!(f, "<function>"),
             UVRTValue::BuiltInFunction(_) => write!(f, "<built-in function>"),
             UVRTValue::FFIFunction(_) => write!(f, "<ffi function>"),
+            UVRTValue::Module(_) => write!(f, "<module>"),
             UVRTValue::Reference(r) => {
                 let Some(val) = r.upgrade() else {
                     return write!(f, "NULL");
@@ -133,8 +136,6 @@ impl EnumPayloadPtr for UVRTValue {
 pub struct RTVariable {
     pub value: UVRTValue,
     pub constant: bool,
-
-    pub contained_env: Option<EnvRef<RTVariable>>,
 }
 
 impl std::fmt::Display for RTVariable {
@@ -149,16 +150,6 @@ impl RTVariable {
         Self {
             value: val,
             constant,
-            contained_env: None,
-        }
-    }
-
-    /// Create new contained env
-    pub fn new_environmental(env: EnvRef<RTVariable>) -> Self {
-        Self {
-            value: UVRTValue::Void,
-            constant: true,
-            contained_env: Some(env),
         }
     }
 }
@@ -166,7 +157,10 @@ impl RTVariable {
 impl GetVariableContainedEnvironment for RTVariable {
     type Out = RTVariable;
     fn get_variable_contained_env(&self) -> Option<EnvRef<Self::Out>> {
-        self.contained_env.clone()
+        match &self.value {
+            UVRTValue::Module(env) => Some(env.clone()),
+            _ => None,
+        }
     }
 }
 
@@ -202,6 +196,7 @@ impl TypeOf for UVRTValue {
             UVRTValue::Boolean(_) => String::from("boolean"),
             UVRTValue::Null => String::from("null"),
             UVRTValue::Void => String::from("void"),
+            UVRTValue::Module(_) => String::from("module"),
             UVRTValue::Function(_) | UVRTValue::BuiltInFunction(_) | UVRTValue::FFIFunction(_) => {
                 String::from("function")
             },
