@@ -112,6 +112,7 @@ pub enum ASTBlockType {
 
     ModuleImport(Spanned<ModuleImport>),
     ModuleExport(Spanned<Vec<SymbolName>>),
+    Namespace(Spanned<Namespace>),
 }
 
 impl<'a> GetBlockName<'a> for ASTBlockType {
@@ -141,6 +142,7 @@ impl<'a> GetBlockName<'a> for ASTBlockType {
             ASTBlockType::ModuleImport(_) => Cow::Borrowed("import"),
             ASTBlockType::ModuleExport(_) => Cow::Borrowed("export"),
             ASTBlockType::FFIDefinition(_) => Cow::Borrowed("ffi"),
+            ASTBlockType::Namespace(_) => Cow::Borrowed("namespace"),
         }
     }
 }
@@ -169,6 +171,7 @@ impl Positional for ASTBlockType {
             ASTBlockType::ModuleImport(i) => i.get_span(),
             ASTBlockType::ModuleExport(e) => e.get_span(),
             ASTBlockType::FFIDefinition(f) => f.get_span(),
+            ASTBlockType::Namespace(ns) => ns.get_span(),
         }
     }
 }
@@ -417,6 +420,14 @@ pub struct FFIDefinition {
 pub struct ModuleImport {
     pub path: Spanned<String>,
     pub name: Spanned<String>,
+}
+
+// ---------------------------- Namespace ----------------------------------------
+
+/// Represents a namespace
+pub struct Namespace {
+    pub name: Spanned<String>,
+    pub body: Vec<Spanned<ASTBlockType>>,
 }
 // ---------------------------- TESTS ----------------------------------------
 

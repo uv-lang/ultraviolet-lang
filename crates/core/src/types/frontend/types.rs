@@ -55,6 +55,7 @@ pub enum UVType {
     Optional(Box<UVType>),
 
     Module(EnvRef<UVTypeVariable>),
+    Namespace(EnvRef<UVTypeVariable>),
 }
 
 #[derive(Clone)]
@@ -109,6 +110,7 @@ impl std::fmt::Display for UVType {
             },
             UVType::Reference(r) => write!(f, "reference to {}", r.t),
             UVType::Module(_) => write!(f, "<module>"),
+            UVType::Namespace(_) => writeln!(f, "<namespace>"),
         }
     }
 }

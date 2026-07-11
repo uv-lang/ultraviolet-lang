@@ -19,6 +19,7 @@ mod ffi;
 mod functions;
 mod loops;
 mod modules;
+mod namespace;
 mod operators;
 mod variables;
 
@@ -88,6 +89,7 @@ impl Typechecker {
 
             ASTBlockType::ModuleImport(i) => self.typecheck_module(i, env)?,
             ASTBlockType::ModuleExport(e) => self.typecheck_export(e, env)?,
+            ASTBlockType::Namespace(ns) => self.typecheck_namespace(ns, env)?,
         })
     }
 

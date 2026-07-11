@@ -48,10 +48,11 @@ impl Typechecker {
         e: &Vec<SymbolName>,
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
+        // FIXME: Fix this name resolving
         for exp in e {
             self.exports
                 .borrow_mut()
-                .define_variable_rc(exp.join("."), env.borrow().find_var(exp)?);
+                .define_variable_rc(exp.join("_"), env.borrow().find_var(exp)?);
         }
 
         Ok(ControlFlow::Simple(UVType::Void))

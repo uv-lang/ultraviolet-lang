@@ -104,7 +104,6 @@ impl Typechecker {
         env: EnvRef<UVTypeVariable>,
     ) -> Result<ControlFlow, SpannedError> {
         let var_rc = env.borrow().find_var(&va.name)?;
-
         let borrowed = var_rc.borrow();
 
         if let UVType::Reference(r) = &borrowed.value {

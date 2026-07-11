@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{self, Display};
 
 use crate::{traits::frontend::Positional, types::frontend::Span};
 
@@ -46,6 +46,12 @@ pub struct UVToken {
 impl Positional for UVToken {
     fn get_span(&self) -> Span {
         self.span.clone()
+    }
+}
+
+impl fmt::Display for Span {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Span {{start: {}, end: {}}}", self.start, self.end)
     }
 }
 

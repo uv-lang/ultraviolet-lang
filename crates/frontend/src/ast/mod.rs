@@ -22,6 +22,7 @@ mod logical_op;
 mod loops;
 mod math_op;
 mod modules;
+mod namespace;
 mod ops;
 mod type_parser;
 mod values;
@@ -129,7 +130,10 @@ impl ASTParser {
             // Parse function call with trailing `$` symbol
             c if c.ends_with("$") => {
                 let mut new_node = node.clone();
-                new_node.extra_param.value = node.name.trim_end_matches("$").to_owned();
+                new_node.extra_param = Spanned::new(
+                    node.name.trim_end_matches("$").to_owned(),
+                    node.name.get_span(),
+                );
                 self.parse_function_call(&new_node)?
             },
 
@@ -141,6 +145,9 @@ impl ASTParser {
 
             // Parse ffi definition
             "ffi" if !node.self_closing => self.parse_ffi_definition(node)?,
+
+            // Parse namespace definition
+            "namespace" => self.parse_namespace(node)?,
 
             // Values such as int, float, etc.
             name if name.to_uvtype().is_some() => self.parse_value(node)?,

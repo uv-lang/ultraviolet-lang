@@ -2,7 +2,7 @@ use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
     ops::Deref,
-    rc::Rc,
+    rc::{Rc, Weak},
 };
 
 use crate::{
@@ -23,6 +23,7 @@ pub mod ffi;
 pub mod frontend;
 
 pub type EnvRef<T> = Rc<RefCell<Environment<T>>>;
+pub type EnvRefWeak<T> = Weak<RefCell<Environment<T>>>;
 
 #[derive(Default, Debug)]
 pub struct SymbolsUseInterceptor {
@@ -30,9 +31,15 @@ pub struct SymbolsUseInterceptor {
 }
 
 #[derive(Debug)]
+pub enum ParentType<T> {
+    Strong(EnvRef<T>),
+    Weak(EnvRefWeak<T>),
+}
+
+#[derive(Debug)]
 pub struct Environment<T> {
     pub symbols: HashMap<String, Rc<RefCell<T>>>,
-    pub parent: Option<EnvRef<T>>,
+    pub parent: Option<ParentType<T>>,
 
     /// Used for intercept inner names, that been accessed
     pub interceptor: Option<Rc<SymbolsUseInterceptor>>,
@@ -63,7 +70,17 @@ impl<T> Environment<T> {
     pub fn new_child(parent: EnvRef<T>) -> EnvRef<T> {
         Rc::new(RefCell::new(Self {
             symbols: HashMap::new(),
-            parent: Some(parent.clone()),
+            parent: Some(ParentType::Strong(parent.clone())),
+
+            interceptor: parent.borrow().interceptor.clone(),
+        }))
+    }
+
+    /// Create new children environment from weak parent
+    pub fn new_child_weak(parent: EnvRef<T>) -> EnvRef<T> {
+        Rc::new(RefCell::new(Self {
+            symbols: HashMap::new(),
+            parent: Some(ParentType::Weak(Rc::downgrade(&parent))),
 
             interceptor: parent.borrow().interceptor.clone(),
         }))
@@ -96,9 +113,14 @@ where
             self.intercept(name);
             sym.clone()
         } else {
+            self.intercept(name);
             return self
                 .parent
                 .as_ref()
+                .and_then(|x| match x {
+                    ParentType::Strong(s) => Some(s.clone()),
+                    ParentType::Weak(weak) => weak.upgrade(),
+                })
                 .ok_or(SpannedError::new(
                     format!("Name `{}` not defined", first),
                     first.get_span(),
@@ -110,6 +132,7 @@ where
         if rest.is_empty() {
             Ok(found)
         } else {
+            self.intercept(name);
             found
                 .borrow()
                 .get_variable_contained_env()

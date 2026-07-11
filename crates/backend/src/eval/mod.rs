@@ -18,6 +18,7 @@ mod logical;
 mod loops;
 mod math;
 mod modules;
+mod namespace;
 mod ops;
 mod variables;
 
@@ -73,6 +74,8 @@ impl Evaluator {
 
             ASTBlockType::ModuleImport(mi) => self.eval_module(mi, env)?,
             ASTBlockType::ModuleExport(me) => self.eval_export(me, env)?,
+
+            ASTBlockType::Namespace(ns) => self.eval_namespace(ns, env)?,
         })
     }
 

@@ -68,6 +68,7 @@ pub enum UVRTValue {
     Reference(Weak<RefCell<RTVariable>>),
 
     Module(EnvRef<RTVariable>),
+    Namespace(EnvRef<RTVariable>),
 }
 
 impl std::fmt::Display for UVRTValue {
@@ -82,6 +83,7 @@ impl std::fmt::Display for UVRTValue {
             UVRTValue::BuiltInFunction(_) => write!(f, "<built-in function>"),
             UVRTValue::FFIFunction(_) => write!(f, "<ffi function>"),
             UVRTValue::Module(_) => write!(f, "<module>"),
+            UVRTValue::Namespace(_) => write!(f, "<namespace>"),
             UVRTValue::Reference(r) => {
                 let Some(val) = r.upgrade() else {
                     return write!(f, "NULL");
@@ -159,6 +161,7 @@ impl GetVariableContainedEnvironment for RTVariable {
     fn get_variable_contained_env(&self) -> Option<EnvRef<Self::Out>> {
         match &self.value {
             UVRTValue::Module(env) => Some(env.clone()),
+            UVRTValue::Namespace(env) => Some(env.clone()),
             _ => None,
         }
     }
@@ -197,6 +200,7 @@ impl TypeOf for UVRTValue {
             UVRTValue::Null => String::from("null"),
             UVRTValue::Void => String::from("void"),
             UVRTValue::Module(_) => String::from("module"),
+            UVRTValue::Namespace(_) => String::from("namespace"),
             UVRTValue::Function(_) | UVRTValue::BuiltInFunction(_) | UVRTValue::FFIFunction(_) => {
                 String::from("function")
             },

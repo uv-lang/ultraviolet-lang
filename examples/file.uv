@@ -3,7 +3,17 @@
         <path>uvstdlib</path>
     </import>
 
+    <namespace test>
+        <let>
+            <name>var</name>
+            <value>
+                <i32>32</i32>
+            </value>
+        </let>
+    </namespace>
+
     <println$>
-        <uvstdlib />
+        <uvstdlib.test_namespace_test$>
+        </uvstdlib.test_namespace_test$>
     </println$>
 </main>

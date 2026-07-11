@@ -27,6 +27,7 @@ impl GetVariableContainedEnvironment for UVTypeVariable {
     fn get_variable_contained_env(&self) -> Option<EnvRef<Self::Out>> {
         match &self.value {
             UVType::Module(env) => Some(env.clone()),
+            UVType::Namespace(env) => Some(env.clone()),
             _ => None,
         }
     }
