@@ -1,0 +1,15 @@
+<main>
+    <call println>
+        <eq>
+            <i32>5</i32>
+            <i32>5</i32>
+        </eq>
+    </call>
+
+    <call println>
+        <neq>
+            <i32>5</i32>
+            <i32>6</i32>
+        </neq>
+    </call>
+</main>

@@ -1,0 +1,8 @@
+<main>
+    <call println>
+        <sub>
+            <f32>100</f32>
+            <f32>30</f32>
+        </sub>
+    </call>
+</main>

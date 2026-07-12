@@ -1,0 +1,8 @@
+<main>
+    <call println>
+        <div>
+            <f32>10</f32>
+            <f32>4</f32>
+        </div>
+    </call>
+</main>

@@ -1,0 +1,8 @@
+<main>
+    <call println>
+        <mod>
+            <i32>17</i32>
+            <i32>5</i32>
+        </mod>
+    </call>
+</main>

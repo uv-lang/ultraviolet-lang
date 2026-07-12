@@ -1,0 +1,21 @@
+<main>
+    <call println>
+        <and>
+            <bool>1</bool>
+            <bool>1</bool>
+        </and>
+    </call>
+
+    <call println>
+        <or>
+            <bool>0</bool>
+            <bool>1</bool>
+        </or>
+    </call>
+
+    <call println>
+        <not>
+            <bool>1</bool>
+        </not>
+    </call>
+</main>

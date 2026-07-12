@@ -1,0 +1,5 @@
+<main>
+    <call print>
+        <str>Test print</str>
+    </call>
+</main>

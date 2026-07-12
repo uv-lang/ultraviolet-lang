@@ -1,0 +1,8 @@
+<main>
+    <call println>
+        <str>Test println</str>
+    </call>
+    <call print>
+        <str>Trailing print</str>
+    </call>
+</main>

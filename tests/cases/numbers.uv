@@ -1,0 +1,13 @@
+<main>
+    <call println>
+        <i32>123</i32>
+    </call>
+
+    <call println>
+        <f32>3.14</f32>
+    </call>
+
+    <call println>
+        <bool>1</bool>
+    </call>
+</main>
