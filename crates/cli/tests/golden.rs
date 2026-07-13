@@ -5,6 +5,10 @@ use std::fs;
 use std::path::Path;
 use ultraviolet_core::errors::CommonError;
 
+fn normalize(s: &str) -> String {
+    s.replace("\r\n", "\n")
+}
+
 #[test]
 fn golden_tests() -> Result<(), Box<dyn Error>> {
     let cases_dir = Path::new("../../tests/cases").canonicalize()?;
@@ -17,7 +21,6 @@ fn golden_tests() -> Result<(), Box<dyn Error>> {
         }
 
         let expected_path = path.with_extension("out");
-
         let expected = fs::read_to_string(&expected_path)
             .map_err(|_| CommonError::new("Failed to read expected output"))?;
 
@@ -29,11 +32,11 @@ fn golden_tests() -> Result<(), Box<dyn Error>> {
         };
 
         assert_eq!(
-            actual,
-            expected,
+            normalize(&actual),
+            normalize(&expected),
             "Test `{}` failed",
             path.components()
-                .last()
+                .next_back()
                 .unwrap()
                 .as_os_str()
                 .to_string_lossy()

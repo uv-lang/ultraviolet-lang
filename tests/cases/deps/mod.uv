@@ -1,0 +1,16 @@
+<mod>
+    <let>
+        <name>
+            variable_1
+        </name>
+
+        <value>
+            <f32>15.3</f32>
+        </value>
+    </let>
+
+
+    <export>
+        <variable_1 />
+    </export>
+</mod>
