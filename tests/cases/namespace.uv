@@ -1,0 +1,34 @@
+<main>
+    <namespace test_namespace>
+        <let>
+            <name>inner_var</name>
+            <value>
+                <str>Hello</str>
+            </value>
+        </let>
+
+        <fn>
+            <name>inner_fn</name>
+
+            <returns>
+                <str />
+            </returns>
+
+            <body>
+                <return>
+                    <inner_var />
+                </return>
+            </body>
+        </fn>
+
+    </namespace>
+
+    <call println>
+        <test_namespace.inner_var />
+    </call>
+
+    <call print>
+        <test_namespace.inner_fn$>
+        </test_namespace.inner_fn$>
+    </call>
+</main>

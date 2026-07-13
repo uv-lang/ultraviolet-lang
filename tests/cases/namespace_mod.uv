@@ -1,0 +1,10 @@
+<main>
+    <import>
+        <path>deps/mod</path>
+        <as>module</as>
+    </import>
+
+    <call print>
+        <module.namespace_1.variable_2 />
+    </call>
+</main>

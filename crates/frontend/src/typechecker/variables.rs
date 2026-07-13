@@ -64,8 +64,7 @@ impl Typechecker {
     ) -> Result<ControlFlow, SpannedError> {
         let var_rc = env.borrow().find_var(&va.name)?;
 
-        let mut var = var_rc.borrow_mut();
-        if var.constant {
+        if var_rc.borrow().constant {
             return Err(SpannedError::new(
                 format!(
                     "Cannot assign to a constant `{}` variable",
@@ -80,6 +79,7 @@ impl Typechecker {
             cf => return Ok(cf),
         };
 
+        let mut var = var_rc.borrow_mut();
         if !var.value.is_assignable_from(&t) {
             return Err(SpannedError::new(
                 format!(
@@ -204,7 +204,7 @@ impl Typechecker {
             ));
         };
 
-        if strong_ref.borrow_mut().constant {
+        if strong_ref.borrow().constant {
             return Err(SpannedError::new(
                 "Attempt to assign to dereferenced constant value",
                 va.get_span(),

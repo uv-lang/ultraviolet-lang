@@ -1,0 +1,24 @@
+<main>
+    <let>
+        <name>var</name>
+
+        <value>
+            <i32>15</i32>
+        </value>
+    </let>
+
+    <call println>
+        <var />
+    </call>
+
+    <var>
+        <sum>
+            <var />
+            <i32>15</i32>
+        </sum>
+    </var>
+
+    <call println>
+        <var />
+    </call>
+</main>

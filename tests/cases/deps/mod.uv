@@ -9,8 +9,21 @@
         </value>
     </let>
 
+    <namespace namespace_1>
+        <let>
+            <name>
+                variable_2
+            </name>
+        
+            <value>
+                <i8>52</i8>
+            </value>
+        </let>
+    </namespace>
+
 
     <export>
         <variable_1 />
+        <namespace_1 />
     </export>
 </mod>
