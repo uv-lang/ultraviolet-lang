@@ -9,12 +9,33 @@
         </value>
     </let>
 
+    <fn>
+        <name>function_1</name>
+
+        <arg>
+            <name>arg</name>
+            <type>
+                <i32 />
+            </type>
+        </arg>
+
+        <returns>
+            <i32 />
+        </returns>
+
+        <body>
+            <return>
+                <arg />
+            </return>
+        </body>
+    </fn>
+
     <namespace namespace_1>
         <let>
             <name>
                 variable_2
             </name>
-        
+
             <value>
                 <i8>52</i8>
             </value>

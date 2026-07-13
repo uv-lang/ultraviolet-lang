@@ -13,3 +13,4 @@ ultraviolet-core = { path = "../core" }
 [dev-dependencies]
 assert_cmd = "2"
 pretty_assertions = "1"
+colored = "3.0.0"

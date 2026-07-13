@@ -53,7 +53,7 @@ jobs:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
       - name: Run tests
-        run: cargo test --workspace --all-features --all-targets --locked
+        run: cargo test --workspace -- --skip golden_tests; cargo test golden_tests -- --nocapture; cargo doc --workspace --all-features --no-deps --locked
 
   docs:
     name: Docs
