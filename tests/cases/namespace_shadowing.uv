@@ -1,0 +1,25 @@
+<main>
+    <namespace config>
+        <let>
+            <name>value</name>
+            <value>
+                <i32>1</i32>
+            </value>
+        </let>
+    </namespace>
+
+    <let>
+        <name>value</name>
+        <value>
+            <i32>2</i32>
+        </value>
+    </let>
+
+    <call println>
+        <value />
+    </call>
+
+    <call println>
+        <config.value />
+    </call>
+</main>

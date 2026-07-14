@@ -21,6 +21,9 @@ pub trait EnvironmentTrait<T> {
 
     /// Remove symbol from CURRENT scope
     fn remove_symbol(&mut self, name: impl Into<String>) -> bool;
+
+    /// Check if symbol exists ONLY in current scope (not parent!)
+    fn exists_in_current(&self, name: &[Spanned<String>]) -> bool;
 }
 
 pub trait GetVariableContainedEnvironment {

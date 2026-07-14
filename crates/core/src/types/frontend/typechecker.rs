@@ -32,3 +32,7 @@ impl GetVariableContainedEnvironment for UVTypeVariable {
         }
     }
 }
+
+pub struct TypecheckContext {
+    
+}

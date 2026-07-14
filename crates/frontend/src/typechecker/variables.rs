@@ -43,7 +43,7 @@ impl Typechecker {
             ));
         }
 
-        if env.borrow().find_var(slice::from_ref(&vd.name)).is_ok() {
+        if env.borrow().exists_in_current(slice::from_ref(&vd.name)) {
             return Err(SpannedError::new(
                 format!("Variable with name {} already defined", vd.name.value),
                 vd.get_span(),

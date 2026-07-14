@@ -1,4 +1,4 @@
-use std::{rc::Rc, slice};
+use std::{rc::Rc};
 
 use crate::Evaluator;
 use ultraviolet_core::{
@@ -21,17 +21,6 @@ impl Evaluator {
         var_def: &Spanned<VariableDefinition>,
         env: EnvRef<RTVariable>,
     ) -> Result<ControlFlow, SpannedError> {
-        if env
-            .borrow()
-            .find_var(slice::from_ref(&var_def.name))
-            .is_ok()
-        {
-            return Err(SpannedError::new(
-                format!("Variable `{}` already defined", var_def.name.value),
-                var_def.get_span(),
-            ));
-        }
-
         match self.eval_single(&var_def.value.value, env.clone())? {
             ControlFlow::Simple(value) => {
                 env.borrow_mut().define_variable(

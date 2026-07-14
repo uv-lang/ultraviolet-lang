@@ -1,0 +1,23 @@
+<main>
+    <for>
+        <iter>i</iter>
+
+        <start>
+            <i32>0</i32>
+        </start>
+
+        <end>
+            <i32>10</i32>
+        </end>
+
+        <step>
+            <i32>2</i32>
+        </step>
+
+        <body>
+            <call println>
+                <i />
+            </call>
+        </body>
+    </for>
+</main>

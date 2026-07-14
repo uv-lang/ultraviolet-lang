@@ -27,6 +27,8 @@ pub struct Typechecker {
     pub source: Rc<SourceFileParsed>,
     pub current_name: String,
     pub exports: EnvRef<UVTypeVariable>,
+
+    pub expected_return_ty: Option<UVType>,
 }
 
 impl Typechecker {
@@ -35,6 +37,7 @@ impl Typechecker {
             source: sf,
             current_name: name.into(),
             exports: Environment::new(),
+            expected_return_ty: None,
         }
     }
 

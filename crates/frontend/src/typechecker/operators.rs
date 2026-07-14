@@ -2,7 +2,7 @@ use ultraviolet_core::{
     errors::SpannedError,
     traits::frontend::{Positional, ast::IsAssignable, token_parser::UnwrapOptionError},
     types::{
-        EnvRef, Environment,
+        EnvRef,
         frontend::{
             Spanned,
             ast::{
@@ -83,28 +83,19 @@ impl Typechecker {
         }
 
         let then_body = match &op.then_body {
-            Some(b) => Some(
-                match self.analyze_group(&b.value, Environment::new_child(env.clone()))? {
-                    ControlFlow::Simple(t) => t,
-                    // TODO: Make it so that it doesn’t skip checking other branches
-                    cf => return Ok(cf),
-                },
-            ),
+            Some(b) => Some(self.analyze_group(&b.value, env.clone())?),
             None => None,
         };
 
         let else_body = match &op.else_body {
-            Some(b) => Some(
-                match self.analyze_group(&b.value, Environment::new_child(env.clone()))? {
-                    ControlFlow::Simple(t) => t,
-                    cf => return Ok(cf),
-                },
-            ),
+            Some(b) => Some(self.analyze_group(&b.value, env.clone())?),
             None => None,
         };
 
         let return_type = match (then_body, else_body) {
             (None, None) => UVType::Void,
+            // Both hands is simple expr
+            (Some(ControlFlow::Simple(l)), Some(ControlFlow::Simple(r))) if l == r => l,
             (Some(l), Some(r)) if r == l => l,
             _ => {
                 return Err(SpannedError::new(

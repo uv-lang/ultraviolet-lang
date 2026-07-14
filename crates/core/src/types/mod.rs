@@ -45,7 +45,10 @@ pub struct Environment<T> {
     pub interceptor: Option<Rc<SymbolsUseInterceptor>>,
 }
 
-impl<T> Environment<T> {
+impl<T> Environment<T>
+where
+    T: GetVariableContainedEnvironment<Out = T>,
+{
     /// Create new empty env
     pub fn new() -> EnvRef<T> {
         Rc::new(RefCell::new(Self {
@@ -97,13 +100,12 @@ impl<T> Environment<T> {
             i.intercepted_names.borrow_mut().insert(name.to_vec());
         }
     }
-}
 
-impl<T> EnvironmentTrait<T> for Environment<T>
-where
-    T: GetVariableContainedEnvironment<Out = T>,
-{
-    fn find_var(&self, name: &[Spanned<String>]) -> Result<Rc<RefCell<T>>, SpannedError> {
+    fn _find_var(
+        &self,
+        name: &[Spanned<String>],
+        with_parent: bool,
+    ) -> Result<Rc<RefCell<T>>, SpannedError> {
         let (first, rest) = name.split_first().ok_or(SpannedError::new(
             format!("Invalid name: `{}`", name.to_vec().join(".")),
             name.to_vec().get_span(),
@@ -112,7 +114,7 @@ where
         let found = if let Some(sym) = self.symbols.get(&first.value) {
             self.intercept(name);
             sym.clone()
-        } else {
+        } else if with_parent {
             self.intercept(name);
             return self
                 .parent
@@ -127,6 +129,11 @@ where
                 ))?
                 .borrow()
                 .find_var(name);
+        } else {
+            return Err(SpannedError::new(
+                format!("Name `{}` not defined", first),
+                first.get_span(),
+            ));
         };
 
         if rest.is_empty() {
@@ -141,8 +148,17 @@ where
                     first.get_span(),
                 ))?
                 .borrow()
-                .find_var(rest)
+                ._find_var(rest, with_parent)
         }
+    }
+}
+
+impl<T> EnvironmentTrait<T> for Environment<T>
+where
+    T: GetVariableContainedEnvironment<Out = T>,
+{
+    fn find_var(&self, name: &[Spanned<String>]) -> Result<Rc<RefCell<T>>, SpannedError> {
+        self._find_var(name, true)
     }
 
     fn define_variable(&mut self, name: impl Into<String>, value: T) -> Rc<RefCell<T>> {
@@ -157,6 +173,10 @@ where
 
     fn define_variable_rc(&mut self, name: impl Into<String>, value: Rc<RefCell<T>>) {
         self.symbols.insert(name.into(), value);
+    }
+
+    fn exists_in_current(&self, name: &[Spanned<String>]) -> bool {
+        self._find_var(name, false).is_ok()
     }
 }
 

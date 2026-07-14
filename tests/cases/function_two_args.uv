@@ -1,0 +1,39 @@
+<main>
+    <fn>
+        <name>add</name>
+
+        <arg>
+            <name>a</name>
+            <type>
+                <i32 />
+            </type>
+        </arg>
+
+        <arg>
+            <name>b</name>
+            <type>
+                <i32 />
+            </type>
+        </arg>
+
+        <returns>
+            <i32 />
+        </returns>
+
+        <body>
+            <return>
+                <sum>
+                    <a />
+                    <b />
+                </sum>
+            </return>
+        </body>
+    </fn>
+
+    <call println>
+        <add$>
+            <i32>10</i32>
+            <i32>20</i32>
+        </add$>
+    </call>
+</main>

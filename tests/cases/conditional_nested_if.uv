@@ -1,0 +1,21 @@
+<main>
+    <if>
+        <test>
+            <bool>1</bool>
+        </test>
+
+        <then>
+            <if>
+                <test>
+                    <bool>1</bool>
+                </test>
+
+                <then>
+                    <call println>
+                        <str>nested</str>
+                    </call>
+                </then>
+            </if>
+        </then>
+    </if>
+</main>

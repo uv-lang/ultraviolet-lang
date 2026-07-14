@@ -1,0 +1,10 @@
+<main>
+    <import>
+        <path>deps/mod</path>
+        <as>m</as>
+    </import>
+
+    <call println>
+        <m.variable_1/>
+    </call>
+</main>
