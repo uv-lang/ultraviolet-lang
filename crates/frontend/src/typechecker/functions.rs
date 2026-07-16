@@ -6,14 +6,14 @@ use ultraviolet_core::{
     errors::SpannedError,
     traits::{
         EnvironmentTrait,
-        frontend::{Positional, UVDisplay, ast::IsAssignable},
+        frontend::{Positional, UVDisplay},
     },
     types::{
         EnvRef, Environment,
         frontend::{
             Span, Spanned,
-            ast::{ASTBlockType, FunctionCall, FunctionDefinition},
-            typechecker::{ControlFlow, UVTypeVariable},
+            ast::{FunctionCall, FunctionDefinition},
+            typechecker::{TControlFlow, UVTypeVariable},
             types::{ReferenceType, UVBuiltinFunctionArguments, UVFunctionType, UVType},
         },
     },
@@ -28,34 +28,17 @@ fn random_name(len: usize) -> String {
         .collect()
 }
 
-enum TypecheckArgsResult {
-    Types(Vec<UVType>),
-    Flow(ControlFlow),
-}
-
 impl Typechecker {
     /// Typecheck function definition
     pub fn check_function_definition(
         &self,
         fd: &Spanned<FunctionDefinition>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
         let inner_env = Environment::new_child(env.clone());
 
         let mut args = Vec::new();
-        let mut trailing_optional = false;
         for arg in &fd.arguments {
-            // Trailing optional check
-            match arg.arg_type.value {
-                UVType::Optional(_) => trailing_optional = true,
-                _ if trailing_optional => {
-                    return Err(SpannedError::new(
-                        "Non-optional argument cannot be trailing",
-                        arg.get_span(),
-                    ));
-                },
-                _ => {},
-            }
             let mut arg_t = arg.arg_type.value.clone();
             if let UVType::Reference(rr) = &arg_t {
                 let v = inner_env.borrow_mut().define_variable(
@@ -98,10 +81,8 @@ impl Typechecker {
         // enable symbols interception
         inner_env.borrow_mut().enable_interception();
 
-        let body = match self.analyze_group(&fd.body, inner_env.clone())? {
-            ControlFlow::Return(t) => t,
-            ControlFlow::Simple(_) => UVType::Void,
-        };
+        let mut body_cf = self.analyze_group(&fd.body, inner_env.clone())?;
+        body_cf.returns.extend(body_cf.ty);
 
         let intercepted_names = inner_env
             .borrow()
@@ -112,17 +93,22 @@ impl Typechecker {
 
         fd.value.moved_symbols.replace(intercepted_names);
 
-        if body != exp {
-            return Err(SpannedError::new(
+        exp.is_assignable_from_many(&body_cf.returns).map_err(|t| {
+            SpannedError::new(
                 format!(
                     "Function body should return `{}` type, but `{}` found",
-                    exp, body
+                    exp, t
                 ),
-                fd.get_span(),
-            ));
-        }
+                t.get_span(),
+            )
+        })?;
 
-        Ok(ControlFlow::Simple(returns))
+        // # SAFETY:
+        // Guaranteed unwrap safety, due body_cf.returns.extend above
+        Ok(TControlFlow::new_ty(
+            returns,
+            body_cf.returns.last().unwrap().get_span(),
+        ))
     }
 
     /// Typecheck function call
@@ -130,14 +116,17 @@ impl Typechecker {
         &self,
         fc: &Spanned<FunctionCall>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
         let simplified_name = fc.name.join(".");
         let var = env.borrow().find_var(&fc.name)?;
 
-        let args_types = match self.check_args(&fc.args, env.clone())? {
-            TypecheckArgsResult::Types(t) => t,
-            TypecheckArgsResult::Flow(cf) => return Ok(cf),
-        };
+        let mut cf = TControlFlow::new_void(fc.get_span());
+        let mut args_types = Vec::new();
+        for arg in &fc.args {
+            let cfi = self.typecheck(&arg.value, env.clone())?;
+            cf.extend_returns(cfi.returns);
+            args_types.push(cfi.ty);
+        }
 
         let value = &var.borrow().value;
 
@@ -156,12 +145,14 @@ impl Typechecker {
                     _ => {},
                 }
 
-                Ok(ControlFlow::Simple(f.returns.clone()))
+                cf.add_ty(f.returns.clone(), fc.get_span());
+                Ok(cf)
             },
 
             UVType::Function(f) => {
                 self.validate_args(&f.args, &args_types, &simplified_name, fc.get_span())?;
-                Ok(ControlFlow::Simple(f.returns.clone()))
+                cf.add_ty(f.returns.clone(), fc.get_span());
+                Ok(cf)
             },
 
             _ => Err(SpannedError::new(
@@ -171,30 +162,11 @@ impl Typechecker {
         }
     }
 
-    /// Get all types of args
-    fn check_args(
-        &self,
-        args: &Vec<Spanned<ASTBlockType>>,
-        env: EnvRef<UVTypeVariable>,
-    ) -> Result<TypecheckArgsResult, SpannedError> {
-        let mut args_types = Vec::new();
-        for arg in args {
-            let t = match self.typecheck(&arg.value, env.clone())? {
-                ControlFlow::Simple(t) => t,
-                cf => return Ok(TypecheckArgsResult::Flow(cf)),
-            };
-
-            args_types.push(t);
-        }
-
-        Ok(TypecheckArgsResult::Types(args_types))
-    }
-
     /// Validate function call args
     fn validate_args(
         &self,
         expected: &[UVType],
-        actual: &[UVType],
+        actual: &[Vec<Spanned<UVType>>],
         name: &str,
         span: Span,
     ) -> Result<(), SpannedError> {
@@ -216,18 +188,16 @@ impl Typechecker {
         }
 
         for (i, (a, b)) in expected.iter().zip(actual).enumerate() {
-            if !a.is_assignable_from(b) {
-                return Err(SpannedError::new(
+            a.is_assignable_from_many(b).map_err(|t| SpannedError::new(
                     format!(
                         "Argument #{} for function `{}` mismatch. Expected `{}`, but `{}` provided ",
                         i + 1,
                         name,
                         a,
-                        b
+                        t
                     ),
-                    span,
-                ));
-            }
+                    t.get_span(),
+                ))?;
         }
 
         Ok(())

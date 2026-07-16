@@ -7,7 +7,7 @@ use ultraviolet_core::{
         frontend::{
             Spanned,
             ast::FFIDefinition,
-            typechecker::{ControlFlow, UVTypeVariable},
+            typechecker::{TControlFlow, UVTypeVariable},
             types::{UVFunctionType, UVType},
         },
     },
@@ -20,7 +20,8 @@ impl Typechecker {
         &self,
         ffi_d: &Spanned<Box<FFIDefinition>>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
+        let mut cf = TControlFlow::new_void(ffi_d.get_span());
         if env
             .borrow()
             .find_var(slice::from_ref(&ffi_d.name.clone()))
@@ -33,37 +34,33 @@ impl Typechecker {
         }
 
         // ------------------------------ <dll> ------------------------------
-        let dll_type = match self.typecheck(&ffi_d.dll, env.clone())? {
-            ControlFlow::Simple(t) => t,
-            cf => return Ok(cf),
-        };
+        let cfi = self.typecheck(&ffi_d.dll, env.clone())?;
+        let dll_type = cfi.ty;
+        cf.extend_returns(cfi.returns);
 
-        if !matches!(dll_type, UVType::String) {
-            return Err(SpannedError::new(
-                format!(
-                    "Type for <dll> mismatch. Expected <str />, found {}",
-                    dll_type
-                ),
-                ffi_d.dll.get_span(),
-            ));
-        }
+        UVType::String
+            .is_assignable_from_many(&dll_type)
+            .map_err(|t| {
+                SpannedError::new(
+                    format!("Type for <dll> mismatch. Expected <str />, found {}", t),
+                    t.get_span(),
+                )
+            })?;
 
         // ------------------------------ <func> -----------------------------
 
-        let func_type = match self.typecheck(&ffi_d.func, env.clone())? {
-            ControlFlow::Simple(t) => t,
-            cf => return Ok(cf),
-        };
+        let cfi = self.typecheck(&ffi_d.func, env.clone())?;
+        let func_type = cfi.ty;
+        cf.extend_returns(cfi.returns);
 
-        if !matches!(func_type, UVType::String) {
-            return Err(SpannedError::new(
-                format!(
-                    "Type for <func> mismatch. Expected <str />, found {}",
-                    func_type
-                ),
-                ffi_d.func.get_span(),
-            ));
-        }
+        UVType::String
+            .is_assignable_from_many(&func_type)
+            .map_err(|t| {
+                SpannedError::new(
+                    format!("Type for <func> mismatch. Expected <str />, found {}", t),
+                    t.get_span(),
+                )
+            })?;
 
         // ----------------------------- <arg> -------------------------------
         for arg in &ffi_d.arguments {
@@ -102,6 +99,6 @@ impl Typechecker {
             ),
         );
 
-        Ok(ControlFlow::Simple(UVType::Void))
+        Ok(cf)
     }
 }

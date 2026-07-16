@@ -21,15 +21,6 @@ pub trait GetTypeEnv {
     fn get_type(&self, env: EnvRef<UVTypeVariable>) -> UVType;
 }
 
-pub trait IsAssignable {
-    /// Returns `true` if `other` is a subtype of `self`.
-    ///
-    /// This defines assignability in the type system.
-    /// A value of type `other` is assignable to `self` if every possible
-    /// runtime value of `other` is valid for `self`.
-    fn is_assignable_from(&self, other: &UVType) -> bool;
-}
-
 pub trait StringToUVType {
     /// Convert string-representation to a Ultraviolet type
     ///

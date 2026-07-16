@@ -434,7 +434,7 @@ pub struct Namespace {
 #[cfg(test)]
 mod tests {
     use crate::{
-        traits::frontend::ast::{IsAssignable, StringToUVType},
+        traits::frontend::ast::StringToUVType,
         types::frontend::{ast::UVType, number::UVNumberType},
     };
 

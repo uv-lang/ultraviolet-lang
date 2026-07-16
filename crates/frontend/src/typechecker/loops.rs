@@ -7,7 +7,7 @@ use ultraviolet_core::{
             Spanned,
             ast::{ForLoop, WhileLoop},
             number::UVNumberType,
-            typechecker::{ControlFlow, UVTypeVariable},
+            typechecker::{TControlFlow, UVTypeVariable},
             types::UVType,
         },
     },
@@ -21,24 +21,27 @@ impl Typechecker {
         &self,
         wl: &Spanned<Box<WhileLoop>>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
-        let test = match self.typecheck(&wl.test, env.clone())? {
-            ControlFlow::Simple(t) => t,
-            cf => return Ok(cf),
-        };
+    ) -> Result<TControlFlow, SpannedError> {
+        let mut cf = self.typecheck(&wl.test, env.clone())?;
+        let test = cf.ty.clone();
 
-        if !matches!(test, UVType::Boolean) {
-            return Err(SpannedError::new(
-                format!(
-                    "While loop allows only `bool` for test block, but `{}` provided",
-                    test
-                ),
-                wl.get_span(),
-            ));
-        }
+        UVType::Boolean
+            .is_assignable_from_many(&test)
+            .map_err(|t| {
+                SpannedError::new(
+                    format!(
+                        "While loop allows only `bool` for test block, but `{}` provided",
+                        t
+                    ),
+                    t.get_span(),
+                )
+            })?;
 
-        self.analyze_group(&wl.body, Environment::new_child(env.clone()))?;
-        Ok(ControlFlow::Simple(UVType::Void))
+        let cfi = self.analyze_group(&wl.body, Environment::new_child(env.clone()))?;
+
+        cf.set_ty(UVType::Void, wl.get_span());
+        cf.extend_returns(cfi.returns);
+        Ok(cf)
     }
 
     /// Typecheck for loop
@@ -46,47 +49,56 @@ impl Typechecker {
         &self,
         fl: &Spanned<ForLoop>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
         let child_env = Environment::new_child(env.clone());
+        let mut cf = TControlFlow::new_void(fl.get_span());
 
-        let start = match self.typecheck(&fl.start, env.clone())? {
-            ControlFlow::Simple(s) => match s {
+        let cf_start = self.typecheck(&fl.start, env.clone())?;
+        cf.extend_returns(cf_start.returns);
+
+        let start_ty = UVType::check_all_types(&cf_start.ty)
+            .map_err(|t| SpannedError::new(format!("Type mismatch: {}", t), t.get_span()))?;
+
+        let start = match start_ty {
+            UVType::Number(n) => n,
+            _ => {
+                return Err(SpannedError::new(
+                    "Type mismatch for `for` start. Expected number",
+                    fl.start.get_span(),
+                ));
+            },
+        };
+
+        let cf_end = self.typecheck(&fl.end, env.clone())?;
+        cf.extend_returns(cf_end.returns);
+
+        let end_ty = UVType::check_all_types(&cf_end.ty)
+            .map_err(|t| SpannedError::new(format!("Type mismatch: {}", t), t.get_span()))?;
+
+        let end = match end_ty {
+            UVType::Number(n) => n,
+            _ => {
+                return Err(SpannedError::new(
+                    "Type mismatch for `for` end. Expected number",
+                    fl.start.get_span(),
+                ));
+            },
+        };
+
+        let step = if let Some(step) = &fl.step {
+            let cf_step = self.typecheck(&step, env.clone())?;
+            cf.extend_returns(cf_step.returns);
+
+            let step_ty = UVType::check_all_types(&cf_step.ty)
+                .map_err(|t| SpannedError::new(format!("Type mismatch: {}", t), t.get_span()))?;
+            match step_ty {
                 UVType::Number(n) => n,
                 _ => {
                     return Err(SpannedError::new(
-                        "Type mismatch for `for` start. Expected number",
+                        "Type mismatch for `for` step. Expected number",
                         fl.start.get_span(),
                     ));
                 },
-            },
-            cf => return Ok(cf),
-        };
-
-        let end = match self.typecheck(&fl.end, env.clone())? {
-            ControlFlow::Simple(s) => match s {
-                UVType::Number(n) => n,
-                _ => {
-                    return Err(SpannedError::new(
-                        "Type mismatch for `for` end. Expected number",
-                        fl.start.get_span(),
-                    ));
-                },
-            },
-            cf => return Ok(cf),
-        };
-
-        let step = if let Some(s) = &fl.step {
-            match self.typecheck(s, env.clone())? {
-                ControlFlow::Simple(s) => match s {
-                    UVType::Number(n) => n,
-                    _ => {
-                        return Err(SpannedError::new(
-                            "Type mismatch for `for` step. Expected number",
-                            fl.start.get_span(),
-                        ));
-                    },
-                },
-                cf => return Ok(cf),
             }
         } else {
             start.clone()
@@ -104,7 +116,8 @@ impl Typechecker {
             UVTypeVariable::new_from(UVType::Number(start), true),
         );
 
-        self.analyze_group(&fl.body, child_env)?;
-        Ok(ControlFlow::Simple(UVType::Void))
+        let cf_group = self.analyze_group(&fl.body, child_env)?;
+        cf.extend_returns(cf_group.returns);
+        Ok(cf)
     }
 }

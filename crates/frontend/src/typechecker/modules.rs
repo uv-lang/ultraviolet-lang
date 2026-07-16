@@ -9,7 +9,7 @@ use ultraviolet_core::{
         frontend::{
             Spanned,
             ast::{ModuleImport, SymbolName},
-            typechecker::{ControlFlow, UVTypeVariable},
+            typechecker::{TControlFlow, UVTypeVariable},
             types::UVType,
         },
     },
@@ -23,7 +23,7 @@ impl Typechecker {
         &self,
         mi: &Spanned<ModuleImport>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
         let Some(module_ast) = self.source.modules.get(&mi.name.value) else {
             return Err(SpannedError::new(
                 "[INTERNAL ERROR] Cannot find loaded module",
@@ -39,22 +39,22 @@ impl Typechecker {
             UVTypeVariable::new_from(UVType::Module(typechecker.exports), true),
         );
 
-        Ok(ControlFlow::Simple(UVType::Void))
+        Ok(TControlFlow::new_void(mi.get_span()))
     }
 
     /// Parse module export block
     pub fn typecheck_export(
         &self,
-        e: &Vec<SymbolName>,
+        e: &Spanned<Vec<SymbolName>>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
         // FIXME: Fix this name resolving
-        for exp in e {
+        for exp in &e.value {
             self.exports
                 .borrow_mut()
                 .define_variable_rc(exp.join("_"), env.borrow().find_var(exp)?);
         }
 
-        Ok(ControlFlow::Simple(UVType::Void))
+        Ok(TControlFlow::new_void(e.get_span()))
     }
 }

@@ -1,6 +1,6 @@
 use ultraviolet_core::{
     errors::SpannedError,
-    traits::frontend::{Positional, ast::IsAssignable, token_parser::UnwrapOptionError},
+    traits::frontend::{Positional, token_parser::UnwrapOptionError},
     types::{
         EnvRef,
         frontend::{
@@ -8,7 +8,7 @@ use ultraviolet_core::{
             ast::{
                 BuiltInOperation, CompareOpType, ConditionalOperator, LogicalOpType, MathOpType,
             },
-            typechecker::{ControlFlow, UVTypeVariable},
+            typechecker::{TControlFlow, UVTypeVariable},
             types::UVType,
         },
     },
@@ -16,17 +16,28 @@ use ultraviolet_core::{
 
 use crate::typechecker::Typechecker;
 
-fn are_comparable(a: &UVType, b: &UVType) -> bool {
-    match (a, b) {
-        (UVType::Number(_), UVType::Number(_)) => true,
+fn is_all_comparable(
+    a: &[Spanned<UVType>],
+    b: &[Spanned<UVType>],
+) -> Result<(), (Spanned<UVType>, Spanned<UVType>)> {
+    for a_ty in a {
+        for b_ty in b {
+            let comparable = match (&a_ty.value, &b_ty.value) {
+                (UVType::Number(_), UVType::Number(_)) => true,
+                (a, b) => a == b,
+            };
 
-        _ if a == b => true,
-        _ => false,
+            if !comparable {
+                return Err((a_ty.clone(), b_ty.clone()));
+            }
+        }
     }
+
+    Ok(())
 }
 
-fn is_number_like(t: &UVType) -> bool {
-    matches!(t, UVType::Number(_))
+fn all_is_number_like(t: &[Spanned<UVType>]) -> bool {
+    t.iter().all(|t| matches!(t.value, UVType::Number(_)))
 }
 
 impl Typechecker {
@@ -35,33 +46,36 @@ impl Typechecker {
         &self,
         op: &Spanned<BuiltInOperation<MathOpType>>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
-        let op_type = match self.typecheck(
+    ) -> Result<TControlFlow, SpannedError> {
+        let mut cf = TControlFlow::new_void(op.get_span());
+        let first_op_cf = self.typecheck(
             op.operands.first().unwrap_or_spanned(op.get_span())?,
             env.clone(),
-        )? {
-            ControlFlow::Simple(t) => t,
-            cf => return Ok(cf),
-        };
+        )?;
+
+        let expected_type = UVType::check_all_types(&first_op_cf.ty)
+            .map_err(|t| SpannedError::new(format!("Type mismatch: {}", t), t.get_span()))?;
+
+        cf.extend_returns(first_op_cf.returns);
+        cf.set_ty(expected_type.clone(), op.get_span());
 
         for operand in &op.operands {
-            let t = match self.typecheck(operand, env.clone())? {
-                ControlFlow::Simple(t) => t,
-                cf => return Ok(cf),
-            };
+            let cfa = self.typecheck(operand, env.clone())?;
 
-            if !op_type.is_assignable_from(&t) {
-                return Err(SpannedError::new(
+            expected_type.is_assignable_from_many(&cf.ty).map_err(|t| {
+                SpannedError::new(
                     format!(
                         "Type mismatch for math operation: Expected `{}`, got `{}`",
-                        op_type, t
+                        expected_type, t
                     ),
-                    operand.get_span(),
-                ));
-            }
+                    t.get_span(),
+                )
+            })?;
+
+            cf.extend_returns(cfa.returns);
         }
 
-        Ok(ControlFlow::Simple(op_type))
+        Ok(cf)
     }
 
     /// Typecheck conditional operator
@@ -69,43 +83,58 @@ impl Typechecker {
         &self,
         op: &Spanned<ConditionalOperator>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
-        let test = match self.typecheck(&op.test, env.clone())? {
-            ControlFlow::Simple(t) => t,
-            cf => return Ok(cf),
-        };
+    ) -> Result<TControlFlow, SpannedError> {
+        let mut cf = TControlFlow::new_void(op.get_span());
+        let test_cf = self.typecheck(&op.test, env.clone())?;
+        cf.extend_returns(test_cf.returns);
 
-        if !matches!(test, UVType::Boolean) {
-            return Err(SpannedError::new(
-                "Conditional operator expects `bool` type for test expression",
-                op.get_span(),
-            ));
-        }
+        UVType::Boolean
+            .is_assignable_from_many(&test_cf.ty)
+            .map_err(|t| {
+                SpannedError::new(
+                    "Conditional operator expects `bool` type for test expression",
+                    t.get_span(),
+                )
+            })?;
 
         let then_body = match &op.then_body {
-            Some(b) => Some(self.analyze_group(&b.value, env.clone())?),
+            Some(b) => {
+                let cfi = self.analyze_group(&b.value, env.clone())?;
+                cf.extend_returns(cfi.returns);
+                Some(cfi.ty)
+            },
             None => None,
         };
 
         let else_body = match &op.else_body {
-            Some(b) => Some(self.analyze_group(&b.value, env.clone())?),
+            Some(b) => {
+                let cfi = self.analyze_group(&b.value, env.clone())?;
+                cf.extend_returns(cfi.returns);
+                Some(cfi.ty)
+            },
             None => None,
         };
 
         let return_type = match (then_body, else_body) {
-            (None, None) => UVType::Void,
-            // Both hands is simple expr
-            (Some(ControlFlow::Simple(l)), Some(ControlFlow::Simple(r))) if l == r => l,
-            (Some(l), Some(r)) if r == l => l,
-            _ => {
+            (Some(t), None) => t,
+            (None, Some(e)) => e,
+
+            (Some(t), Some(e)) => {
+                let mut r = t.clone();
+                r.extend(e);
+                t
+            },
+
+            (None, None) => {
                 return Err(SpannedError::new(
-                    "Type mismatch for conditional operator hands",
+                    "Conditional operator cannot be empty",
                     op.get_span(),
                 ));
             },
         };
 
-        Ok(ControlFlow::Simple(return_type))
+        cf.ty = return_type;
+        Ok(cf)
     }
 
     /// Typecheck logical operator
@@ -113,25 +142,27 @@ impl Typechecker {
         &self,
         op: &Spanned<BuiltInOperation<LogicalOpType>>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
+        let mut cf = TControlFlow::new_ty(UVType::Boolean, op.get_span());
         for operand in &op.operands {
-            let t = match self.typecheck(operand, env.clone())? {
-                ControlFlow::Simple(t) => t,
-                cf => return Ok(cf),
-            };
+            let cfa = self.typecheck(operand, env.clone())?;
 
-            if !matches!(t, UVType::Boolean) {
-                return Err(SpannedError::new(
-                    format!(
-                        "Logical operator allows only boolean type, but {} provided",
-                        t
-                    ),
-                    op.get_span(),
-                ));
-            }
+            UVType::Boolean
+                .is_assignable_from_many(&cfa.ty)
+                .map_err(|t| {
+                    SpannedError::new(
+                        format!(
+                            "Logical operator allows only boolean type, but {} provided",
+                            t
+                        ),
+                        t.get_span(),
+                    )
+                })?;
+
+            cf.extend_returns(cfa.returns);
         }
 
-        Ok(ControlFlow::Simple(UVType::Boolean))
+        Ok(cf)
     }
 
     /// Typecheck comparison operator
@@ -139,28 +170,26 @@ impl Typechecker {
         &self,
         op: &Spanned<BuiltInOperation<CompareOpType>>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
         let mut types = Vec::new();
+        let mut cf = TControlFlow::new_ty(UVType::Boolean, op.get_span());
 
         for operand in &op.operands {
-            let t = match self.typecheck(operand, env.clone())? {
-                ControlFlow::Simple(t) => t,
-                cf => return Ok(cf),
-            };
-
-            types.push(t);
+            let cfi = self.typecheck(operand, env.clone())?;
+            types.push(cfi.ty);
+            cf.extend_returns(cfi.returns);
         }
 
         match op.op_type {
             CompareOpType::Equality | CompareOpType::NotEquality => {
                 for i in 0..types.len() {
                     for j in (i + 1)..types.len() {
-                        if !are_comparable(&types[i], &types[j]) {
-                            return Err(SpannedError::new(
-                                format!("Cannot compare `{}` with `{}`", types[i], types[j]),
+                        is_all_comparable(&types[i], &types[j]).map_err(|(l, r)| {
+                            SpannedError::new(
+                                format!("Cannot compare `{}` with `{}`", l, r),
                                 op.get_span(),
-                            ));
-                        }
+                            )
+                        })?;
                     }
                 }
             },
@@ -170,11 +199,12 @@ impl Typechecker {
             | CompareOpType::Less
             | CompareOpType::LessEquals => {
                 for t in &types {
-                    if !is_number_like(t) {
+                    if !all_is_number_like(t) {
                         return Err(SpannedError::new(
                             format!(
                                 "Operator `{}` expects number operands, but `{}` provided",
-                                op.op_type, t
+                                op.op_type,
+                                t.first().unwrap()
                             ),
                             op.get_span(),
                         ));
@@ -183,6 +213,6 @@ impl Typechecker {
             },
         }
 
-        Ok(ControlFlow::Simple(UVType::Boolean))
+        Ok(cf)
     }
 }

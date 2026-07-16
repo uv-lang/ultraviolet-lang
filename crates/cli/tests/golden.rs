@@ -21,6 +21,8 @@ fn golden_tests() -> Result<(), Box<dyn Error>> {
     let cases_dir = Path::new("../../tests/cases").canonicalize()?;
 
     let mut latest_err: Option<TestError> = None;
+    let mut succeed_count = 0;
+    let mut failed_count = 0;
     for entry in fs::read_dir(cases_dir).unwrap() {
         let path = entry.unwrap().path();
 
@@ -50,15 +52,22 @@ fn golden_tests() -> Result<(), Box<dyn Error>> {
 
         if normalize(&actual) != normalize(&expected) {
             println!("{}", "ERROR".red());
+            failed_count += 1;
             latest_err = Some(TestError {
                 actual: normalize(&actual),
                 expected: normalize(&expected),
                 test_name: test_name.to_string(),
             })
         } else {
+            succeed_count += 1;
             println!("{}", "ok".green());
         }
     }
+
+    println!(
+        "Golden tests finished: {} succeed, {} failed",
+        succeed_count, failed_count
+    );
 
     if let Some(err) = latest_err {
         assert_eq!(err.actual, err.expected, "Test `{}` failed", err.test_name);

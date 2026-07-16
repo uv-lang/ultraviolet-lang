@@ -4,14 +4,14 @@ use ultraviolet_core::{
     errors::SpannedError,
     traits::{
         EnvironmentTrait,
-        frontend::{Positional, UVDisplay, ast::IsAssignable},
+        frontend::{Positional, UVDisplay},
     },
     types::{
         EnvRef,
         frontend::{
             Spanned,
             ast::{VariableAccess, VariableAssign, VariableDefinition},
-            typechecker::{ControlFlow, UVTypeVariable},
+            typechecker::{TControlFlow, UVTypeVariable},
             types::{ReferenceType, UVType},
         },
     },
@@ -25,22 +25,20 @@ impl Typechecker {
         &self,
         vd: &Spanned<VariableDefinition>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
-        let val = match self.typecheck(&vd.value.value, env.clone())? {
-            ControlFlow::Simple(uvtype) => uvtype,
-            cf => return Ok(cf),
-        };
+    ) -> Result<TControlFlow, SpannedError> {
+        let mut cf = self.typecheck(&vd.value.value, env.clone())?;
+        let val = cf.ty.clone();
 
-        if let Some(expected) = &vd.expected_type
-            && !expected.value.is_assignable_from(&val)
-        {
-            return Err(SpannedError::new(
-                format!(
-                    "Expected type `{}`, got `{}` for variable `{}`",
-                    expected.value, val, vd.name.value
-                ),
-                vd.value.value.get_span(),
-            ));
+        if let Some(expected) = &vd.expected_type {
+            expected.value.is_assignable_from_many(&val).map_err(|t| {
+                SpannedError::new(
+                    format!(
+                        "Expected type `{}`, got `{}` for variable `{}`",
+                        expected.value, t, vd.name.value
+                    ),
+                    t.get_span(),
+                )
+            })?
         }
 
         if env.borrow().exists_in_current(slice::from_ref(&vd.name)) {
@@ -50,10 +48,14 @@ impl Typechecker {
             ));
         }
 
-        env.borrow_mut()
-            .define_variable(&vd.name.value, UVTypeVariable::new_from(val, vd.is_const));
+        let t = UVType::check_all_types(&val)
+            .map_err(|t| SpannedError::new(format!("Type mismatch: {}", t), t.get_span()))?;
 
-        Ok(ControlFlow::Simple(UVType::Void))
+        env.borrow_mut()
+            .define_variable(&vd.name.value, UVTypeVariable::new_from(t, vd.is_const));
+
+        cf.set_ty(UVType::Void, vd.get_span());
+        Ok(cf)
     }
 
     /// Check variable assignment
@@ -61,7 +63,7 @@ impl Typechecker {
         &self,
         va: &Spanned<VariableAssign>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
         let var_rc = env.borrow().find_var(&va.name)?;
 
         if var_rc.borrow().constant {
@@ -74,27 +76,29 @@ impl Typechecker {
             ));
         }
 
-        let t = match self.typecheck(&va.value.value, env.clone())? {
-            ControlFlow::Simple(uvtype) => uvtype,
-            cf => return Ok(cf),
-        };
+        let mut cf = self.typecheck(&va.value.value, env.clone())?;
+        let t = cf.ty.clone();
 
-        let mut var = var_rc.borrow_mut();
-        if !var.value.is_assignable_from(&t) {
-            return Err(SpannedError::new(
+        let var = var_rc.borrow_mut();
+
+        var.value.is_assignable_from_many(&t).map_err(|t| {
+            SpannedError::new(
                 format!(
                     "Expected type `{}`, got `{}` for variable `{}`",
                     var.value,
                     t,
                     va.name.join(".")
                 ),
-                va.get_span(),
-            ));
-        }
+                t.get_span(),
+            )
+        })?;
 
-        var.value = t;
+        // TODO: Write comments for this line:
+        // FIXME:! This assign used for references checking!!!!
+        //var.value = t.value;
 
-        Ok(ControlFlow::Simple(UVType::Void))
+        cf.set_ty(UVType::Void, va.get_span());
+        Ok(cf)
     }
 
     /// Check variable is defined and get its type
@@ -102,7 +106,7 @@ impl Typechecker {
         &self,
         va: &Spanned<VariableAccess>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
         let var_rc = env.borrow().find_var(&va.name)?;
         let borrowed = var_rc.borrow();
 
@@ -123,7 +127,7 @@ impl Typechecker {
             }
         }
 
-        Ok(ControlFlow::Simple(borrowed.value.clone()))
+        Ok(TControlFlow::new_ty(borrowed.value.clone(), va.get_span()))
     }
 
     /// Check and validate reference creation
@@ -131,12 +135,14 @@ impl Typechecker {
         &self,
         rc: &Spanned<VariableAccess>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
         let var_rc = env.borrow().find_var(&rc.name)?;
+        let val = UVType::Reference(Box::new(ReferenceType::new_referenced(
+            var_rc.borrow().value.clone(),
+            Rc::downgrade(&var_rc),
+        )));
 
-        Ok(ControlFlow::Simple(UVType::Reference(Box::new(
-            ReferenceType::new_referenced(var_rc.borrow().value.clone(), Rc::downgrade(&var_rc)),
-        ))))
+        Ok(TControlFlow::new_ty(val, rc.get_span()))
     }
 
     /// Check and validate dereference
@@ -144,7 +150,7 @@ impl Typechecker {
         &self,
         dr: &Spanned<VariableAccess>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
         let var_rc = env.borrow().find_var(&dr.name)?;
 
         let borrowed = var_rc.borrow();
@@ -170,7 +176,10 @@ impl Typechecker {
             ));
         };
 
-        Ok(ControlFlow::Simple(upgraded.borrow().value.clone()))
+        Ok(TControlFlow::new_ty(
+            upgraded.borrow().value.clone(),
+            dr.get_span(),
+        ))
     }
 
     /// Check dereference assign
@@ -178,7 +187,7 @@ impl Typechecker {
         &self,
         va: &Spanned<VariableAssign>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
         let reference = env.borrow().find_var(&va.name)?;
 
         let borrowed = reference.borrow();
@@ -211,27 +220,31 @@ impl Typechecker {
             ));
         }
 
-        let t = match self.typecheck(&va.value.value, env.clone())? {
-            ControlFlow::Simple(uvtype) => uvtype,
-            cf => return Ok(cf),
-        };
+        let mut cf = self.typecheck(&va.value.value, env.clone())?;
+        let t = cf.ty.clone();
 
-        let mut borrowed_ref = strong_ref.borrow_mut();
+        let borrowed_ref = strong_ref.borrow_mut();
 
-        if !borrowed_ref.value.is_assignable_from(&t) {
-            return Err(SpannedError::new(
-                format!(
-                    "Expected type `{}`, got `{}` for reference `{}`",
-                    borrowed_ref.value,
-                    t,
-                    va.name.join(".")
-                ),
-                va.get_span(),
-            ));
-        }
+        borrowed_ref
+            .value
+            .is_assignable_from_many(&t)
+            .map_err(|t| {
+                SpannedError::new(
+                    format!(
+                        "Expected type `{}`, got `{}` for reference `{}`",
+                        borrowed_ref.value,
+                        t,
+                        va.name.join(".")
+                    ),
+                    t.get_span(),
+                )
+            })?;
 
-        borrowed_ref.value = t;
+        // TODO: Write comments for this line:
+        // FIXME:! This assign used for references checking!!!!
+        //borrowed_ref.value = t.value;
 
-        Ok(ControlFlow::Simple(UVType::Void))
+        cf.set_ty(UVType::Void, va.get_span());
+        Ok(cf)
     }
 }
