@@ -176,16 +176,13 @@ impl UVType {
         &self,
         other: &[Spanned<UVType>],
     ) -> Result<(), Spanned<UVType>> {
-        other
-            .iter()
-            .map(|t| {
-                if self.is_assignable_from(t) {
-                    Ok(())
-                } else {
-                    Err(t.clone())
-                }
-            })
-            .collect::<Result<(), Spanned<UVType>>>()
+        other.iter().try_for_each(|t| {
+            if self.is_assignable_from(t) {
+                Ok(())
+            } else {
+                Err(t.clone())
+            }
+        })
     }
 
     /// Check thats all types in vec is eq and return its type

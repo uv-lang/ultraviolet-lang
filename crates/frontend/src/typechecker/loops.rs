@@ -86,7 +86,7 @@ impl Typechecker {
         };
 
         let step = if let Some(step) = &fl.step {
-            let cf_step = self.typecheck(&step, env.clone())?;
+            let cf_step = self.typecheck(step, env.clone())?;
             cf.extend_returns(cf_step.returns);
 
             let step_ty = UVType::check_all_types(&cf_step.ty)

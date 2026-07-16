@@ -54,7 +54,7 @@ impl Typechecker {
     ) -> Result<TControlFlow, SpannedError> {
         Ok(match block {
             ASTBlockType::CodeBlock(m) | ASTBlockType::ModuleBlock(m) => {
-                self.analyze_group(&m, env)?
+                self.analyze_group(m, env)?
             },
 
             ASTBlockType::VariableDefinition(vd) => self.check_variable_definition(vd, env)?,
@@ -81,7 +81,7 @@ impl Typechecker {
             ASTBlockType::WhileLoop(wl) => self.check_while_loop(wl, env)?,
 
             ASTBlockType::Value(v) => TControlFlow::new_ty(v.get_type(), v.get_span()),
-            ASTBlockType::GroupBlock(g) => self.analyze_group(&g, env)?,
+            ASTBlockType::GroupBlock(g) => self.analyze_group(g, env)?,
             ASTBlockType::Return(r) => self.analyze_return(r, env)?,
             ASTBlockType::Continue(s) | ASTBlockType::Break(s) => {
                 // FIXME: Should it be never?
@@ -128,7 +128,7 @@ impl Typechecker {
             return Ok(cf);
         };
 
-        let cfi = self.typecheck(&b, env)?;
+        let cfi = self.typecheck(b, env)?;
         cf.extend_returns(cfi.ty);
         cf.returns.extend(cfi.returns);
         Ok(cf)
