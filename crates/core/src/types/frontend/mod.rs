@@ -119,7 +119,7 @@ impl SourceFile {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 /// Span displays the portion of the source code that a token or AST node occupies
 pub struct Span {
     pub start: usize,
@@ -185,6 +185,12 @@ impl<T> DerefMut for Spanned<T> {
 impl<T: fmt::Display> fmt::Display for Spanned<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.value)
+    }
+}
+
+impl fmt::Debug for Span {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Span {{ s: {}, e: {} }}", self.start, self.end)
     }
 }
 

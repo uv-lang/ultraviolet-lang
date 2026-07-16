@@ -1,0 +1,18 @@
+<main>
+    <namespace a>
+        <namespace b>
+            <namespace c>
+                <let>
+                    <name>x</name>
+                    <value>
+                        <i32>42</i32>
+                    </value>
+                </let>
+            </namespace>
+        </namespace>
+    </namespace>
+
+    <call println>
+        <a.b.c.x />
+    </call>
+</main>

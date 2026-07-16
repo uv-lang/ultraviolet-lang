@@ -1,0 +1,31 @@
+<main>
+    <fn>
+        <name>double</name>
+
+        <arg>
+            <name>x</name>
+            <type>
+                <i32 />
+            </type>
+        </arg>
+
+        <returns>
+            <i32 />
+        </returns>
+
+        <body>
+            <return>
+                <mul>
+                    <x />
+                    <i32>2</i32>
+                </mul>
+            </return>
+        </body>
+    </fn>
+
+    <call println>
+        <double$>
+            <i32>21</i32>
+        </double$>
+    </call>
+</main>

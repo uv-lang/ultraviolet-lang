@@ -60,7 +60,7 @@ impl Evaluator {
 
         loop {
             let current = env.borrow().find_var(slice::from_ref(&for_node.iterator))?;
-            if current.borrow().value > end {
+            if current.borrow().value >= end {
                 break;
             }
 

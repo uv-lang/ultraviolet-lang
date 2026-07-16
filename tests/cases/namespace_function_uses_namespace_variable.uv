@@ -1,0 +1,40 @@
+<main>
+    <namespace math>
+        <let>
+            <name>factor</name>
+            <value>
+                <i32>10</i32>
+            </value>
+        </let>
+
+        <fn>
+            <name>mul_factor</name>
+
+            <arg>
+                <name>x</name>
+                <type>
+                    <i32 />
+                </type>
+            </arg>
+
+            <returns>
+                <i32 />
+            </returns>
+
+            <body>
+                <return>
+                    <mul>
+                        <x />
+                        <factor />
+                    </mul>
+                </return>
+            </body>
+        </fn>
+    </namespace>
+
+    <call println>
+        <math.mul_factor$>
+            <i32>7</i32>
+        </math.mul_factor$>
+    </call>
+</main>

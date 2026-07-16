@@ -1,0 +1,19 @@
+<main>
+    <if>
+        <test>
+            <bool>0</bool>
+        </test>
+
+        <then>
+            <call println>
+                <str>then</str>
+            </call>
+        </then>
+
+        <else>
+            <call println>
+                <str>else</str>
+            </call>
+        </else>
+    </if>
+</main>

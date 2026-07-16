@@ -2,14 +2,14 @@ use colored::Colorize;
 use std::{cell::RefCell, ops::Deref, rc::Weak};
 
 use crate::{
-    traits::frontend::ast::{IsAssignable, StringToUVNumberType, StringToUVType},
+    traits::frontend::ast::{StringToUVNumberType, StringToUVType},
     types::{
         EnvRef, Environment,
-        frontend::{number::UVNumberType, typechecker::UVTypeVariable},
+        frontend::{Spanned, number::UVNumberType, typechecker::UVTypeVariable},
     },
 };
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// User environment function type
 pub struct UVFunctionType {
     pub args: Vec<UVType>,
@@ -18,7 +18,7 @@ pub struct UVFunctionType {
 
 // ---------------------- Builtin functions -------------------------------
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UVBuiltinFunctionArguments {
     /// Arguments of any type and quantity
     Any,
@@ -28,7 +28,7 @@ pub enum UVBuiltinFunctionArguments {
     AllOf(UVType),
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UVBuiltinFunctionType {
     pub args: UVBuiltinFunctionArguments,
     pub returns: UVType,
@@ -37,7 +37,7 @@ pub struct UVBuiltinFunctionType {
 // ------------------------------------------------------------------------
 
 /// Ultraviolet types
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UVType {
     Number(UVNumberType),
     String,
@@ -49,6 +49,7 @@ pub enum UVType {
 
     /// Unreachable from user env
     Any,
+    Never,
 
     Reference(Box<ReferenceType>),
 
@@ -58,7 +59,7 @@ pub enum UVType {
     Namespace(EnvRef<UVTypeVariable>),
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ReferenceType {
     pub t: UVType,
     pub reference: Option<Weak<RefCell<UVTypeVariable>>>,
@@ -110,7 +111,8 @@ impl std::fmt::Display for UVType {
             },
             UVType::Reference(r) => write!(f, "reference to {}", r.t),
             UVType::Module(_) => write!(f, "<module>"),
-            UVType::Namespace(_) => writeln!(f, "<namespace>"),
+            UVType::Namespace(_) => write!(f, "<namespace>"),
+            UVType::Never => write!(f, "never"),
         }
     }
 }
@@ -139,8 +141,13 @@ impl UVType {
     }
 }
 
-impl IsAssignable for UVType {
-    fn is_assignable_from(&self, other: &UVType) -> bool {
+impl UVType {
+    /// Returns `true` if `other` is a subtype of `self`.
+    ///
+    /// This defines assignability in the type system.
+    /// A value of type `other` is assignable to `self` if every possible
+    /// runtime value of `other` is valid for `self`.
+    pub fn is_assignable_from(&self, other: &UVType) -> bool {
         if self == other {
             return true;
         }
@@ -151,11 +158,45 @@ impl IsAssignable for UVType {
             (UVType::Reference(lr), UVType::Reference(rr)) => lr.t.is_assignable_from(&rr.t),
             (UVType::Number(UVNumberType::AnyNumber), UVType::Number(_)) => true,
 
+            (_, UVType::Never) => true,
+
             (UVType::Any, _) => true,
             (_, UVType::Any) => false,
 
             _ => false,
         }
+    }
+
+    /// Returns `true` if `other` is ALL a subtype of `self`.
+    ///
+    /// This defines assignability in the type system.
+    /// A value of type `other` is assignable to `self` if every possible
+    /// runtime value of `other` is valid for `self`.
+    pub fn is_assignable_from_many(
+        &self,
+        other: &[Spanned<UVType>],
+    ) -> Result<(), Spanned<UVType>> {
+        other.iter().try_for_each(|t| {
+            if self.is_assignable_from(t) {
+                Ok(())
+            } else {
+                Err(t.clone())
+            }
+        })
+    }
+
+    /// Check thats all types in vec is eq and return its type
+    pub fn check_all_types(other: &[Spanned<UVType>]) -> Result<Self, Spanned<UVType>> {
+        let mut i = other.iter();
+        let f = i.next().unwrap();
+
+        for el in i {
+            if !f.is_assignable_from(el) {
+                return Err(el.clone());
+            }
+        }
+
+        Ok(f.clone().value)
     }
 }
 

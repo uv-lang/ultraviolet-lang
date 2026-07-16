@@ -1,0 +1,14 @@
+<main>
+    <namespace math>
+        <let>
+            <name>pi</name>
+            <value>
+                <i32>314</i32>
+            </value>
+        </let>
+    </namespace>
+
+    <call println>
+        <math.pi />
+    </call>
+</main>

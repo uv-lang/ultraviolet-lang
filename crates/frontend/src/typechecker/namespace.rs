@@ -8,7 +8,7 @@ use ultraviolet_core::{
         frontend::{
             Spanned,
             ast::Namespace,
-            typechecker::{ControlFlow, UVTypeVariable},
+            typechecker::{TControlFlow, UVTypeVariable},
             types::UVType,
         },
     },
@@ -22,7 +22,7 @@ impl Typechecker {
         &self,
         ns: &Spanned<Namespace>,
         env: EnvRef<UVTypeVariable>,
-    ) -> Result<ControlFlow, SpannedError> {
+    ) -> Result<TControlFlow, SpannedError> {
         if env.borrow().find_var(slice::from_ref(&ns.name)).is_ok() {
             return Err(SpannedError::new(
                 format!(
@@ -34,15 +34,10 @@ impl Typechecker {
         }
 
         let namespace = Environment::new_child_weak(env.clone());
-        let mut cf = ControlFlow::Simple(UVType::Void);
+        let mut cf = TControlFlow::new_void(ns.get_span());
         for node in &ns.body {
-            match self.typecheck(node, namespace.clone())? {
-                ControlFlow::Simple(_) => {},
-                c => {
-                    cf = c;
-                    break;
-                },
-            }
+            let cfi = self.typecheck(node, namespace.clone())?;
+            cf.extend_from(cfi);
         }
 
         env.borrow_mut().define_variable(
@@ -50,6 +45,7 @@ impl Typechecker {
             UVTypeVariable::new_from(UVType::Namespace(namespace), true),
         );
 
+        cf.set_ty(UVType::Void, ns.get_span());
         Ok(cf)
     }
 }
