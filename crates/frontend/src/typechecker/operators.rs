@@ -62,15 +62,17 @@ impl Typechecker {
         for operand in &op.operands {
             let cfa = self.typecheck(operand, env.clone())?;
 
-            expected_type.is_assignable_from_many(&cf.ty).map_err(|t| {
-                SpannedError::new(
-                    format!(
-                        "Type mismatch for math operation: Expected `{}`, got `{}`",
-                        expected_type, t
-                    ),
-                    t.get_span(),
-                )
-            })?;
+            expected_type
+                .is_assignable_from_many(&cfa.ty)
+                .map_err(|t| {
+                    SpannedError::new(
+                        format!(
+                            "Type mismatch for math operation: Expected `{}`, got `{}`",
+                            expected_type, t
+                        ),
+                        t.get_span(),
+                    )
+                })?;
 
             cf.extend_returns(cfa.returns);
         }
@@ -122,7 +124,7 @@ impl Typechecker {
             (Some(t), Some(e)) => {
                 let mut r = t.clone();
                 r.extend(e);
-                t
+                r
             },
 
             (None, None) => {

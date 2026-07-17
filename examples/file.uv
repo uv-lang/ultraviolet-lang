@@ -1,37 +1,42 @@
 <main>
-    <let>
-        <name>x</name>
-        <value>
-            <i32>100</i32>
-        </value>
-    </let>
-
     <fn>
-        <name>test</name>
+        <name>aaa</name>
+
+        <arg>
+            <name>arg</name>
+            <type>
+                <bool />
+            </type>
+        </arg>
 
         <returns>
-            <i32 />
+            <i8 />
         </returns>
 
+
         <body>
-            <let>
-                <name>x</name>
-                <value>
-                    <i32>5</i32>
-                </value>
-            </let>
+            <if>
+                <test>
+                    <arg />
+                </test>
+
+                <then>
+                    <return>
+                        <i32>67</i32>
+                    </return>
+                </then>
+            </if>
 
             <return>
-                <x />
+                <i8>5</i8>
             </return>
         </body>
     </fn>
 
-    <call println>
-        <test$ />
-    </call>
+    <println$>
+        <aaa$>
+            <bool>true</bool>
+        </aaa$>
+    </println$>
 
-    <call println>
-        <x />
-    </call>
 </main>

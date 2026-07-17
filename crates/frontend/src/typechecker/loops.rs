@@ -80,7 +80,7 @@ impl Typechecker {
             _ => {
                 return Err(SpannedError::new(
                     "Type mismatch for `for` end. Expected number",
-                    fl.start.get_span(),
+                    fl.end.get_span(),
                 ));
             },
         };
@@ -96,7 +96,7 @@ impl Typechecker {
                 _ => {
                     return Err(SpannedError::new(
                         "Type mismatch for `for` step. Expected number",
-                        fl.start.get_span(),
+                        step.get_span(),
                     ));
                 },
             }
