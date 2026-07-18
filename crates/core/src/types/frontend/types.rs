@@ -136,7 +136,7 @@ impl ReferenceType {
     }
 
     /// Convert refs to types
-    pub fn get_types(v: &Vec<Spanned<Rc<RefCell<UVTypeVariable>>>>) -> Vec<Spanned<UVType>> {
+    pub fn get_types(v: &[Spanned<Rc<RefCell<UVTypeVariable>>>]) -> Vec<Spanned<UVType>> {
         v.iter()
             .map(|i| Spanned::new(i.borrow().value.clone(), i.get_span()))
             .collect()
