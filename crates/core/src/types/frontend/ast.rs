@@ -51,7 +51,7 @@ impl GetType for UVValue {
                 let Some(val) = r.upgrade() else {
                     return UVType::Null;
                 };
-                UVType::Reference(Box::new(ReferenceType::new(val.borrow().get_type())))
+                UVType::ReferenceBatch(vec![ReferenceType::new(val.borrow().get_type())])
             },
         }
     }

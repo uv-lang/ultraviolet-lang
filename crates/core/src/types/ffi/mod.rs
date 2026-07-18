@@ -20,7 +20,7 @@ impl ToTypeFFI for UVType {
             UVType::Boolean => Some(Type::u8()),
             UVType::Void => Some(Type::void()),
             UVType::Null => Some(Type::pointer()),
-            UVType::Reference(_) => Some(Type::pointer()),
+            UVType::ReferenceBatch(_) => Some(Type::pointer()),
             _ => None,
         }
     }

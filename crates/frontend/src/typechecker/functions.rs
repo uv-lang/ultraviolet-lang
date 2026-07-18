@@ -40,16 +40,16 @@ impl Typechecker {
         let mut args = Vec::new();
         for arg in &fd.arguments {
             let mut arg_t = arg.arg_type.value.clone();
-            if let UVType::Reference(rr) = &arg_t {
-                let v = inner_env.borrow_mut().define_variable(
-                    random_name(5),
-                    UVTypeVariable::new_from(rr.t.clone(), false),
-                );
+            if let UVType::ReferenceBatch(rr) = &arg_t {
+                let t = &rr.first().unwrap().t;
+                let v = inner_env
+                    .borrow_mut()
+                    .define_variable(random_name(5), UVTypeVariable::new_from(t.clone(), false));
 
-                arg_t = UVType::Reference(Box::new(ReferenceType::new_referenced(
-                    rr.t.clone(),
-                    Rc::downgrade(&v),
-                )));
+                arg_t = UVType::ReferenceBatch(vec![ReferenceType::new_referenced(
+                    t.clone(),
+                    Spanned::new(Rc::downgrade(&v), arg.get_span()),
+                )]);
             }
 
             inner_env.borrow_mut().define_variable(

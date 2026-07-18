@@ -1,0 +1,27 @@
+<main>
+    <let>
+        <name>a</name>
+        <value>
+            <i8>10</i8>
+        </value>
+    </let>
+
+    <let>
+        <name>ptr_a</name>
+        <value>
+            <a ref />
+        </value>
+    </let>
+
+    <call println>
+        <ptr_a deref />
+    </call>
+
+    <ptr_a deref>
+        <i8>42</i8>
+    </ptr_a>
+
+    <call println>
+        <a />
+    </call>
+</main>

@@ -79,7 +79,7 @@ impl Typechecker {
         let mut cf = self.typecheck(&va.value.value, env.clone())?;
         let t = cf.ty.clone();
 
-        let var = var_rc.borrow_mut();
+        let mut var = var_rc.borrow_mut();
 
         var.value.is_assignable_from_many(&t).map_err(|t| {
             SpannedError::new(
@@ -93,9 +93,15 @@ impl Typechecker {
             )
         })?;
 
-        // TODO: Write comments for this line:
-        // FIXME:! This assign used for references checking!!!!
-        //var.value = t.value;
+        if let UVType::ReferenceBatch(r) = &mut var.value {
+            for reference in t {
+                let UVType::ReferenceBatch(rr) = &reference.value else {
+                    unreachable!()
+                };
+
+                r.extend(rr.clone());
+            }
+        }
 
         cf.set_ty(UVType::Void, va.get_span());
         Ok(cf)
@@ -110,20 +116,9 @@ impl Typechecker {
         let var_rc = env.borrow().find_var(&va.name)?;
         let borrowed = var_rc.borrow();
 
-        if let UVType::Reference(r) = &borrowed.value {
-            let Some(referenced_var) = &r.reference else {
-                return Err(SpannedError::new_tipped(
-                    "This is a dangling reference",
-                    "Report about this issue to https://github.com/Andcool-Systems/ultraviolet-lang",
-                    va.get_span(),
-                ));
-            };
-
-            if referenced_var.upgrade().is_none() {
-                return Err(SpannedError::new(
-                    "Value at this reference is freed before accessing",
-                    va.get_span(),
-                ));
+        if let UVType::ReferenceBatch(rb) = &borrowed.value {
+            for r in rb.iter() {
+                r.check_references_lifetime(va.get_span(), false)?;
             }
         }
 
@@ -137,10 +132,10 @@ impl Typechecker {
         env: EnvRef<UVTypeVariable>,
     ) -> Result<TControlFlow, SpannedError> {
         let var_rc = env.borrow().find_var(&rc.name)?;
-        let val = UVType::Reference(Box::new(ReferenceType::new_referenced(
+        let val = UVType::ReferenceBatch(vec![ReferenceType::new_referenced(
             var_rc.borrow().value.clone(),
-            Rc::downgrade(&var_rc),
-        )));
+            Spanned::new(Rc::downgrade(&var_rc), rc.get_span()),
+        )]);
 
         Ok(TControlFlow::new_ty(val, rc.get_span()))
     }
@@ -152,34 +147,29 @@ impl Typechecker {
         env: EnvRef<UVTypeVariable>,
     ) -> Result<TControlFlow, SpannedError> {
         let var_rc = env.borrow().find_var(&dr.name)?;
-
         let borrowed = var_rc.borrow();
-        let UVType::Reference(rf) = &borrowed.value else {
-            return Err(SpannedError::new(
-                "Cannot dereference primitive value",
-                dr.get_span(),
-            ));
+
+        let all_types: Vec<Spanned<UVType>> = match &borrowed.value {
+            UVType::ReferenceBatch(rb) => {
+                let mut acc: Vec<Spanned<UVType>> = Vec::new();
+                for r in rb.iter() {
+                    let v = r.check_references_lifetime(dr.get_span(), false)?;
+                    acc.append(&mut ReferenceType::get_types(&v));
+                }
+                acc
+            },
+            _ => {
+                return Err(SpannedError::new(
+                    "Cannot dereference primitive value",
+                    dr.get_span(),
+                ));
+            },
         };
 
-        let Some(referenced_var) = &rf.reference else {
-            return Err(SpannedError::new_tipped(
-                "This is a dangling reference",
-                "Report about this issue to https://github.com/Andcool-Systems/ultraviolet-lang",
-                dr.get_span(),
-            ));
-        };
-
-        let Some(upgraded) = referenced_var.upgrade() else {
-            return Err(SpannedError::new(
-                "Value at this reference is freed before accessing",
-                dr.get_span(),
-            ));
-        };
-
-        Ok(TControlFlow::new_ty(
-            upgraded.borrow().value.clone(),
-            dr.get_span(),
-        ))
+        Ok(TControlFlow {
+            ty: all_types,
+            returns: Vec::new(),
+        })
     }
 
     /// Check dereference assign
@@ -191,60 +181,47 @@ impl Typechecker {
         let reference = env.borrow().find_var(&va.name)?;
 
         let borrowed = reference.borrow();
-        let UVType::Reference(r) = &borrowed.value else {
-            return Err(SpannedError::new(
-                "Cannot dereference non-reference variable",
-                va.get_span(),
-            ));
+        let all_refs = match &borrowed.value {
+            UVType::ReferenceBatch(rb) => {
+                let mut acc = Vec::new();
+                for r in rb.iter() {
+                    let mut v = r.check_references_lifetime(va.get_span(), true)?;
+                    acc.append(&mut v);
+                }
+                acc
+            },
+            _ => {
+                return Err(SpannedError::new(
+                    "Cannot dereference primitive value",
+                    va.get_span(),
+                ));
+            },
         };
-
-        let Some(referenced_var) = &r.reference else {
-            return Err(SpannedError::new_tipped(
-                "This is a dangling reference",
-                "Report about this issue to https://github.com/Andcool-Systems/ultraviolet-lang",
-                va.get_span(),
-            ));
-        };
-
-        let Some(strong_ref) = referenced_var.upgrade() else {
-            return Err(SpannedError::new(
-                "Value at this reference is freed before accessing",
-                va.get_span(),
-            ));
-        };
-
-        if strong_ref.borrow().constant {
-            return Err(SpannedError::new(
-                "Attempt to assign to dereferenced constant value",
-                va.get_span(),
-            ));
-        }
 
         let mut cf = self.typecheck(&va.value.value, env.clone())?;
         let t = cf.ty.clone();
+        let common_t = UVType::check_all_types(&t)
+            .map_err(|t| SpannedError::new(format!("Type mismatch: {}", t), t.get_span()))?;
 
-        let borrowed_ref = strong_ref.borrow_mut();
-
-        borrowed_ref
-            .value
-            .is_assignable_from_many(&t)
-            .map_err(|t| {
+        for reference_t in ReferenceType::get_types(&all_refs) {
+            reference_t.is_assignable_from_many(&t).map_err(|t| {
                 SpannedError::new(
                     format!(
                         "Expected type `{}`, got `{}` for reference `{}`",
-                        borrowed_ref.value,
+                        reference_t,
                         t,
                         va.name.join(".")
                     ),
                     t.get_span(),
                 )
             })?;
+        }
 
-        // TODO: Write comments for this line:
-        // FIXME:! This assign used for references checking!!!!
-        //borrowed_ref.value = t.value;
-
+        for target in all_refs {
+            target.borrow_mut().value = common_t.clone();
+        }
         cf.set_ty(UVType::Void, va.get_span());
+
         Ok(cf)
     }
 }

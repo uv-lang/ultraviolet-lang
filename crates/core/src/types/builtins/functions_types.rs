@@ -75,9 +75,9 @@ pub fn init_builtin_types_functions(env: EnvRef<UVTypeVariable>) {
         "inc",
         UVTypeVariable::new_from(
             UVType::BuiltInFunction(Box::new(UVBuiltinFunctionType {
-                args: UVBuiltinFunctionArguments::Args(vec![UVType::Reference(Box::new(
+                args: UVBuiltinFunctionArguments::Args(vec![UVType::ReferenceBatch(vec![
                     ReferenceType::new(UVType::Number(UVNumberType::AnyNumber)),
-                ))]),
+                ])]),
                 returns: UVType::String,
             })),
             true,
@@ -88,9 +88,9 @@ pub fn init_builtin_types_functions(env: EnvRef<UVTypeVariable>) {
         "dec",
         UVTypeVariable::new_from(
             UVType::BuiltInFunction(Box::new(UVBuiltinFunctionType {
-                args: UVBuiltinFunctionArguments::Args(vec![UVType::Reference(Box::new(
+                args: UVBuiltinFunctionArguments::Args(vec![UVType::ReferenceBatch(vec![
                     ReferenceType::new(UVType::Number(UVNumberType::AnyNumber)),
-                ))]),
+                ])]),
                 returns: UVType::String,
             })),
             true,

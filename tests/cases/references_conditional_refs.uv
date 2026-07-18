@@ -6,6 +6,12 @@
         </value>
     </let>
     <let>
+        <name>target_b</name>
+        <value>
+            <i32>200</i32>
+        </value>
+    </let>
+    <let>
         <name>flag</name>
         <value>
             <bool>0</bool>
@@ -21,7 +27,10 @@
 
     <if>
         <test>
-            <flag />
+            <eq>
+                <flag />
+                <bool>1</bool>
+            </eq>
         </test>
         <then>
             <dynamic_ptr>
@@ -29,12 +38,6 @@
             </dynamic_ptr>
         </then>
         <else>
-            <let>
-                <name>target_b</name>
-                <value>
-                    <i32>200</i32>
-                </value>
-            </let>
             <dynamic_ptr>
                 <target_b ref />
             </dynamic_ptr>
@@ -43,5 +46,13 @@
 
     <call println>
         <dynamic_ptr deref />
+    </call>
+
+    <dynamic_ptr deref>
+        <i32>999</i32>
+    </dynamic_ptr>
+
+    <call println>
+        <target_b />
     </call>
 </main>

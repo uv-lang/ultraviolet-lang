@@ -1,0 +1,40 @@
+<main>
+    <let>
+        <name>condition</name>
+        <value><bool>1</bool></value>
+    </let>
+
+    <if>
+        <test>
+            <condition />
+        </test>
+        <then>
+            <let>
+                <name>local_var</name>
+                <value><i8>77</i8></value>
+            </let>
+
+            <let>
+                <name>inner_ptr</name>
+                <value><local_var ref /></value>
+            </let>
+            
+            <call println>
+                <str>Inside scope:</str>
+            </call>
+            <call println>
+                <inner_ptr deref />
+            </call>
+
+            </then>
+        <else>
+            <call println>
+                <str>Unreachable</str>
+            </call>
+        </else>
+    </if>
+
+    <call println>
+        <str>Scope ended safely</str>
+    </call>
+</main>

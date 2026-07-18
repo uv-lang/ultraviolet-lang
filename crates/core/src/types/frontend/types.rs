@@ -1,11 +1,19 @@
 use colored::Colorize;
-use std::{cell::RefCell, ops::Deref, rc::Weak};
+use std::{
+    cell::RefCell,
+    ops::Deref,
+    rc::{Rc, Weak},
+};
 
 use crate::{
-    traits::frontend::ast::{StringToUVNumberType, StringToUVType},
+    errors::SpannedError,
+    traits::frontend::{
+        Positional,
+        ast::{StringToUVNumberType, StringToUVType},
+    },
     types::{
         EnvRef, Environment,
-        frontend::{Spanned, number::UVNumberType, typechecker::UVTypeVariable},
+        frontend::{Span, Spanned, number::UVNumberType, typechecker::UVTypeVariable},
     },
 };
 
@@ -51,7 +59,7 @@ pub enum UVType {
     Any,
     Never,
 
-    Reference(Box<ReferenceType>),
+    ReferenceBatch(Vec<ReferenceType>),
 
     Optional(Box<UVType>),
 
@@ -62,7 +70,7 @@ pub enum UVType {
 #[derive(Debug, Clone)]
 pub struct ReferenceType {
     pub t: UVType,
-    pub reference: Option<Weak<RefCell<UVTypeVariable>>>,
+    pub references: Vec<Spanned<Weak<RefCell<UVTypeVariable>>>>,
 }
 
 impl ReferenceType {
@@ -70,17 +78,68 @@ impl ReferenceType {
     ///
     /// Used e.g. `<int ref />`
     pub fn new(t: UVType) -> Self {
-        Self { t, reference: None }
+        Self {
+            t,
+            references: Vec::new(),
+        }
     }
 
     /// Create new reference with non-empty reference field
     ///
     /// Used for real references to a variables
-    pub fn new_referenced(t: UVType, reference: Weak<RefCell<UVTypeVariable>>) -> Self {
+    pub fn new_referenced(t: UVType, reference: Spanned<Weak<RefCell<UVTypeVariable>>>) -> Self {
         Self {
             t,
-            reference: Some(reference),
+            references: vec![reference],
         }
+    }
+
+    /// Adds another state for the current link
+    pub fn add_reference_state(&mut self, reference: Spanned<Weak<RefCell<UVTypeVariable>>>) {
+        self.references.push(reference);
+    }
+
+    /// Check all contained reverences for validity
+    pub fn check_references_lifetime(
+        &self,
+        span: Span,
+        check_constant: bool,
+    ) -> Result<Vec<Spanned<Rc<RefCell<UVTypeVariable>>>>, SpannedError> {
+        if self.references.is_empty() {
+            return Err(SpannedError::new_tipped(
+                "This is a dangling reference",
+                "Report about this issue to https://github.com/Andcool-Systems/ultraviolet-lang",
+                span,
+            ));
+        }
+
+        let mut types = Vec::new();
+        for reference in &self.references {
+            let Some(t) = reference.upgrade() else {
+                return Err(SpannedError::new(
+                    "This value doesn't life enough for this reference",
+                    reference.get_span(),
+                ));
+            };
+
+            if check_constant && t.borrow().constant {
+                return Err(SpannedError::new(
+                    "Attempt to assign to dereferenced constant value",
+                    reference.get_span(),
+                ));
+            }
+
+            types.push(Spanned::new(t, reference.span.clone()));
+        }
+
+        Ok(types)
+    }
+
+    /// Convert refs to types
+    pub fn get_types(v: &Vec<Spanned<Rc<RefCell<UVTypeVariable>>>>) -> Vec<Spanned<UVType>> {
+        v.iter()
+            .map(|i| Spanned::new(i.borrow().value.clone(), i.get_span()))
+            .collect()
     }
 }
 
@@ -109,7 +168,14 @@ impl std::fmt::Display for UVType {
             UVType::Optional(t) => {
                 write!(f, "<optional>{}</optional>", t.to_string().green().bold())
             },
-            UVType::Reference(r) => write!(f, "reference to {}", r.t),
+            UVType::ReferenceBatch(rb) => write!(
+                f,
+                "reference to {}",
+                rb.iter()
+                    .map(|i| i.t.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            ),
             UVType::Module(_) => write!(f, "<module>"),
             UVType::Namespace(_) => write!(f, "<namespace>"),
             UVType::Never => write!(f, "never"),
@@ -155,7 +221,18 @@ impl UVType {
         match (self, other) {
             (UVType::Optional(lv), rv) => lv.deref() == rv,
 
-            (UVType::Reference(lr), UVType::Reference(rr)) => lr.t.is_assignable_from(&rr.t),
+            (UVType::ReferenceBatch(lr), UVType::ReferenceBatch(rr)) => {
+                let mut res = true;
+                for l in lr {
+                    for r in rr {
+                        if !l.t.is_assignable_from(&r.t) {
+                            res = false;
+                        }
+                    }
+                }
+
+                res
+            },
             (UVType::Number(UVNumberType::AnyNumber), UVType::Number(_)) => true,
 
             (_, UVType::Never) => true,
@@ -187,16 +264,24 @@ impl UVType {
 
     /// Check thats all types in vec is eq and return its type
     pub fn check_all_types(other: &[Spanned<UVType>]) -> Result<Self, Spanned<UVType>> {
-        let mut i = other.iter();
-        let f = i.next().unwrap();
+        let first = other.first().unwrap();
 
-        for el in i {
-            if !f.is_assignable_from(el) {
-                return Err(el.clone());
+        let mut result = first.value.clone();
+
+        for el in &other[1..] {
+            if result.is_assignable_from(&el.value) {
+                continue;
             }
+
+            if el.value.is_assignable_from(&result) {
+                result = el.value.clone();
+                continue;
+            }
+
+            return Err(el.clone());
         }
 
-        Ok(f.clone().value)
+        Ok(result)
     }
 }
 
