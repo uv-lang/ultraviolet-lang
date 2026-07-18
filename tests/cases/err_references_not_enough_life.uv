@@ -1,0 +1,47 @@
+<main>
+    <let>
+        <name>target_a</name>
+        <value>
+            <i32>100</i32>
+        </value>
+    </let>
+    <let>
+        <name>flag</name>
+        <value>
+            <bool>0</bool>
+        </value>
+    </let>
+
+    <let>
+        <name>dynamic_ptr</name>
+        <value>
+            <target_a ref />
+        </value>
+    </let>
+
+    <if>
+        <test>
+            <flag />
+        </test>
+        <then>
+            <dynamic_ptr>
+                <target_a ref />
+            </dynamic_ptr>
+        </then>
+        <else>
+            <let>
+                <name>target_b</name>
+                <value>
+                    <i32>200</i32>
+                </value>
+            </let>
+            <dynamic_ptr>
+                <target_b ref />
+            </dynamic_ptr>
+        </else>
+    </if>
+
+    <call println>
+        <dynamic_ptr deref />
+    </call>
+</main>
