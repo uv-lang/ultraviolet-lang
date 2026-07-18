@@ -3,7 +3,7 @@ use colored::Colorize;
 use pretty_assertions::assert_eq;
 use std::error::Error;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 fn normalize(s: &str) -> String {
     s.replace("\r\n", "\n")
@@ -15,7 +15,7 @@ struct TestError {
     pub test_name: String,
 }
 
-fn get_expected(path: &PathBuf, ext: &str) -> String {
+fn get_expected(path: &Path, ext: &str) -> String {
     let expected_path = path.with_extension(ext);
     fs::read_to_string(&expected_path).unwrap_or(String::from("Expected output file not found"))
 }
