@@ -161,53 +161,60 @@ impl TokenParser {
 
 #[cfg(test)]
 mod tests {
-    /*
+    use std::{path::Path, rc::Rc};
+
     use ultraviolet_core::types::frontend::{
-        Span, Spanned,
+        SourceFile, Span, Spanned,
         tokens::{UVParseBody, UVParseNode},
     };
 
     use crate::{lexer::Lexer, tokens_parser::TokenParser};
 
-    fn get_nodes(code: &str) -> UVParseNode {
-        TokenParser::new(Lexer::new(code.to_owned()).parse())
-            .parse()
-            .unwrap()
+    fn get_source_file(code: &str) -> SourceFile {
+        SourceFile::from_str(code, Box::<Path>::from(Path::new("")))
+    }
+
+    fn get_nodes(sf: Rc<SourceFile>) -> UVParseNode {
+        let tokens = Lexer::new(sf.clone()).parse();
+
+        TokenParser::new(tokens, sf.clone()).parse().unwrap()
     }
 
     #[test]
     fn simple() {
+        let sf = Rc::new(get_source_file("<main><inner/></main>"));
         assert_eq!(
-            get_nodes("<main><inner/></main>"),
+            get_nodes(sf.clone()),
             UVParseNode {
-                name: "main".to_owned(),
+                name: Spanned::new("main".to_owned(), Span::new(1, 5, sf.clone())),
                 children: vec![UVParseBody::Tag(Box::new(UVParseNode {
-                    name: "inner".to_owned(),
+                    name: Spanned::new("inner".to_owned(), Span::new(7, 12, sf.clone())),
                     children: vec![],
                     self_closing: true,
-                    extra_param: String::new(),
-                    span: Span::new(6, 14)
+                    extra_param: Spanned::new(String::new(), Span::new(0, 0, sf.clone())),
+                    span: Span::new(6, 14, sf.clone())
                 }))],
                 self_closing: false,
-                extra_param: String::new(),
-                span: Span::new(0, 21)
+                extra_param: Spanned::new(String::new(), Span::new(0, 0, sf.clone())),
+                span: Span::new(0, 21, sf.clone())
             }
         )
     }
 
     #[test]
     fn literal() {
+        let sf = Rc::new(get_source_file("<main>literal</main>"));
         assert_eq!(
-            get_nodes("<main>literal</main>"),
+            get_nodes(sf.clone()),
             UVParseNode {
-                name: "main".to_owned(),
+                name: Spanned::new("main".to_owned(), Span::new(1, 5, sf.clone())),
                 children: vec![UVParseBody::String(Spanned {
                     value: "literal".to_owned(),
-                    span: Span::new(6, 13)
+                    span: Span::new(6, 13, sf.clone())
                 })],
                 self_closing: false,
-                extra_param: String::new(),
-                span: Span::new(0, 20)
+                extra_param: Spanned::new(String::new(), Span::new(0, 0, sf.clone())),
+                span: Span::new(0, 20, sf.clone())
             }
         )
     }
@@ -215,8 +222,6 @@ mod tests {
     #[test]
     #[should_panic]
     fn unexpected_token() {
-        get_nodes("<main>literal?</main>");
+        get_nodes(Rc::new(get_source_file("<main>literal?</main>")));
     }
-
-    */
 }
